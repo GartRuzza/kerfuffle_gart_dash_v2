@@ -1,6 +1,6 @@
 # Product Brief — Gart Dash
 
-**Owner:** Product owner, with PM Claude.
+> **How to use this docOwner:** Product owner, with PM Claude.
 **Update when:** The vision changes, or the MVP scope changes. Keep it in step with `pm/product_vision.md`.
 **This doc contains:** The working, actionable definition of the product — what an agent needs to know in 60 seconds before touching anything.
 **This doc never contains:** Status, progress, or timelines. What exists is in `pm/current_state.md`; what comes next is in `pm/roadmap.md`.
@@ -15,7 +15,7 @@
 
 ## In one sentence
 
-Raccoon Gart Dash gives the Rangoon Raccoons owner two numbers side by side — what a player is worth in KERFUFFLE and what he costs — so every bid, claim, start, and trade is made on a visible edge instead of a gut feel.
+Gart Dash gives the Rangoon Raccoons owner two numbers side by side — what a player is worth in KERFUFFLE and what he costs — so every bid, claim, start, and trade is made on a visible edge instead of a gut feel.
 
 ## What it is
 
