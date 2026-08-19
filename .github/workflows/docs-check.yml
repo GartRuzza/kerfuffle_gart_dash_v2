@@ -1,0 +1,105 @@
+# Fails a pull request that changes product code but updates no documentation.
+#
+# This is the only mechanism in this system that an agent cannot talk its way past.
+# CLAUDE.md *asks* an agent to update the docs; this *makes* it.
+#
+# Design notes, in case you ever edit this:
+#
+#   - No third-party actions, on purpose. The obvious choice here would be
+#     tj-actions/changed-files, which was compromised in March 2025 (CVE-2025-30066):
+#     attackers repointed existing version tags at malicious code that dumped runner
+#     secrets into build logs. Even pinned versions were hit. Using only `gh` (preinstalled
+#     on GitHub's runners) and git removes that entire class of risk.
+#
+#   - The escape hatch is checked INSIDE the job, not with an `on: paths:` filter.
+#     A workflow skipped by a path filter leaves its check stuck "Pending" forever, which
+#     BLOCKS the merge — the opposite of what an escape hatch should do. A job skipped by
+#     an `if:` reports Success. That difference is why this is written the way it is.
+#
+#   - `labeled`/`unlabeled` are in the trigger list so that adding the escape-hatch label
+#     re-runs the check and unblocks the PR without needing a new commit.
+
+name: Docs check
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write   # needed to post the explanatory comment
+
+jobs:
+  docs-check:
+    name: docs-check      # ← this exact string is what you mark as "required" in the ruleset
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check that code changes come with doc changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          SKIP_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no-docs-needed') }}
+        run: |
+          set -euo pipefail
+
+          if [ "$SKIP_LABEL" = "true" ]; then
+            echo "The 'no-docs-needed' label is set — skipping. The owner has deliberately chosen to merge without doc updates."
+            exit 0
+          fi
+
+          gh pr diff "$PR" --name-only > changed.txt
+          echo "Files changed in this PR:"
+          sed 's/^/  /' changed.txt
+
+          # Product code = anything that is not documentation, config, or tooling.
+          # Adjust this list if your project keeps source somewhere unusual.
+          CODE=$(grep -vE '^(docs/|template-system/|\.github/|\.claude/|[^/]*\.md$|LICENSE|\.gitignore|\.gitattributes)' changed.txt || true)
+
+          if [ -z "$CODE" ]; then
+            echo "No product code changed. Nothing to enforce."
+            exit 0
+          fi
+
+          echo ""
+          echo "Product code changed:"
+          echo "$CODE" | sed 's/^/  /'
+
+          # The two docs CLAUDE.md requires on every PR that touches product source.
+          MISSING=""
+          grep -q '^docs/pm/current_state\.md$'              changed.txt || MISSING="${MISSING}  - docs/pm/current_state.md — what is now Built, Partial, or broken\n"
+          grep -q '^docs/pm/implementation_reality_log\.md$' changed.txt || MISSING="${MISSING}  - docs/pm/implementation_reality_log.md — what was planned vs. what was actually built\n"
+
+          if [ -z "$MISSING" ]; then
+            echo ""
+            echo "Both required docs were updated. Passing."
+            exit 0
+          fi
+
+          echo ""
+          printf "MISSING:\n$MISSING"
+
+          {
+            printf '## 📋 Docs check failed\n\n'
+            printf 'This pull request changes product code, but these required docs were not updated:\n\n'
+            printf "$MISSING"
+            printf '\nWhy this is blocking: every agent in this project is told to trust '
+            printf '`docs/pm/current_state.md` as the truth about what exists. The moment it stops being '
+            printf 'true, every plan built on top of it is built on a false premise — silently, and with '
+            printf 'confidence. Updating it is part of the work, not paperwork after the work.\n\n'
+            printf '**To fix:** update the docs and push again. See the checklist in the PR description.\n\n'
+            printf '**To override:** if this PR genuinely needs no docs — a typo, a dependency bump, a '
+            printf 'config tweak — add the `no-docs-needed` label. The check will re-run and pass. '
+            printf 'Skipping the docs stays possible; it just has to be a decision *you* make, rather than '
+            printf 'something an agent quietly omits.\n'
+          } > comment.md
+
+          # Sticky comment: edit the previous one rather than pile up a new one on each push.
+          # Non-fatal — a comment failure (e.g. a PR from a fork, where the token is read-only)
+          # must not turn into a passing check.
+          gh pr comment "$PR" --body-file comment.md --edit-last --create-if-none || \
+            echo "Could not post a comment (this does not affect the result below)."
+
+          echo ""
+          echo "FAILING: product code changed, required docs did not."
+          exit 1
