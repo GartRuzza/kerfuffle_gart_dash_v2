@@ -1,6 +1,6 @@
 # Product Brief — Gart Dash
 
-> **How to use this docOwner:** Product owner, with PM Claude.
+> **Owner:** Product owner, with PM Claude.
 **Update when:** The vision changes, or the MVP scope changes. Keep it in step with `pm/product_vision.md`.
 **This doc contains:** The working, actionable definition of the product — what an agent needs to know in 60 seconds before touching anything.
 **This doc never contains:** Status, progress, or timelines. What exists is in `pm/current_state.md`; what comes next is in `pm/roadmap.md`.
