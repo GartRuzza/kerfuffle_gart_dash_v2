@@ -1,77 +1,71 @@
-# Product Vision — [PRODUCT NAME]
+# Product Vision — Gart Dash
 
-> **How to use this doc**
-> **Owner:** Product owner, with PM Claude.
-> **Update when:** The direction of the product genuinely changes. Expect this to be rare — quarterly at most.
+> **Owner:** Product owner (Garrett), with PM Claude.
+> **Update when:** The direction of the product genuinely changes. Expect this to be rare.
 > **This doc contains:** Why the product exists and who it is for.
 > **This doc never contains:** Timelines, sequencing, or the status of any feature. Those belong in [`roadmap.md`](roadmap.md) and [`current_state.md`](current_state.md).
->
-> *Every example below is in italics and refers to a fictional product, "Ledgerly." Delete the examples as you fill each section in.*
 
-**Last reviewed:** [YYYY-MM-DD]
+**Last reviewed:** 2026-08-19
 
 ---
 
 ## Mission
 
-*One paragraph. What the product does, for whom, and the change it creates in their working life. If you cannot say it in a paragraph, the product is not yet clear enough to build.*
-
-> *Ledgerly gives freelance bookkeepers back the first week of every month. It reconciles client invoices against bank activity automatically, so the bookkeeper reviews exceptions instead of hunting for matches line by line.*
+Gart Dash gives the owner of the Rangoon Raccoons a decision edge in the KERFUFFLE dynasty league. It converts NFL history and expert consensus into KERFUFFLE-specific player value, overlays that value on the league's actual contract economy, and puts both numbers — what a player is worth, and what the market will pay — in front of the owner at the moment of every bid, claim, trade, and lineup call. The change it creates: decisions that today rest on standard rankings and manual mental adjustment instead rest on evidence nobody else in the league has.
 
 ## Target users
 
-*List the user types, then name the single primary user you optimize for. When two users' needs conflict, the primary user wins. Naming one is the whole point of this section — a product that serves everyone equally serves no one.*
+**Primary user:** Garrett, owner of the Rangoon Raccoons (KERFUFFLE). He is the only user. Every design decision optimizes for his workflow, his roster, and his decisions — there is no second user whose needs can conflict.
 
-**Primary user:** [WHO]
-
-- **[User type]** — [their situation, and what they need from this product]
-
-> *Primary: the solo freelance bookkeeper managing 10–40 small business clients. Secondary: the small accounting firm with 2–5 staff. When their needs conflict the solo bookkeeper wins, because a firm can absorb friction that would sink a solo operator.*
+This is deliberate and load-bearing: the product never needs onboarding, permissions, multi-league support, or explanations of things the owner already knows. Anything built to serve a hypothetical other user is scope creep by definition.
 
 ## Core problem
 
-*What is broken today, and why has nobody fixed it? The second half matters more than the first — if the problem were both real and easy, it would already be solved, so name the reason it persists.*
+**The problem:** Every decision in KERFUFFLE — auction bids, contract durations, trades, waivers, lineups — is currently made using rankings and projections built for *other leagues' scoring*. KERFUFFLE's PPFD scoring meaningfully re-orders player value (chain-movers rise, touchdown-dependent players fall), and its $500 salary-cap economy adds a second dimension — price — that no fantasy site models at all. Today, connecting "what is this player worth under our rules" to "what does he cost in our economy" is manual, mental, and error-prone. The two most expensive recurring mistakes have been overpaying at auction and committing to wrong contract durations, followed by mispriced trades.
 
-**The problem:** [WHAT IS BROKEN]
+**Why it is still unsolved:** No commercial tool will ever model one 12-team league's custom scoring and bespoke contract rules; the market is one person. CBS hosts the league but cannot answer even basic questions about real cap position, let alone value. The only way this gets solved is by the one person it serves building it.
 
-**Why it is still unsolved:** [WHAT MAKES IT HARD, OR WHO HAS BEEN IGNORING IT]
+**The edge, stated plainly:** leaguemates anchor on standard rankings (ECR or similar) that don't reflect KERFUFFLE scoring, and they have no systematic mechanism for overlaying performance against salary and contract economics. Gart Dash exploits both gaps at once.
 
 ## Desired future state
 
-*Describe the world once this product has succeeded. Write it in the present tense, from the user's point of view — not as a feature list.*
+It is the week before the auction. The owner opens Gart Dash and sees every relevant free agent with two numbers side by side: a **market price** (what the KERFUFFLE economy has historically paid for a player of this rank and position) and a **ceiling** (what the player is worth in projected points above replacement, in dollars against the $500 cap). He walks into the auction with a pre-committed maximum for every player he wants, bids confidently below his ceiling, and lets someone else win the overpays.
 
-> *A bookkeeper opens Ledgerly on the 1st, sees 12 exceptions out of 400 transactions, clears them in under an hour, and sends every client statement the same morning. She no longer works weekends in the first week of the month.*
+In season, a Tuesday night takes ten minutes: the waiver wire ranked by expected KERFUFFLE points rather than standard projections, breakouts separated into sustainable first-down volume versus touchdown luck, and every bid checked against remaining FAAB and cap space. When a trade offer arrives, he compares both sides in KERFUFFLE points, roster-aware value to the Raccoons specifically, and contract terms against the league curve — and can see at a glance which players the rest of the league is likely mispricing because their KERFUFFLE rank diverges from their public ECR.
+
+He no longer adjusts rankings in his head, keeps salary math in spreadsheets, or wonders after the fact whether he overpaid.
 
 ## Product principles
 
-*The tie-breaker rules for hard calls. These are what let an agent — or you, at 11pm — choose between two reasonable options without a meeting. A good principle has a real cost; if it costs nothing to follow, it is a slogan, not a principle.*
+1. **Every view serves a named decision.** Bid, claim, start, trade. A screen that doesn't sharpen one of those four decisions doesn't get built, however interesting the data is. This costs us fun exploratory features; it keeps a one-person tool small enough to actually maintain.
 
-1. **[Principle]** — [what it means in practice, and what it costs us]
+2. **Always both numbers: the market's and mine.** Value is never shown without price, and KERFUFFLE-adjusted numbers are never shown without the standard consensus they diverge from. The edge lives in the *gap* between those pairs — a view that shows only one side hides the edge. This costs us screen simplicity and we accept it.
 
-> *1. **Exceptions over dashboards.** We show the user what needs their judgment, not a summary of everything. This makes us look thin next to competitors in a feature comparison, and we accept that.*
->
-> *2. **Never guess silently.** When confidence in a match is low we ask rather than assume. This makes us slower than a fully automatic competitor, and it is why bookkeepers will trust us.*
+3. **Transparent enough to overrule.** The owner follows the engine when the gap is large and his own judgment when it's close — which means every projection must be drillable to the inputs driving it (why did this player move from RB18 to RB11?). A black box that's right 60% of the time is worth less than a glass box that's right 55%, because only the glass box can be trusted at the moment of a real-money bid. This costs us modeling sophistication when sophistication can't be explained.
+
+4. **Tiers over false precision.** Adjacent ranks are usually the same player in disguise. The product shows expected-value groups, not decimal-point pecking orders, so a close call is *visibly* a close call. This costs us the satisfying illusion of exactness.
+
+5. **Win-now wins ties.** When this-season value and long-term value point in different directions, the product's defaults, rankings, and recommendations favor this season. Dynasty perspective (via dynasty ECR) is displayed as supporting context — chiefly for contract-duration judgment — not blended into the primary numbers.
 
 ## Non-goals
 
-*What we explicitly refuse to build, and why. This section does more work than any other in the file: it is what lets an agent decline a request instead of stopping to ask you. Be specific — "we won't build enterprise features" is too vague to act on.*
-
-- **[We will not build X]** — [why not]
-
-> *- **We will not do tax filing.** It is a regulated, jurisdiction-specific problem that would swallow the entire roadmap.*
->
-> *- **We will not build a mobile app.** Reconciliation is desk work. A phone app would be used by nobody and maintained forever.*
+- **We will not recommend contract durations.** Duration depends heavily on real-life NFL contract and depth-chart situations that this product does not yet model. The product displays dynasty ECR as the owner's best single duration indicator; the call itself stays human. (Revisit only when real-life contract/depth-chart data is in scope.)
+- **We will not model real-life NFL contract situations or depth charts (yet).** Acknowledged as the two biggest unmodeled inputs to dynasty decisions — explicitly deferred to a later version, not forgotten.
+- **We will not build for the Bench Cup.** It doesn't factor into the owner's decisions. No bench-depth valuation, no Bench Cup views.
+- **We will not build tanking or draft-lottery optimization.** Out of scope entirely.
+- **We will not touch TRUFFLE.** KERFUFFLE data only, even though the sister league shares scoring. Extra sample size is not worth the data plumbing.
+- **We will not serve other owners.** No sharing, no accounts, no "what if my leaguemates used this." The edge depends on them *not* having it.
+- **We will not replace CBS.** CBS remains the system of record for rosters, scoring, and transactions. Gart Dash reads reality; it never becomes a second place where league state must be maintained.
 
 ## Success definition
 
-*How we would know we have won. Include at least one number, even if today it is a guess — a guessed number can be corrected, a vague ambition cannot.*
-
 | Horizon | What success looks like | Measure |
 | --- | --- | --- |
-| [6 months] | [outcome] | [metric + target] |
-| [18 months] | [outcome] | [metric + target] |
+| By next auction | The owner walks in with a pre-set market price and ceiling for every targeted player, and never bids past a ceiling in the room | 100% of winning bids ≤ pre-committed ceiling; zero "what did I just pay" moments |
+| 6 months | KERFUFFLE-adjusted rankings demonstrably beat the standard consensus at predicting what actually happens in this league | Backtest on the last 2+ seasons: engine's preseason/weekly ranks correlate with actual KERFUFFLE PPG better than raw FantasyPros ECR does |
+| 18 months | The tool is the default first stop for every bid, claim, trade, and lineup decision — spreadsheets and manual adjustment are gone | Every in-season transaction the Raccoons make was checked in Gart Dash first; subjective but honestly assessable |
 
-> *| 6 months | Bookkeepers close a month of books in one sitting | Median time-to-close under 2 hours for a 400-transaction client |*
+*(A championship is the point, but a 12-team league is noisy enough that one season proves little either way. The measures above are the controllable inputs to winning; the trophy is the lagging indicator.)*
 
 ---
 
