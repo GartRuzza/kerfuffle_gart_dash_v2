@@ -47,19 +47,28 @@
 
 <!-- Newest entry goes directly below this line. -->
 
-### *D-01 · [2026-02-10] · Hold matches at low confidence instead of auto-applying (example — delete me)*
+### D-01 · 2026-08-19 · Tech stack: Next.js + TypeScript
 
-> *| **Status** | Active | **Type** | Both | **Decided by** | Product owner |*
->
-> ***The question:** when the matching engine is unsure, do we apply the match anyway and let the user correct it, or hold it back for review?*
->
-> ***What we decided:** anything below 0.9 confidence goes to the exception queue. We never apply a match we are not confident in.*
->
-> ***Why:** a wrong match is not a small error — it silently corrupts a client's books, and the bookkeeper may not find it for months. The damage is not the mistake, it is the loss of trust in every match we ever make. This follows directly from the "never guess silently" product principle.*
->
-> ***What we gave up:** a much better demo. Auto-applying would let us claim "98% automatic," and our exception queue will look like work our competitors do not make you do. That is a real commercial cost and we are choosing to pay it.*
->
-> ***What would make us reconsider:** if we ever have enough labelled real-world data to show that matches above some threshold are wrong less than, say, 1 in 10,000 times, the calculus changes. We do not have that data and cannot get it yet.*
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Technical (product-approved) |
+| **Decided by** | Claude Code proposal + owner approval |
+
+**The question**
+What stack do we build the player table prototype — and the real tool it grows into — on, given the product must run locally now and deploy to the web later without rework, and its centerpiece is one rich, interactive, editable, filterable table?
+
+**What we decided**
+Next.js (React) + TypeScript, with TanStack Table for the data grid and Tailwind for styling. Local-first (`npm run dev`), deployable to Vercel later with no rearchitecting. One app, one language.
+
+**Why**
+It matches the brief's own description of the product — "a single web application, run locally to start but built so it can be deployed to the web later without rework." One language across the whole app means no second system for a solo, non-technical owner to run and maintain. TanStack Table is best-in-class for exactly the sort/filter/tiers/editable-column behavior that *is* the product. The later data work (CBS + FantasyPros ingestion, valuation engine, backtest) fits inside the same app's server routes; the roadmap itself calls the engine "minimal," well within what TypeScript handles comfortably.
+
+**What we gave up**
+Python/FastAPI's native data-science ecosystem (pandas/numpy), which would be the more natural home for the valuation engine and backtest. We accept this because those pieces are scoped small, and because we can add a Python service *behind a clean API boundary* later if — and only if — the engine genuinely outgrows TypeScript, without disturbing the UI.
+
+**What would make us reconsider**
+The valuation engine or backtest proving substantially heavier than TypeScript handles well (e.g. real numerical/statistical modeling at data-science scale). At that point we introduce a Python service behind an API boundary rather than replacing the stack — the UI decision above stands regardless.
 
 ---
 
