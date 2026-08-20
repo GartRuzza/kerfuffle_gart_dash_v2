@@ -22,7 +22,7 @@
 
 | Feature / capability | Status | Notes |
 | --- | --- | --- |
-| Player table (prototype) | **Built** | Local Next.js app, mock data only. Dark theme; position badges; tier bands; expanded columns; roster/FA + position filters; column show/hide + drag-reorder; **saved views (localStorage)**; inline-editable Ceiling; MOCK-DATA banner. Phase 3 (data dictionary) pending. See details below. |
+| Player table (prototype) | **Built** | Local Next.js app, mock data only. Dark theme; position badges; tier bands; expanded columns; roster/manager + position filters; column show/hide + drag-reorder; saved views (localStorage); inline-editable Ceiling; **data-dictionary overlay (placeholder content)**; MOCK-DATA banner. The 3-phase redesign is complete. See details below. |
 | Player table (on real data) | Not built | Waits on data ingestion + engine (roadmap #2–6). |
 | CBS API ingestion | Not built | Access itself is unproven — spike is roadmap item #2 |
 | FantasyPros ingestion | Not built | Access method is an open decision (roadmap decision #2) |
@@ -40,7 +40,9 @@ Nothing is in a Partial state. The player table prototype is fully Built **as a 
 
 **Phase 2 (view system) adds:** a 3-way **roster toggle** (All / Rostered / Free Agents) beside a **Manager dropdown** (All / each team); the **position dropdown** (All/SuperFlex/Flex/QB/RB/WR/TE); a **column picker** to show/hide columns; **drag-to-reorder** column headers (@dnd-kit, mounted client-side to stay SSR-safe); and **saved views** — five built-in default views (Full, Auction Prep, Waivers, Trades, Start/Sit) plus user-created custom views, **persisted in browser localStorage**. Opens to Full. The table scrolls inside a bounded, sticky-header container so both scrollbars stay on screen. (Ovr ECR / Dyn Ovr ECR display the unique overall rank so tier bands stay contiguous.)
 
-**What it deliberately does *not* do:** no real data (all values, ranks, and the six mock tier dimensions are hand-authored or derived, not computed by an engine); no **data-dictionary popup** (that's **Phase 3**); ceilings still reset on reload (only view configs persist); no accounts, no deployment, no real data schema. DST has a badge color but no DST players exist in the mock data.
+**Phase 3 adds:** a **Data Dictionary** overlay (button at the bottom) that defines each column — a one-line definition plus an expandable bulleted deep-dive (mechanics + source). **The structure is built but most content is placeholder** (flagged "Placeholder"), to be filled after data discovery (roadmap #2–3) and the engine (#4–6).
+
+**What it deliberately does *not* do:** no real data (all values, ranks, and the six mock tier dimensions are hand-authored or derived, not computed by an engine); the data-dictionary content is mostly placeholder; ceilings still reset on reload (only view configs persist); no accounts, no deployment, no real data schema. DST has a badge color but no DST players exist in the mock data.
 
 ## Current limitations
 
@@ -65,9 +67,11 @@ Nothing is in a Partial state. The player table prototype is fully Built **as a 
 | **Active branch** | feat/issue-1-player-table-prototype |
 | **Deployed to production** | No. Nothing is deployed anywhere. |
 | **Environments live** | Local only — `npm run dev` at http://localhost:3000 |
-| **Tests** | **Vitest unit tests** (`npm test`) — 19 passing, covering mock-data derivation (incl. the unique-rank invariant that keeps tier bands contiguous), the tier/sort/position rules, and the saved-views model. `npm run build` passes; render verified. UI interaction checks (drag, show/hide, save view) remain manual — see [`../qa_test_plan.md`](../qa_test_plan.md). |
+| **Tests** | **Vitest unit tests** (`npm test`) — 21 passing, covering mock-data derivation (incl. the unique-rank invariant), the tier/sort/position rules, the saved-views model, and data-dictionary coverage. `npm run build` passes; render verified. UI interaction checks (drag, show/hide, save view, open dictionary) remain manual — see [`../qa_test_plan.md`](../qa_test_plan.md). |
 
 ## Latest implementation summary
+
+**2026-08-20 — Table redesign, Phase 3 of 3 (data dictionary shell).** Added the Data Dictionary overlay: a button at the bottom opens a modal defining each column — a one-line definition (kept under 15 words) plus an expandable bulleted deep-dive (mechanics + source). Content is intentionally **mostly placeholder** (flagged per field) pending data discovery and the engine; the structure (`lib/dataDictionary.ts` + `components/DataDictionary.tsx`) is stable so later issues just fill in text. A coverage unit test guarantees every column has an entry (21 tests total). This completes the 3-phase redesign. Validated: unit tests + clean build + rendered-DOM check.
 
 **2026-08-20 — Phase 2 polish: filter model, two bug fixes, sticky scroll.** On owner review: the roster control became a 3-way toggle (All / Rostered / Free Agents) next to a renamed **Manager** dropdown (All / team). Fixed two bugs the owner found — broken/duplicated **tier bands** when sorting by the overall-ECR columns (they sorted by raw ECR, which had ties; now they sort by a unique derived rank, and band keys are collision-proof) and a **@dnd-kit hydration** console error (drag now mounts client-side only). Table now scrolls in a bounded container with a **sticky header** so scrollbars stay on screen. 19 unit tests (added the unique-rank invariant). Validated: unit tests + clean build + rendered-DOM checks (SSR headers confirmed drag-free).
 

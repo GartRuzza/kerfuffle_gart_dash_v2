@@ -53,6 +53,27 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-20 — Table redesign Phase 3: data dictionary shell (placeholders)
+
+**Ticket / Issue:** [#1](../../../../issues/1) (owner design feedback) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** No (owner asked for structure now, content later)
+
+**Original intent**
+Final phase of the redesign: a bottom-of-page overlay defining each field — a concise (<15-word) definition plus an expandable bulleted deep-dive (mechanics + source). Owner explicitly asked to **set up the structure with placeholders now** and fill real content after data discovery.
+
+**What was actually built**
+Exactly that. `lib/dataDictionary.ts` holds one entry per column (definition + deep-dive bullets + a `placeholder` flag), with real one-liners for the UI-native fields (Owner, Player, Pos, Team, Ceiling, Edge) and clearly-flagged placeholders for the engine/market fields. `components/DataDictionary.tsx` renders a "📖 Data Dictionary" button that opens a modal (Esc/backdrop/✕ to close) listing every field with an expandable "Details" section. A unit test guarantees every column is documented and every definition stays under 15 words.
+
+**Product implications**
+The owner can open a per-column reference now; the honest "Placeholder" chips make clear which entries still need real source/mechanics content. This closes the 3-phase redesign. The next real work is data discovery (roadmap #2–3), after which the placeholders get filled.
+
+**Technical tradeoffs and debt**
+- Content is a stub by design — the debt is intentional and tracked by the `placeholder` flags; nothing to pay down until discovery.
+- The modal is a lightweight custom overlay (no focus-trap library); fine for a single-user prototype.
+
+**Follow-up decisions needed from the product owner:** None now. The dictionary **content** (real source + mechanics per field) gets written during/after data discovery and the engine build.
+
+---
+
 ### 2026-08-20 — Phase 2 polish: filter model + two bug fixes
 
 **Ticket / Issue:** [#1](../../../../issues/1) (owner review of Phase 2) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** No (owner-requested changes + bug fixes)

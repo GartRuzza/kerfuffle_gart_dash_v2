@@ -17,9 +17,9 @@
 | | |
 | --- | --- |
 | **How to run them** | `npm test` (Vitest unit tests) and `npm run build` (compile + type-check + lint). |
-| **What they cover** | **Unit (19 tests):** mock-data derivation, incl. the **unique-rank invariant** (overall ECR/Dynasty ranks are 1..N and their tiers stay contiguous — the guard for the tier-band bug); the tier/sort/position **state machine**; and the **saved-views model** (presets consistent, sort column visible, use cases). **Build:** the app compiles clean and server-renders every column, tier bands, badges, the view selector, the column picker, and the headers (drag-free on the server, so no hydration mismatch). |
+| **What they cover** | **Unit (21 tests):** mock-data derivation, incl. the **unique-rank invariant** (overall ECR/Dynasty ranks are 1..N and their tiers stay contiguous — the guard for the tier-band bug); the tier/sort/position **state machine**; the **saved-views model**; and **data-dictionary coverage** (every column documented, definitions under 15 words). **Build:** the app compiles clean and server-renders every column, tier bands, badges, the view selector, the column picker, the dictionary button, and drag-free headers (no hydration mismatch). |
 | **What they do not cover** | Click/drag interactions in a real browser (drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. |
-| **Currently passing?** | Yes — `npm test` (19/19) and `npm run build` pass clean as of 2026-08-20. |
+| **Currently passing?** | Yes — `npm test` (21/21) and `npm run build` pass clean as of 2026-08-20. |
 
 ## Manual checks — the critical flows
 
@@ -56,6 +56,7 @@
 | 6 | Change something (hide a column), then **Save as new**, name it | Your view appears under "My views" and is selected. | ☐ |
 | 7 | Switch to another view, then back to yours; then **reload the page** | Your saved view is still there after reload (stored in this browser). | ☐ |
 | 8 | Select your custom view → **Delete** | It's removed; the table returns to Full. (Default views can't be deleted or overwritten — only "Save as new".) | ☐ |
+| 9 | Click **📖 Data Dictionary** (bottom), expand a field's **Details**, close with ✕ / Esc / clicking outside | A pop-up lists every column with a one-line definition; engine/market fields show a **Placeholder** chip; Details expands bullets. | ☐ |
 
 ## Edge cases and things that should fail gracefully
 

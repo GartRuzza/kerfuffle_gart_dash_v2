@@ -55,6 +55,7 @@ import { columns, CONTRACT_COLUMNS, GART_COLUMNS, MARKET_COLUMNS } from "./colum
 import FilterBar from "./FilterBar";
 import ColumnPicker from "./ColumnPicker";
 import ViewBar from "./ViewBar";
+import DataDictionary from "./DataDictionary";
 
 function cellTint(id: string): string {
   if (GART_COLUMNS.has(id)) return "bg-group-gart";
@@ -379,11 +380,14 @@ export default function PlayerTable() {
         )}
       </div>
 
-      <p className="mt-3 text-xs text-ink-subtle">
-        Drag column headers to reorder · use <span className="text-ink-muted">Columns</span> to
-        show/hide · save arrangements as views. Tier bands appear when you sort by a rank column.
-        Ceilings reset on reload.
-      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <DataDictionary />
+        <p className="text-xs text-ink-subtle">
+          Drag column headers to reorder · use <span className="text-ink-muted">Columns</span> to
+          show/hide · save arrangements as views. Tier bands appear when you sort by a rank column.
+          Ceilings reset on reload.
+        </p>
+      </div>
     </section>
   );
 }

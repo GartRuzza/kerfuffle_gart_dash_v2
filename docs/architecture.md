@@ -77,14 +77,14 @@ to this behavior goes in that one module — never spread the rules into compone
 ### Rendering the table
 
 1. `app/page.tsx` (a server component, the one screen) renders `<PlayerTable />`.
-2. `components/PlayerTable.tsx` (`"use client"`) seeds React state from `MOCK_PLAYERS`, giving each row a `ceiling` equal to its `kerfValue`.
-3. It builds a [TanStack Table](https://tanstack.com/table) from `components/columns.tsx` (grouped "Yours" / "Edge" / "The Market" columns, tier badge, editable ceiling) and renders header + body, tinting the paired columns so the value-vs-price gap reads at a glance.
+2. `components/PlayerTable.tsx` (`"use client"`) seeds React state from `MOCK_PLAYERS` (each row gets a `ceiling` = `kerfValue`) and builds a [TanStack Table](https://tanstack.com/table) from the flat column set in `components/columns.tsx`.
+3. It renders the header (drag-reorder via @dnd-kit, mounted client-side) and body, tinting columns into GartStats / Market / Contract-Info groups and injecting tier-band rows. Around it sit `ViewBar` (saved views), `ColumnPicker` (show/hide), `FilterBar` (roster toggle + Manager + position), and `DataDictionary` (the bottom overlay defined by `lib/dataDictionary.ts`).
 
-### Editing a ceiling / filtering / sorting
+### Editing a ceiling / filtering / sorting / views
 
-1. Filters come from `components/FilterBar.tsx` (roster + position) → PlayerTable turns them into TanStack `columnFilters`. Sorting is TanStack's, on header click.
-2. Filtering and sorting happen **inside** TanStack, so each row keeps its original data index.
-3. Editing a Ceiling box calls `table.options.meta.updateCeiling(row.index, value)`, which updates that row in React state by its original index — so edits survive re-sorting and re-filtering. (They reset on reload; no persistence yet.)
+1. Filters come from `FilterBar` → PlayerTable turns them into TanStack `columnFilters`; sorting is TanStack's (on header click), which can auto-adjust the position filter via `lib/tierRules.ts`.
+2. Filtering and sorting happen **inside** TanStack, so each row keeps its original data index; editing a Ceiling calls `meta.updateCeiling(row.index, value)` and survives re-sort/re-filter (resets on reload).
+3. A **view** bundles column visibility + order + sort + filters (`lib/views.ts`); applying one sets all that state at once. Custom views persist to `localStorage`.
 
 ## Environments
 

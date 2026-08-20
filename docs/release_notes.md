@@ -41,6 +41,16 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-20 — Table redesign, part 3 (Data Dictionary)
+
+**New**
+- A **📖 Data Dictionary** button at the bottom opens a pop-up that explains **every column** — a one-line definition, plus a **"Details"** you can expand for more on how it's built and where it comes from.
+
+**Known issues / not yet done**
+- Most entries are **placeholders** (marked as such) — the real "where it comes from / how it's calculated" text gets written after we do the data discovery and build the valuation engine. The structure is ready; only the words are pending.
+
+This completes the three-part redesign. Next up is the real work: verifying the CBS and FantasyPros data sources.
+
 ## 2026-08-20 — Filter tweaks + two fixes
 
 **Improved**
