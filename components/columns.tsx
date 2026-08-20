@@ -88,8 +88,9 @@ export const columns: ColumnDef<PlayerRow>[] = [
     cell: (info) => {
       const v = info.getValue<number>();
       const sign = v > 0 ? "+" : v < 0 ? "−" : "";
+      const cls = v > 0 ? "text-edge-up" : v < 0 ? "text-edge-down" : "text-edge";
       return (
-        <span className="tabular-nums text-edge">
+        <span className={`font-medium tabular-nums ${cls}`}>
           {sign}${Math.abs(v)}
         </span>
       );

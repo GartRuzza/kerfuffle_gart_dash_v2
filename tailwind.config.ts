@@ -68,8 +68,12 @@ const config: Config = {
           line: "#3a4760",
         },
 
-        // --- Edge column (plain, no up/down color) ---
-        edge: { DEFAULT: "#c3ccdb" },
+        // --- Edge column: green above market, red below ---
+        edge: {
+          DEFAULT: "#c3ccdb", // zero
+          up: "#34d399", // we value above market
+          down: "#f87171", // we value below market
+        },
 
         // --- MOCK-DATA warning banner (stays high-visibility on dark) ---
         warning: {
