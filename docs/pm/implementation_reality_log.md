@@ -53,6 +53,27 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-20 — Phase 2 polish: filter model + two bug fixes
+
+**Ticket / Issue:** [#1](../../../../issues/1) (owner review of Phase 2) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** No (owner-requested changes + bug fixes)
+
+**What changed**
+- **Filter model** reshaped at owner's request: the roster control is now a 3-way toggle (All / Rostered / Free Agents) beside a renamed **Manager** dropdown (All / team). The old "Free Agents in the dropdown + include-FA checkbox" model was replaced. The saved-views model changed shape accordingly (`{ manager, rosterMode }`), and the default views were remapped (Auction/Waivers → Free Agents; Trades → Rostered; Start/Sit → Manager = Raccoons).
+- **Bug 1 (tier bands):** sorting by Ovr ECR / Dyn Ovr ECR produced duplicated, out-of-order bands and a React duplicate-key crash. Root cause: those columns sorted by the **raw** ECR values, which have ties, so the row order didn't match the (unique) tier ranking → non-contiguous tiers. Fix: those columns now sort/display the **unique derived overall rank** (`ovrEcrRank`/`dynOvrRank`), matching the other four rank columns; band keys also made collision-proof. Guarded by a new unit test.
+- **Bug 2 (hydration):** @dnd-kit emitted server/client-mismatched accessibility ids. Fix: the drag context now mounts **client-side only** (SSR renders plain, sortable-on-click headers), verified by checking the server HTML is drag-attribute-free.
+- **Scroll UX:** the table now lives in a bounded-height container with a **sticky header**, so the horizontal scrollbar is reachable without scrolling to the bottom of a tall table.
+
+**Product implications**
+Cleaner, less-ambiguous roster filtering; the tier view is trustworthy on every rank sort; no console errors on load; easier side-to-side scrolling. Still mock data.
+
+**Technical tradeoffs and debt**
+- "Ovr ECR" now shows a contiguous 1..N overall rank rather than the raw authored consensus number — arguably more correct, and it's what makes tiers stable. Noted in case the real FantasyPros data wants the raw ECR shown instead (revisit at ingestion).
+- The sticky-header `max-height` is a rough `calc(100vh - 15rem)`; may need tuning as the controls above it change.
+
+**Follow-up decisions needed from the product owner:** None new. Phase 3 (data dictionary) content questions still pending.
+
+---
+
 ### 2026-08-20 — Table redesign Phase 2: the view system
 
 **Ticket / Issue:** [#1](../../../../issues/1) (owner design feedback) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** No (built to the agreed Phase 2 scope)

@@ -1,14 +1,14 @@
 "use client";
 
 import { type PositionFilter } from "@/lib/types";
-import { ROSTER_ALL, ROSTER_FA } from "@/lib/views";
+import { MANAGER_ALL, type RosterMode } from "@/lib/views";
 
 interface Props {
   teams: string[];
-  roster: string;
-  onRosterChange: (v: string) => void;
-  includeFA: boolean;
-  onIncludeFAChange: (v: boolean) => void;
+  manager: string;
+  onManagerChange: (v: string) => void;
+  rosterMode: RosterMode;
+  onRosterModeChange: (v: RosterMode) => void;
   positionFilter: PositionFilter;
   onPositionChange: (v: PositionFilter) => void;
   shown: number;
@@ -25,59 +25,68 @@ const POSITION_OPTIONS: { value: PositionFilter; label: string }[] = [
   { value: "TE", label: "TE" },
 ];
 
+const ROSTER_MODES: { value: RosterMode; label: string }[] = [
+  { value: "ALL", label: "All" },
+  { value: "ROSTERED", label: "Rostered" },
+  { value: "FA", label: "Free Agents" },
+];
+
 const selectCls =
-  "rounded-md border border-line-strong bg-surface-raised px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
-const labelCls =
-  "text-xs font-semibold uppercase tracking-wide text-ink-subtle";
+  "rounded-md border border-line-strong bg-surface-raised px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-40";
+const labelCls = "text-xs font-semibold uppercase tracking-wide text-ink-subtle";
 
 export default function FilterBar({
   teams,
-  roster,
-  onRosterChange,
-  includeFA,
-  onIncludeFAChange,
+  manager,
+  onManagerChange,
+  rosterMode,
+  onRosterModeChange,
   positionFilter,
   onPositionChange,
   shown,
   total,
 }: Props) {
-  const faOnly = roster === ROSTER_FA;
+  const faOnly = rosterMode === "FA";
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-line bg-surface px-3 py-2 shadow-sm">
+      {/* 3-way roster-status toggle (sliding segmented control) */}
+      <div className="inline-flex rounded-full border border-line-strong bg-surface-raised p-0.5">
+        {ROSTER_MODES.map((m) => {
+          const active = rosterMode === m.value;
+          return (
+            <button
+              key={m.value}
+              type="button"
+              onClick={() => onRosterModeChange(m.value)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                active
+                  ? "bg-accent text-accent-contrast shadow"
+                  : "text-ink-muted hover:text-ink"
+              }`}
+            >
+              {m.label}
+            </button>
+          );
+        })}
+      </div>
+
       <label className="flex items-center gap-1.5">
-        <span className={labelCls}>Roster</span>
+        <span className={labelCls}>Manager</span>
         <select
           className={selectCls}
-          value={roster}
-          onChange={(e) => onRosterChange(e.target.value)}
+          value={manager}
+          disabled={faOnly}
+          onChange={(e) => onManagerChange(e.target.value)}
+          title={faOnly ? "Not applicable when showing free agents" : undefined}
         >
-          <option value={ROSTER_ALL}>All Players</option>
-          <option value={ROSTER_FA}>Free Agents</option>
+          <option value={MANAGER_ALL}>All</option>
           {teams.map((t) => (
             <option key={t} value={t}>
               {t}
             </option>
           ))}
         </select>
-      </label>
-
-      <label
-        className={`flex items-center gap-1.5 ${faOnly ? "opacity-40" : ""}`}
-        title={
-          faOnly
-            ? "Already showing free agents only"
-            : "Also include free agents in this view"
-        }
-      >
-        <input
-          type="checkbox"
-          className="h-4 w-4 accent-accent"
-          checked={faOnly ? true : includeFA}
-          disabled={faOnly}
-          onChange={(e) => onIncludeFAChange(e.target.checked)}
-        />
-        <span className={labelCls}>Include free agents</span>
       </label>
 
       <label className="flex items-center gap-1.5">

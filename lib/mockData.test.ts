@@ -48,6 +48,20 @@ describe("mock data derivation", () => {
     }
   });
 
+  it("overall ECR/Dynasty ranks are unique 1..N and tiers stay contiguous", () => {
+    // The two 'overall ECR' columns sort by these unique ranks (not the raw ECR,
+    // which has ties) — this is what keeps tier bands from repeating.
+    for (const key of ["ovrEcrRank", "dynOvrRank"] as const) {
+      const ranks = MOCK_PLAYERS.map((p) => p[key]).sort((a, b) => a - b);
+      expect(ranks).toEqual(Array.from({ length: 79 }, (_, i) => i + 1));
+    }
+    // Ordered by the rank, the matching tier never decreases (contiguous bands).
+    const byEcr = [...MOCK_PLAYERS].sort((a, b) => a.ovrEcrRank - b.ovrEcrRank);
+    for (let i = 1; i < byEcr.length; i++) {
+      expect(byEcr[i].ovrEcrTier).toBeGreaterThanOrEqual(byEcr[i - 1].ovrEcrTier);
+    }
+  });
+
   it("bucket helper maps ranks to tiers by break points", () => {
     const breaks = [3, 6, 10];
     expect(tierFromRank(1, breaks)).toBe(1);

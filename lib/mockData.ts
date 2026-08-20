@@ -6,7 +6,9 @@ type RawPlayer = Omit<
   | "projPts"
   | "kerfOvrRank"
   | "kerfPosRank"
+  | "ovrEcrRank"
   | "posEcr"
+  | "dynOvrRank"
   | "dynPosEcr"
   | "kerfOvrTier"
   | "kerfPosTier"
@@ -194,7 +196,9 @@ export const MOCK_PLAYERS: Player[] = RAW_PLAYERS.map((p): Player => {
     projPts: mockProjPts(p),
     kerfOvrRank,
     kerfPosRank,
+    ovrEcrRank,
     posEcr,
+    dynOvrRank,
     dynPosEcr,
     kerfOvrTier: tierFromRank(kerfOvrRank, OVERALL_TIER_BREAKS),
     kerfPosTier: tierFromRank(kerfPosRank, POSITIONAL_TIER_BREAKS),

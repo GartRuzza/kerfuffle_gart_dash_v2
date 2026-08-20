@@ -1,4 +1,4 @@
-import { FREE_AGENT, MY_TEAM, type PositionFilter } from "./types";
+import { MY_TEAM, type PositionFilter } from "./types";
 
 /**
  * Saved views: a named bundle of table settings (which columns show, their order,
@@ -7,9 +7,15 @@ import { FREE_AGENT, MY_TEAM, type PositionFilter } from "./types";
  * localStorage. See docs/architecture.md and decision_log D-05.
  */
 
-/** Roster dropdown value: everyone, free agents only, or a specific team name. */
-export const ROSTER_ALL = "ALL";
-export const ROSTER_FA = FREE_AGENT; // "FA"
+/** Manager dropdown: everyone, or a specific team name. */
+export const MANAGER_ALL = "ALL";
+/** Roster-status toggle: everyone / rostered only / free agents only. */
+export type RosterMode = "ALL" | "ROSTERED" | "FA";
+/** Value passed to the owner-column filter. */
+export interface RosterFilterValue {
+  manager: string; // MANAGER_ALL | team name
+  rosterMode: RosterMode;
+}
 
 export interface SortSpec {
   id: string;
@@ -17,8 +23,8 @@ export interface SortSpec {
 }
 
 export interface ViewState {
-  roster: string; // ROSTER_ALL | ROSTER_FA | team name
-  includeFA: boolean; // fold free agents into ALL / team views
+  manager: string; // MANAGER_ALL | team name
+  rosterMode: RosterMode;
   position: PositionFilter;
   sorting: SortSpec[];
   columnOrder: string[]; // full ordering of all column ids
@@ -83,8 +89,8 @@ const DEFAULT_SORT: SortSpec[] = [{ id: "kerfOvrRank", desc: false }];
 function makeState(visible: string[], overrides: Partial<ViewState> = {}): ViewState {
   const visibleSet = new Set(visible);
   return {
-    roster: ROSTER_ALL,
-    includeFA: true,
+    manager: MANAGER_ALL,
+    rosterMode: "ALL",
     position: "ALL",
     sorting: DEFAULT_SORT,
     columnOrder: [...ALL_COLUMN_IDS],
@@ -110,7 +116,7 @@ export const DEFAULT_VIEWS: SavedView[] = [
         "name", "pos", "nflTeam", "kerfOvrRank", "kerfPosRank", "projPts",
         "kerfValue", "ceiling", "edge", "marketPrice", "ecr", "salary", "contractYears",
       ],
-      { roster: ROSTER_FA },
+      { rosterMode: "FA" },
     ),
   },
   {
@@ -122,7 +128,7 @@ export const DEFAULT_VIEWS: SavedView[] = [
         "name", "pos", "nflTeam", "kerfOvrRank", "kerfPosRank", "projPts",
         "kerfValue", "edge", "marketPrice", "ecr", "salary",
       ],
-      { roster: ROSTER_FA },
+      { rosterMode: "FA" },
     ),
   },
   {
@@ -134,7 +140,7 @@ export const DEFAULT_VIEWS: SavedView[] = [
         "owner", "name", "pos", "nflTeam", "kerfOvrRank", "projPts", "kerfValue",
         "marketPrice", "dynastyEcr", "salary", "contractYears",
       ],
-      { roster: ROSTER_ALL, includeFA: false },
+      { rosterMode: "ROSTERED" },
     ),
   },
   {
@@ -143,7 +149,7 @@ export const DEFAULT_VIEWS: SavedView[] = [
     builtIn: true,
     state: makeState(
       ["name", "pos", "nflTeam", "kerfOvrRank", "kerfPosRank", "projPts", "kerfValue"],
-      { roster: MY_TEAM },
+      { manager: MY_TEAM },
     ),
   },
 ];

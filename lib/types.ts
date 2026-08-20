@@ -50,7 +50,9 @@ export interface Player {
   projPts: number; // "Proj Points" — mock projected KERFUFFLE points
   kerfOvrRank: number; // "Kerf Ovr Rank" — overall, by Kerf value
   kerfPosRank: number; // "Kerf Pos Rank" — within position, by Kerf value
+  ovrEcrRank: number; // "Ovr ECR" — unique overall rank by ECR (display + sort)
   posEcr: number; // "Pos ECR" — within position, by ECR
+  dynOvrRank: number; // "Dyn Ovr ECR" — unique overall rank by dynasty ECR
   dynPosEcr: number; // "Dyn Pos ECR" — within position, by dynasty ECR
 
   // --- Six tier dimensions (one per rank column that shows tier bands) ---

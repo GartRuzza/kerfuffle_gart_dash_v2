@@ -5,7 +5,7 @@ import {
   type PlayerRow,
   type Position,
 } from "@/lib/types";
-import { ROSTER_ALL, ROSTER_FA } from "@/lib/views";
+import { MANAGER_ALL, type RosterFilterValue } from "@/lib/views";
 import PositionBadge from "./PositionBadge";
 import EditableCeilingCell from "./EditableCeilingCell";
 
@@ -34,14 +34,15 @@ export const columns: ColumnDef<PlayerRow>[] = [
   {
     accessorKey: "owner",
     header: "Owner",
-    // Roster/free-agent gate. value = { roster, includeFA }.
-    filterFn: (row, columnId, value: { roster: string; includeFA: boolean }) => {
+    // Manager + roster-mode gate. value = { manager, rosterMode }.
+    filterFn: (row, columnId, value: RosterFilterValue) => {
       const owner = row.getValue(columnId) as string;
       const isFA = owner === FREE_AGENT;
-      const { roster, includeFA } = value;
-      if (roster === ROSTER_ALL) return isFA ? includeFA : true;
-      if (roster === ROSTER_FA) return isFA;
-      return owner === roster || (isFA && includeFA);
+      const { manager, rosterMode } = value;
+      if (rosterMode === "FA") return isFA; // free agents only (manager ignored)
+      if (manager !== MANAGER_ALL) return owner === manager; // a specific team
+      if (rosterMode === "ROSTERED") return !isFA; // all rostered, no FAs
+      return true; // ALL
     },
     cell: (info) => {
       const v = info.getValue<string>();
@@ -119,9 +120,17 @@ export const columns: ColumnDef<PlayerRow>[] = [
       <span className="tabular-nums">{dollars(info.getValue<number>())}</span>
     ),
   },
-  { accessorKey: "ecr", header: "Ovr ECR", cell: num },
+  // Ovr ECR / Dyn Ovr ECR use the UNIQUE derived overall rank (not the raw ECR,
+  // which has ties) so the sort order matches the tier ranking and bands stay
+  // contiguous. Column ids stay "ecr"/"dynastyEcr" (used by tierRules/views).
+  { id: "ecr", accessorFn: (r) => r.ovrEcrRank, header: "Ovr ECR", cell: num },
   { accessorKey: "posEcr", header: "Pos ECR", cell: posRankCell },
-  { accessorKey: "dynastyEcr", header: "Dyn Ovr ECR", cell: num },
+  {
+    id: "dynastyEcr",
+    accessorFn: (r) => r.dynOvrRank,
+    header: "Dyn Ovr ECR",
+    cell: num,
+  },
   { accessorKey: "dynPosEcr", header: "Dyn Pos ECR", cell: posRankCell },
 
   // --- Contract Info ---

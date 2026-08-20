@@ -17,9 +17,9 @@
 | | |
 | --- | --- |
 | **How to run them** | `npm test` (Vitest unit tests) and `npm run build` (compile + type-check + lint). |
-| **What they cover** | **Unit (18 tests):** mock-data derivation (ranks, tier ranges); the tier/sort/position **state machine** (which bands show, auto-switch-to-QB, revert-to-no-tiers); and the **saved-views model** (default views internally consistent, sort column visible, presets match their use cases, visibility mapping). **Build:** the whole app compiles clean and the page server-renders with every column, tier bands, position badges, the view selector, the column picker, and 17 draggable headers. |
-| **What they do not cover** | Click/drag interactions in a real browser (sort click, drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. |
-| **Currently passing?** | Yes — `npm test` (18/18) and `npm run build` pass clean as of 2026-08-20. |
+| **What they cover** | **Unit (19 tests):** mock-data derivation, incl. the **unique-rank invariant** (overall ECR/Dynasty ranks are 1..N and their tiers stay contiguous — the guard for the tier-band bug); the tier/sort/position **state machine**; and the **saved-views model** (presets consistent, sort column visible, use cases). **Build:** the app compiles clean and server-renders every column, tier bands, badges, the view selector, the column picker, and the headers (drag-free on the server, so no hydration mismatch). |
+| **What they do not cover** | Click/drag interactions in a real browser (drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. |
+| **Currently passing?** | Yes — `npm test` (19/19) and `npm run build` pass clean as of 2026-08-20. |
 
 ## Manual checks — the critical flows
 
@@ -48,9 +48,9 @@
 
 | # | Do this | You should see | Pass? |
 | --- | --- | --- | --- |
-| 1 | Open the **Roster** dropdown → **Free Agents** | Only free agents show (no team, "—" salary). | ☐ |
-| 2 | Set Roster = a **team**, then tick **Include free agents** | That team's players **plus** all free agents show. Untick → just the team. (The checkbox greys out when Roster = Free Agents.) | ☐ |
-| 3 | Click **Columns**, untick **Owner** and **Salary** | Those columns vanish from the table; the count on the button drops. **Player** can't be unticked. | ☐ |
+| 1 | Roster toggle → **Free Agents** | Only free agents show (no team, "—" salary). The **Manager** dropdown greys out. | ☐ |
+| 2 | Roster toggle → **Rostered**; then pick a **Manager** (team) | Rostered shows all managers' players, no free agents; picking a team narrows to that team. **All** shows everyone incl. free agents. | ☐ |
+| 3 | Click **Columns**, untick **Owner** and **Salary** | Those columns vanish; the count on the button drops. **Player** can't be unticked. | ☐ |
 | 4 | **Drag** a column header (e.g. Edge) left or right | The column moves to where you drop it; the order sticks. | ☐ |
 | 5 | Open the **View** menu → **Auction Prep** | Columns, sort, and filters snap to the auction preset (free agents, auction column set). Try the other presets. | ☐ |
 | 6 | Change something (hide a column), then **Save as new**, name it | Your view appears under "My views" and is selected. | ☐ |
@@ -63,7 +63,9 @@
 | --- | --- | --- | --- |
 | 1 | Filter to a rival team **and** a position with no players on it (e.g. a team with no TE) | Show "No players match these filters." — never a blank/broken table. | ☐ |
 | 2 | Clear a Ceiling box (delete the number) | Treat it as 0 rather than breaking the row. | ☐ |
-| 3 | Narrow the browser window | The table scrolls sideways inside its own box; the page itself does not break its layout. | ☐ |
+| 3 | Narrow the browser window | The table scrolls sideways inside its own box; the horizontal scrollbar is reachable **without scrolling to the bottom**, and the header stays pinned while you scroll rows. | ☐ |
+| 4 | Sort by **Ovr ECR**, then **Dyn Ovr ECR** (regression: tier-band bug) | Tier bands are clean — in order, no repeats — and there is **no console error**. | ☐ |
+| 5 | Open the browser console on load (regression: hydration bug) | **No hydration / console errors** appear. | ☐ |
 
 ## Security and permissions checks
 

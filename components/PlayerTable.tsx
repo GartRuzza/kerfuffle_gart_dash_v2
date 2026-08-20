@@ -47,6 +47,7 @@ import {
   nextCustomViewId,
   saveCustomViews,
   visibilityFromHidden,
+  type RosterMode,
   type SavedView,
   type ViewState,
 } from "@/lib/views";
@@ -62,6 +63,17 @@ function cellTint(id: string): string {
   return "";
 }
 
+/** Header cell classes. Sticky + opaque bg so it stays readable over scrolling rows. */
+function headerClass(id: string, canSort: boolean): string {
+  return `sticky top-0 z-10 touch-none whitespace-nowrap px-2.5 py-2 text-left align-bottom text-xs font-semibold uppercase tracking-wide text-ink-muted ${
+    cellTint(id) || "bg-surface"
+  } ${canSort ? "hover:text-ink" : ""}`;
+}
+
+function ariaSort(dir: false | "asc" | "desc") {
+  return dir === "asc" ? "ascending" : dir === "desc" ? "descending" : undefined;
+}
+
 function SortCaret({ dir }: { dir: false | "asc" | "desc" }) {
   return (
     <svg width="9" height="9" viewBox="0 0 8 8" aria-hidden className={`ml-1 inline-block ${dir ? "text-accent" : "text-ink-faint"}`}>
@@ -74,13 +86,24 @@ function SortCaret({ dir }: { dir: false | "asc" | "desc" }) {
   );
 }
 
-const GROUP_LEGEND = [
-  { label: "GartStats", tint: "bg-group-gart" },
-  { label: "Market", tint: "bg-group-market" },
-  { label: "Contract Info", tint: "bg-group-contract" },
-];
+/** Plain header (server + pre-mount): sortable-on-click, no drag — avoids the
+ * @dnd-kit SSR id mismatch by only enabling drag after the client mounts. */
+function PlainHeader({ header }: { header: Header<PlayerRow, unknown> }) {
+  const canSort = header.column.getCanSort();
+  const sorted = header.column.getIsSorted();
+  return (
+    <th
+      onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+      aria-sort={ariaSort(sorted)}
+      className={`${headerClass(header.column.id, canSort)} ${canSort ? "cursor-pointer" : ""}`}
+    >
+      {flexRender(header.column.columnDef.header, header.getContext())}
+      {canSort ? <SortCaret dir={sorted} /> : null}
+    </th>
+  );
+}
 
-/** A draggable, sortable header cell. */
+/** Draggable + sortable header (after mount). */
 function SortableHeader({ header }: { header: Header<PlayerRow, unknown> }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: header.column.id });
@@ -98,16 +121,20 @@ function SortableHeader({ header }: { header: Header<PlayerRow, unknown> }) {
       {...attributes}
       {...listeners}
       onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-      aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : undefined}
-      className={`cursor-grab touch-none whitespace-nowrap px-2.5 py-2 text-left align-bottom text-xs font-semibold uppercase tracking-wide text-ink-muted active:cursor-grabbing ${cellTint(
-        header.column.id,
-      )} ${canSort ? "hover:text-ink" : ""}`}
+      aria-sort={ariaSort(sorted)}
+      className={`${headerClass(header.column.id, canSort)} cursor-grab active:cursor-grabbing`}
     >
       {flexRender(header.column.columnDef.header, header.getContext())}
       {canSort ? <SortCaret dir={sorted} /> : null}
     </th>
   );
 }
+
+const GROUP_LEGEND = [
+  { label: "GartStats", tint: "bg-group-gart" },
+  { label: "Market", tint: "bg-group-market" },
+  { label: "Contract Info", tint: "bg-group-contract" },
+];
 
 const FULL_VIEW = DEFAULT_VIEWS.find((v) => v.id === DEFAULT_VIEW_ID)!;
 
@@ -116,10 +143,9 @@ export default function PlayerTable() {
     MOCK_PLAYERS.map((p) => ({ ...p, ceiling: p.kerfValue })),
   );
 
-  // Filters + view state (initialized from the "Full" default view).
   const [sorting, setSorting] = useState<SortingState>(FULL_VIEW.state.sorting);
-  const [roster, setRoster] = useState<string>(FULL_VIEW.state.roster);
-  const [includeFA, setIncludeFA] = useState<boolean>(FULL_VIEW.state.includeFA);
+  const [manager, setManager] = useState<string>(FULL_VIEW.state.manager);
+  const [rosterMode, setRosterMode] = useState<RosterMode>(FULL_VIEW.state.rosterMode);
   const [positionFilter, setPositionFilter] = useState<PositionFilter>(FULL_VIEW.state.position);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() =>
     visibilityFromHidden(FULL_VIEW.state.hiddenColumns),
@@ -128,16 +154,19 @@ export default function PlayerTable() {
 
   const [customViews, setCustomViews] = useState<SavedView[]>([]);
   const [activeViewId, setActiveViewId] = useState<string>(DEFAULT_VIEW_ID);
+  const [mounted, setMounted] = useState(false);
 
-  // Load saved custom views (client-only) after mount.
-  useEffect(() => setCustomViews(loadCustomViews()), []);
+  useEffect(() => {
+    setCustomViews(loadCustomViews());
+    setMounted(true); // enable drag only after mount (avoids SSR hydration mismatch)
+  }, []);
 
   const allViews = useMemo(() => [...DEFAULT_VIEWS, ...customViews], [customViews]);
   const activeView = allViews.find((v) => v.id === activeViewId) ?? FULL_VIEW;
 
   const currentState = (): ViewState => ({
-    roster,
-    includeFA,
+    manager,
+    rosterMode,
     position: positionFilter,
     sorting,
     columnOrder,
@@ -147,14 +176,13 @@ export default function PlayerTable() {
 
   function applyView(view: SavedView) {
     setActiveViewId(view.id);
-    setRoster(view.state.roster);
-    setIncludeFA(view.state.includeFA);
+    setManager(view.state.manager);
+    setRosterMode(view.state.rosterMode);
     setPositionFilter(view.state.position);
     setSorting(view.state.sorting);
     setColumnOrder(view.state.columnOrder);
     setColumnVisibility(visibilityFromHidden(view.state.hiddenColumns));
   }
-
   function persist(next: SavedView[]) {
     setCustomViews(next);
     saveCustomViews(next);
@@ -172,9 +200,7 @@ export default function PlayerTable() {
     setActiveViewId(view.id);
   }
   function updateView() {
-    persist(
-      customViews.map((v) => (v.id === activeViewId ? { ...v, state: currentState() } : v)),
-    );
+    persist(customViews.map((v) => (v.id === activeViewId ? { ...v, state: currentState() } : v)));
   }
   function deleteView() {
     persist(customViews.filter((v) => v.id !== activeViewId));
@@ -182,10 +208,10 @@ export default function PlayerTable() {
   }
 
   const columnFilters = useMemo<ColumnFiltersState>(() => {
-    const f: ColumnFiltersState = [{ id: "owner", value: { roster, includeFA } }];
+    const f: ColumnFiltersState = [{ id: "owner", value: { manager, rosterMode } }];
     if (positionFilter !== "ALL") f.push({ id: "pos", value: positionFilter });
     return f;
-  }, [roster, includeFA, positionFilter]);
+  }, [manager, rosterMode, positionFilter]);
 
   const updateCeiling = (rowIndex: number, value: number) =>
     setData((old) => old.map((row, i) => (i === rowIndex ? { ...row, ceiling: value } : row)));
@@ -237,14 +263,18 @@ export default function PlayerTable() {
   const visibleIds = headers.map((h) => h.column.id);
   const { showTiers, tierField } = tierPlan(sorting[0]?.id, positionFilter);
 
+  // Build the body, inserting a tier band whenever the tier value changes.
+  // Band keys carry a running index so they never collide even if (defensively)
+  // a tier value ever appeared in two groups.
   const body: ReactNode[] = [];
   let lastTier: number | null = null;
+  let bandIdx = 0;
   rows.forEach((row) => {
     if (showTiers && tierField) {
       const t = row.original[tierField] as number;
       if (t !== lastTier) {
         body.push(
-          <tr key={`band-${tierField}-${t}`}>
+          <tr key={`band-${bandIdx++}`}>
             <td colSpan={leafCount} className="border-y-2 border-tier-line bg-tier-band px-3 py-1 text-xs font-bold uppercase tracking-wide text-tier-text">
               Tier {t}
             </td>
@@ -263,6 +293,34 @@ export default function PlayerTable() {
       </tr>,
     );
   });
+
+  const headerCells = mounted ? (
+    <SortableContext items={visibleIds} strategy={horizontalListSortingStrategy}>
+      {headers.map((header) => (
+        <SortableHeader key={header.id} header={header} />
+      ))}
+    </SortableContext>
+  ) : (
+    headers.map((header) => <PlainHeader key={header.id} header={header} />)
+  );
+
+  const tableEl = (
+    <table className="w-full border-collapse text-sm">
+      <thead>
+        <tr>{headerCells}</tr>
+      </thead>
+      <tbody>
+        {body}
+        {rows.length === 0 && (
+          <tr>
+            <td colSpan={leafCount} className="px-3 py-8 text-center text-ink-subtle">
+              No players match these filters.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  );
 
   return (
     <section>
@@ -283,19 +341,17 @@ export default function PlayerTable() {
         <ColumnPicker
           order={columnOrder}
           visibility={columnVisibility}
-          onToggle={(id, visible) =>
-            setColumnVisibility((prev) => ({ ...prev, [id]: visible }))
-          }
+          onToggle={(id, visible) => setColumnVisibility((prev) => ({ ...prev, [id]: visible }))}
         />
       </div>
 
       <div className="mb-3">
         <FilterBar
           teams={TEAMS}
-          roster={roster}
-          onRosterChange={setRoster}
-          includeFA={includeFA}
-          onIncludeFAChange={setIncludeFA}
+          manager={manager}
+          onManagerChange={setManager}
+          rosterMode={rosterMode}
+          onRosterModeChange={setRosterMode}
           positionFilter={positionFilter}
           onPositionChange={handlePositionChange}
           shown={rows.length}
@@ -313,30 +369,14 @@ export default function PlayerTable() {
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-line shadow-sm">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-line bg-surface">
-                <SortableContext items={visibleIds} strategy={horizontalListSortingStrategy}>
-                  {headers.map((header) => (
-                    <SortableHeader key={header.id} header={header} />
-                  ))}
-                </SortableContext>
-              </tr>
-            </thead>
-            <tbody>
-              {body}
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={leafCount} className="px-3 py-8 text-center text-ink-subtle">
-                    No players match these filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </DndContext>
+      <div className="max-h-[calc(100vh-15rem)] overflow-auto rounded-lg border border-line shadow-sm">
+        {mounted ? (
+          <DndContext id="players-table" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            {tableEl}
+          </DndContext>
+        ) : (
+          tableEl
+        )}
       </div>
 
       <p className="mt-3 text-xs text-ink-subtle">

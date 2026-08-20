@@ -41,6 +41,16 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-20 — Filter tweaks + two fixes
+
+**Improved**
+- The roster control is now a **three-way toggle** — **All / Rostered / Free Agents** — sitting next to a **Manager** dropdown (All, or a specific team). Cleaner than the old dropdown-plus-checkbox.
+- The table now has a **sticky header** and its own scroll area, so you can reach the **side-to-side scrollbar without scrolling to the bottom** of the list.
+
+**Fixed**
+- **Tier bands** no longer break (duplicate or show out of order) when you sort by **Ovr ECR** or **Dyn Ovr ECR**. Those columns now show a clean overall rank.
+- Removed a **console error** on load related to column dragging (drag now starts up after the page loads).
+
 ## 2026-08-20 — Table redesign, part 2 (filters, columns you control, and saved views)
 
 **New**

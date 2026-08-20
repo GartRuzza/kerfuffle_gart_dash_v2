@@ -4,7 +4,6 @@ import {
   ALWAYS_VISIBLE,
   DEFAULT_VIEWS,
   DEFAULT_VIEW_ID,
-  ROSTER_FA,
   visibilityFromHidden,
 } from "./views";
 import { MY_TEAM } from "./types";
@@ -34,10 +33,10 @@ describe("default views", () => {
 
   it("view presets match the intended use cases", () => {
     const byId = Object.fromEntries(DEFAULT_VIEWS.map((v) => [v.id, v]));
-    expect(byId["view-auction"].state.roster).toBe(ROSTER_FA);
-    expect(byId["view-waivers"].state.roster).toBe(ROSTER_FA);
-    expect(byId["view-trades"].state.includeFA).toBe(false);
-    expect(byId["view-startsit"].state.roster).toBe(MY_TEAM);
+    expect(byId["view-auction"].state.rosterMode).toBe("FA");
+    expect(byId["view-waivers"].state.rosterMode).toBe("FA");
+    expect(byId["view-trades"].state.rosterMode).toBe("ROSTERED");
+    expect(byId["view-startsit"].state.manager).toBe(MY_TEAM);
   });
 });
 

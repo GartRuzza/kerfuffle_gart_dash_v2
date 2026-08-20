@@ -38,7 +38,7 @@ Nothing is in a Partial state. The player table prototype is fully Built **as a 
 
 **Player table prototype — what it does (v2 redesign, Phases 1–2):** runs locally (`npm install`, then `npm run dev`, at http://localhost:3000) as one screen with a **dark theme**; ~80 real-name players across QB/RB/WR/TE spanning a free-agent pool, the Rangoon Raccoons' roster, and 3 rival rosters; columns Owner, Player, **Pos (colored badge)**, Team, Kerf Ovr Rank, Kerf Pos Rank, Proj Points, Kerf Value, Ceiling, Edge (green +/red −), Market Value, Ovr ECR, Pos ECR, Dyn Ovr ECR, Dyn Pos ECR, Salary, Contract, tinted into **GartStats / Market / Contract Info** groups with a color-key legend; sorting with a filled caret; **FantasyPros-style tier bands** driven by six mock tier dimensions (bands appear only under a matching rank sort; the coupled sort↔position rules live in `lib/tierRules.ts`).
 
-**Phase 2 (view system) adds:** a **roster dropdown** (All Players / Free Agents / each team) plus a separate **"include free agents"** toggle; the **position dropdown** (All/SuperFlex/Flex/QB/RB/WR/TE); a **column picker** to show/hide columns; **drag-to-reorder** column headers (@dnd-kit); and **saved views** — five built-in default views (Full, Auction Prep, Waivers, Trades, Start/Sit) plus user-created custom views, **persisted in browser localStorage**. Opens to the Full view.
+**Phase 2 (view system) adds:** a 3-way **roster toggle** (All / Rostered / Free Agents) beside a **Manager dropdown** (All / each team); the **position dropdown** (All/SuperFlex/Flex/QB/RB/WR/TE); a **column picker** to show/hide columns; **drag-to-reorder** column headers (@dnd-kit, mounted client-side to stay SSR-safe); and **saved views** — five built-in default views (Full, Auction Prep, Waivers, Trades, Start/Sit) plus user-created custom views, **persisted in browser localStorage**. Opens to Full. The table scrolls inside a bounded, sticky-header container so both scrollbars stay on screen. (Ovr ECR / Dyn Ovr ECR display the unique overall rank so tier bands stay contiguous.)
 
 **What it deliberately does *not* do:** no real data (all values, ranks, and the six mock tier dimensions are hand-authored or derived, not computed by an engine); no **data-dictionary popup** (that's **Phase 3**); ceilings still reset on reload (only view configs persist); no accounts, no deployment, no real data schema. DST has a badge color but no DST players exist in the mock data.
 
@@ -55,7 +55,8 @@ Nothing is in a Partial state. The player table prototype is fully Built **as a 
 
 | # | Bug | Impact | Severity | Status |
 | --- | --- | --- | --- | --- |
-| — | No code, no bugs | — | — | — |
+| 1 | Tier bands duplicated/out-of-order + a React duplicate-key crash when sorting by Ovr ECR / Dyn Ovr ECR | Broken tier display on those sorts | High | **Fixed 2026-08-20** — those columns now sort by a unique derived rank (raw ECR had ties); band keys made collision-proof |
+| 2 | Hydration mismatch console error from @dnd-kit (server vs client accessibility ids) | Console error on load; no functional break | Medium | **Fixed 2026-08-20** — drag context now mounts only on the client (SSR renders plain headers) |
 
 ## Build and deploy status
 
@@ -64,9 +65,11 @@ Nothing is in a Partial state. The player table prototype is fully Built **as a 
 | **Active branch** | feat/issue-1-player-table-prototype |
 | **Deployed to production** | No. Nothing is deployed anywhere. |
 | **Environments live** | Local only — `npm run dev` at http://localhost:3000 |
-| **Tests** | **Vitest unit tests** (`npm test`) — 18 passing, covering mock-data derivation, the tier/sort/position rules, and the saved-views model. `npm run build` (compile + type-check + lint) passes; render verified. UI interaction checks (drag, show/hide, save view) remain manual — see [`../qa_test_plan.md`](../qa_test_plan.md). |
+| **Tests** | **Vitest unit tests** (`npm test`) — 19 passing, covering mock-data derivation (incl. the unique-rank invariant that keeps tier bands contiguous), the tier/sort/position rules, and the saved-views model. `npm run build` passes; render verified. UI interaction checks (drag, show/hide, save view) remain manual — see [`../qa_test_plan.md`](../qa_test_plan.md). |
 
 ## Latest implementation summary
+
+**2026-08-20 — Phase 2 polish: filter model, two bug fixes, sticky scroll.** On owner review: the roster control became a 3-way toggle (All / Rostered / Free Agents) next to a renamed **Manager** dropdown (All / team). Fixed two bugs the owner found — broken/duplicated **tier bands** when sorting by the overall-ECR columns (they sorted by raw ECR, which had ties; now they sort by a unique derived rank, and band keys are collision-proof) and a **@dnd-kit hydration** console error (drag now mounts client-side only). Table now scrolls in a bounded container with a **sticky header** so scrollbars stay on screen. 19 unit tests (added the unique-rank invariant). Validated: unit tests + clean build + rendered-DOM checks (SSR headers confirmed drag-free).
 
 **2026-08-20 — Table redesign, Phase 2 of 3 (the view system).** Added the interactive view layer: the roster filter became a dropdown (All Players / Free Agents / each team) with a separate "include free agents" toggle; a column picker (show/hide); drag-to-reorder column headers via **@dnd-kit**; and **saved views** — five built-in default views mirroring the user flows (Full, Auction Prep, Waivers, Trades, Start/Sit) plus user-created custom views, persisted in **browser localStorage** (D-05). Opens to Full. Two new dependencies (@dnd-kit, plus the earlier Vitest). Validated: 18 unit tests (added the views model) + clean build + rendered-DOM checks. Phase 3 (data-dictionary popup) is next. Deferred by owner: ceiling persistence (still resets).
 
