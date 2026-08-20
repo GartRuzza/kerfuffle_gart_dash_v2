@@ -17,9 +17,9 @@
 | | |
 | --- | --- |
 | **How to run them** | `npm test` (Vitest unit tests) and `npm run build` (compile + type-check + lint). |
-| **What they cover** | **Unit (14 tests):** mock-data derivation — 79 players, unique overall ranks, clean 1..N positional ranks, tier ranges; and the tier/sort/position **state machine** — which bands show for each sort×position, the auto-switch-to-QB effect, and the revert-to-no-tiers effect. **Build:** the whole app compiles clean and the page server-renders with every column, the tier bands, position badges, and the editable Ceiling inputs. |
-| **What they do not cover** | Click-level interactions in a real browser (sorting on click, the dropdowns, inline Ceiling edits updating state). The *logic* behind them is unit-tested; the wiring is verified by the manual checks below. |
-| **Currently passing?** | Yes — `npm test` (14/14) and `npm run build` pass clean as of 2026-08-20. |
+| **What they cover** | **Unit (18 tests):** mock-data derivation (ranks, tier ranges); the tier/sort/position **state machine** (which bands show, auto-switch-to-QB, revert-to-no-tiers); and the **saved-views model** (default views internally consistent, sort column visible, presets match their use cases, visibility mapping). **Build:** the whole app compiles clean and the page server-renders with every column, tier bands, position badges, the view selector, the column picker, and 17 draggable headers. |
+| **What they do not cover** | Click/drag interactions in a real browser (sort click, drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. |
+| **Currently passing?** | Yes — `npm test` (18/18) and `npm run build` pass clean as of 2026-08-20. |
 
 ## Manual checks — the critical flows
 
@@ -41,9 +41,21 @@
 | 8 | With Position = **All**, click **Kerf Pos Rank** | The app **auto-switches Position to QB** (positional rank needs one position) and shows QB tiers. | ☐ |
 | 9 | While positionally sorted, set Position back to **All** (or SuperFlex/Flex) | Sort falls back to Kerf Ovr Rank order with **no bands**, until you click a rank header again. | ☐ |
 | 10 | Sort by **Ovr ECR**, then **Dyn Ovr ECR** | Bands change to ECR-overall, then Dynasty-overall tiers — the band set follows the sort field. | ☐ |
-| 11 | Roster filter: **My roster** / **Free agents** / a rival via **"A team"** | Rows narrow accordingly; count updates. Combines with the Position dropdown. | ☐ |
-| 12 | Edit a **Ceiling** box (pre-filled with Kerf Value) | The row updates immediately and the value stays as you sort/filter. | ☐ |
-| 13 | Reload the page | Ceilings reset — expected for this prototype. | ☐ |
+| 11 | Edit a **Ceiling** box (pre-filled with Kerf Value) | The row updates immediately and the value stays as you sort/filter. | ☐ |
+| 12 | Reload the page | Ceilings reset — expected for this prototype. | ☐ |
+
+### The view system (Phase 2)
+
+| # | Do this | You should see | Pass? |
+| --- | --- | --- | --- |
+| 1 | Open the **Roster** dropdown → **Free Agents** | Only free agents show (no team, "—" salary). | ☐ |
+| 2 | Set Roster = a **team**, then tick **Include free agents** | That team's players **plus** all free agents show. Untick → just the team. (The checkbox greys out when Roster = Free Agents.) | ☐ |
+| 3 | Click **Columns**, untick **Owner** and **Salary** | Those columns vanish from the table; the count on the button drops. **Player** can't be unticked. | ☐ |
+| 4 | **Drag** a column header (e.g. Edge) left or right | The column moves to where you drop it; the order sticks. | ☐ |
+| 5 | Open the **View** menu → **Auction Prep** | Columns, sort, and filters snap to the auction preset (free agents, auction column set). Try the other presets. | ☐ |
+| 6 | Change something (hide a column), then **Save as new**, name it | Your view appears under "My views" and is selected. | ☐ |
+| 7 | Switch to another view, then back to yours; then **reload the page** | Your saved view is still there after reload (stored in this browser). | ☐ |
+| 8 | Select your custom view → **Delete** | It's removed; the table returns to Full. (Default views can't be deleted or overwritten — only "Save as new".) | ☐ |
 
 ## Edge cases and things that should fail gracefully
 

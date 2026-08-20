@@ -41,6 +41,20 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-20 — Table redesign, part 2 (filters, columns you control, and saved views)
+
+**New**
+- **Roster dropdown** — one menu to pick All Players, Free Agents, or a specific team, plus a separate **"Include free agents"** checkbox to fold free agents into the All-Players or a team view.
+- **Choose your columns** — a **Columns** button lets you show or hide any column (Player always stays).
+- **Reorder columns** — **drag a column header** left or right to rearrange the table.
+- **Saved views** — five ready-made views mirroring how you actually use the tool: **Full, Auction Prep, Waivers, Trades, Start/Sit**. Pick one from the **View** menu and the columns, sort, and filters all snap into place. **Save your own** arrangements as named views with "Save as new" — they're remembered on this computer between sessions.
+
+**Known issues / not yet done**
+- Everything is still **mock data** (amber banner).
+- Saved views are remembered **per browser** (not synced across devices).
+- Ceilings still reset on reload (you chose to keep it that way for now).
+- Next up (**part 3**): the **data dictionary** — a pop-up explaining what each column means and where it comes from.
+
 ## 2026-08-20 — Table redesign, part 1 (new dark look + more columns)
 
 **New / Improved**

@@ -1,5 +1,11 @@
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
-import { FLEX_POSITIONS, type PlayerRow, type Position } from "@/lib/types";
+import {
+  FLEX_POSITIONS,
+  FREE_AGENT,
+  type PlayerRow,
+  type Position,
+} from "@/lib/types";
+import { ROSTER_ALL, ROSTER_FA } from "@/lib/views";
 import PositionBadge from "./PositionBadge";
 import EditableCeilingCell from "./EditableCeilingCell";
 
@@ -28,7 +34,15 @@ export const columns: ColumnDef<PlayerRow>[] = [
   {
     accessorKey: "owner",
     header: "Owner",
-    filterFn: "equalsString",
+    // Roster/free-agent gate. value = { roster, includeFA }.
+    filterFn: (row, columnId, value: { roster: string; includeFA: boolean }) => {
+      const owner = row.getValue(columnId) as string;
+      const isFA = owner === FREE_AGENT;
+      const { roster, includeFA } = value;
+      if (roster === ROSTER_ALL) return isFA ? includeFA : true;
+      if (roster === ROSTER_FA) return isFA;
+      return owner === roster || (isFA && includeFA);
+    },
     cell: (info) => {
       const v = info.getValue<string>();
       return v === "FA" ? (

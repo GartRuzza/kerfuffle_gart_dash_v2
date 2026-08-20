@@ -47,6 +47,31 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-05 · 2026-08-20 · Saved views persisted in localStorage; @dnd-kit for column reorder
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Technical (product-approved) |
+| **Decided by** | Owner (persistence mechanism, drag approach) |
+
+**The question**
+How should the table remember user-created "views" (column choices, order, sort, filters) between sessions, and how should columns be reordered?
+
+**What we decided**
+Persist **custom views in the browser's localStorage** (`lib/views.ts`), keyed `gartdash.customViews.v1`; built-in default views stay in code. Reorder columns by **dragging headers**, using **@dnd-kit** bound to TanStack's `columnOrder`.
+
+**Why**
+localStorage fits the local-first, single-user, no-backend prototype: views survive reloads with zero infrastructure. @dnd-kit is the standard, well-maintained, accessible drag toolkit and integrates cleanly with TanStack column ordering; the owner explicitly chose real drag over a lighter reorder UI.
+
+**What we gave up**
+localStorage is **per-browser and not synced** across machines, and it's the first persisted client state (a small step up in complexity). @dnd-kit adds a dependency. Both accepted for the UX; real cross-device sync waits for a backend (deployment era).
+
+**What would make us reconsider**
+Web deployment with multiple devices, or a login — then views (and other state) move to a real per-user store behind the API, and localStorage becomes a cache at most.
+
+---
+
 ### D-04 · 2026-08-20 · Vitest for unit testing
 
 | | |

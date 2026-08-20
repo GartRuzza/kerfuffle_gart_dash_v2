@@ -25,7 +25,9 @@ Everything the product will become — CBS + FantasyPros ingestion, the valuatio
 | Frontend | Next.js (App Router) + React + TypeScript | One language across the whole app; best-in-class React ecosystem for a rich interactive table; local now, web-deployable later with no rework | [D-01](decision_log.md) |
 | Data grid | [TanStack Table](https://tanstack.com/table) v8 | Handles exactly the sort / filter / grouped-columns / editable-cell behavior that *is* the product | D-01 |
 | Styling | [Tailwind CSS](https://tailwindcss.com) v3 + a semantic design-token layer, **dark theme** | Fast, consistent styling in-markup; a single-source-of-truth palette so every component stays consistent and a restyle is one file | D-01, D-02, D-03 |
-| Testing | [Vitest](https://vitest.dev) (`npm test`) | Fast, TS-native unit tests for the pure logic (mock-data derivation, tier/sort/position rules) | D-04 |
+| Testing | [Vitest](https://vitest.dev) (`npm test`) | Fast, TS-native unit tests for the pure logic (mock-data derivation, tier/sort/position rules, views model) | D-04 |
+| Drag & drop | [@dnd-kit](https://dndkit.com) | Accessible column-header drag-to-reorder, bound to TanStack `columnOrder` | D-05 |
+| Persistence | Browser **localStorage** (custom views only) | Local-first: saved views survive reloads with no backend. Per-browser, not synced. | D-05 |
 | Data source | In-repo mock fixture (`lib/mockData.ts`) | Prototype only — real data (CBS API, FantasyPros) is unverified and deliberately deferred (roadmap #2–3) | — |
 | Backend / API | **(planned)** — Next.js server routes | Real data ingestion + engine live here later, behind a clean boundary | D-01 |
 | Database | **(planned / none yet)** | No schema exists; mock data is a flat fixture, not a data model | — |
@@ -36,7 +38,7 @@ Everything the product will become — CBS + FantasyPros ingestion, the valuatio
 
 - **The mock-data boundary — `lib/mockData.ts` is the only place invented data enters.** Every component reads the typed `Player` / `PlayerRow` shapes from `lib/types.ts`; none of them know the numbers are fake. When real CBS/FantasyPros data arrives, this one module is replaced (with a server route that returns the same shapes) and the UI does not change. **Do not scatter mock values through components**, and **do not grow a database around the `Player` type** — it is a fixture shape, not a schema. If a real schema becomes necessary, stop and flag the owner.
 - **One table, many filters.** There is exactly one table component. Flows differ only by how it is filtered (roster, position). Never add a dedicated per-flow screen (a "waiver screen", a "trade screen") that duplicates the table — that is the drift [`user_flows.md`](user_flows.md) exists to prevent.
-- **The prototype does no I/O.** No network, no storage, no login. State lives in React memory and resets on reload. This is deliberate for Issue #1 (UI-only, no sensitive surfaces).
+- **The prototype does no network I/O, and the only storage is localStorage.** No server calls, no login. In-session state (filters, sort, edited ceilings) lives in React memory and resets on reload; the sole persisted thing is **custom views** in `localStorage` (`lib/views.ts`, key `gartdash.customViews.v1`) — read on mount in a `useEffect` to stay SSR-safe. Keep it that way: localStorage holds UI config only, never domain data or anything sensitive.
 
 ## Styling & design tokens
 

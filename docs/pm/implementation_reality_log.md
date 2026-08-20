@@ -53,6 +53,37 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-20 — Table redesign Phase 2: the view system
+
+**Ticket / Issue:** [#1](../../../../issues/1) (owner design feedback) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** No (built to the agreed Phase 2 scope)
+
+**Original intent**
+Phase 2 of the redesign: replace the roster buttons with a single dropdown, add a free-agent toggle, add column show/hide + drag-to-reorder, and add saved custom views (with default views mirroring the user flows), persisted in localStorage.
+
+**What was actually built**
+All of it. Roster dropdown (All Players / Free Agents / each team) + a separate "include free agents" toggle; a column picker (show/hide, with "Player" locked visible); drag-to-reorder headers via **@dnd-kit** (bound to TanStack's `columnOrder`); and a saved-views system (`lib/views.ts`) — five built-in default views plus user-created custom views, stored in **localStorage** and unit-tested. Opens to Full.
+
+**Decisions worth noting (owner-resolved this session)**
+- **"Free agents only" gap:** the dropdown+toggle model couldn't express "free agents only" (which Auction/Waiver need). Resolved by adding **"Free Agents" as a dropdown option**; the toggle then folds FAs into the All-Players/team views.
+- **Opens to Full** (not last-used); **ceilings keep resetting** (owner deferred ceiling persistence); a saved view stores visible columns + order + sort + all filters; the **Player** column is always visible.
+- Default-view sorts were all set to **Kerf Ovr Rank** (kept the sort column visible in every preset, so its bands/indicator make sense).
+
+**Product implications**
+The owner can now shape the table for each use case and save those arrangements — the mechanism the user flows imply. Still mock data; the default views' column choices are a starting point to react to. Nothing about the real build changed.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| Two new deps (@dnd-kit; Vitest earlier) | Drag UX + strong validation, both owner-requested | Standard, well-maintained libs | — |
+| Saved views persist in localStorage (per-browser, not synced) | Local-first, no backend yet | Views don't follow the owner across machines | Real sync needs a backend — out of scope until deployment |
+| No component/interaction tests (drag, save-view wiring) | jsdom + Testing Library is a bigger lift; the *logic* is unit-tested | DOM wiring not regression-guarded | Add Testing Library when it stabilizes |
+| `window.prompt` used to name a new view | Simplest for a local prototype | Slightly clunky UX | Swap for an inline input later |
+
+**Follow-up decisions needed from the product owner:** For **Phase 3** (data dictionary): the per-field definitions + how much "source/mechanics" detail to write now, given the engine fields aren't real yet. Comes when we start it.
+
+---
+
 ### 2026-08-20 — Table redesign Phase 1: dark theme, columns, tier bands
 
 **Ticket / Issue:** [#1](../../../../issues/1) (owner design feedback) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** N/A (new, owner-directed redesign, phased 1 of 3)
