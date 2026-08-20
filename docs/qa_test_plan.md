@@ -1,4 +1,4 @@
-# QA & Test Plan — [PRODUCT NAME]
+# QA & Test Plan — Gart Dash
 
 > **How to use this doc**
 > **Owner:** Claude Code writes and maintains it; the product owner runs the manual checks.
@@ -7,10 +7,8 @@
 > **This doc never contains:** Test code. This is the human-readable plan; the code lives in the test suite.
 >
 > **The rule that makes this doc real:** a feature is not "Built" in [`pm/current_state.md`](pm/current_state.md) until the checks below pass. When a check fails, that feature's status changes — to Partial, or to a known bug. Test results are the evidence behind every status in that doc, which is why this one keeps it honest.
->
-> *Examples are in italics and refer to a fictional product, "Ledgerly." Delete them as you fill each section in.*
 
-**Last updated:** [YYYY-MM-DD] · **Last full pass:** [YYYY-MM-DD] · **Result:** [pass / fail — what failed]
+**Last updated:** 2026-08-20 · **Last full pass:** 2026-08-20 (unit tests + build + rendered-DOM verified by Claude Code; the manual interaction checks below are ready for the owner to run) · **Result:** Automated checks pass (14 unit tests + clean build); manual interaction checks pending owner sign-off.
 
 ---
 
@@ -18,59 +16,68 @@
 
 | | |
 | --- | --- |
-| **How to run them** | `[command]` |
-| **What they cover** | [in plain English — which parts of the product] |
-| **What they do not cover** | [be honest; this is the gap the manual checks must fill] |
-| **Currently passing?** | [yes / no — which are failing] |
+| **How to run them** | `npm test` (Vitest unit tests) and `npm run build` (compile + type-check + lint). |
+| **What they cover** | **Unit (21 tests):** mock-data derivation, incl. the **unique-rank invariant** (overall ECR/Dynasty ranks are 1..N and their tiers stay contiguous — the guard for the tier-band bug); the tier/sort/position **state machine**; the **saved-views model**; and **data-dictionary coverage** (every column documented, definitions under 15 words). **Build:** the app compiles clean and server-renders every column, tier bands, badges, the view selector, the column picker, the dictionary button, and drag-free headers (no hydration mismatch). |
+| **What they do not cover** | Click/drag interactions in a real browser (drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. |
+| **Currently passing?** | Yes — `npm test` (21/21) and `npm run build` pass clean as of 2026-08-20. |
 
 ## Manual checks — the critical flows
 
-*One block per critical flow in [`user_flows.md`](user_flows.md). Written as steps a non-technical person can follow without help. If a step needs the console, a database client, or a developer, rewrite it — a check only you can run is a check that will not get run.*
+*This prototype serves [`user_flows.md`](user_flows.md) flow 1 (Auction prep), seeded with mock data. Run these after `npm install`.*
 
-### [Flow name]
+### The table (prototype, v2 dark redesign)
 
-**Setup:** [what you need before you start — a test account, a sample file]
+**Setup:** In a terminal in the project folder, run `npm install` once, then `npm run dev`. Open http://localhost:3000.
 
 | # | Do this | You should see | Pass? |
 | --- | --- | --- | --- |
-| 1 | [action] | [expected result — precise enough to be wrong] | ☐ |
-| 2 | [action] | [expected] | ☐ |
+| 1 | Open the page | One **dark** screen: the player table, centered "Gart Dash" title, amber **"MOCK DATA"** bar on top. No login. | ☐ |
+| 2 | Read the header | Owner, Player, Pos, Team, then GartStats (Kerf Ovr Rank, Kerf Pos Rank, Proj Points, Kerf Value, Ceiling), Edge, Market (Market Value, Ovr ECR, Pos ECR, Dyn Ovr ECR, Dyn Pos ECR), Contract Info (Salary, Contract). A **color key** shows the three group tints. "Showing 79 of 79 players." | ☐ |
+| 3 | Look at the Pos column | Each is a **colored badge** — QB green, RB red, WR blue, TE tan. | ☐ |
+| 4 | On first load | Rows are sorted by **Kerf Ovr Rank** and **"Tier 1 / Tier 2 / …" band rows** separate the tiers. | ☐ |
+| 5 | Click the **Proj Points** header | Rows re-sort; the **tier bands disappear** (Proj Points isn't a rank column). Filled caret shows the sort direction. | ☐ |
+| 6 | Click **Kerf Ovr Rank** again | Overall Kerf tier bands come back. | ☐ |
+| 7 | Set Position = **QB**, then click **Kerf Pos Rank** | Only QBs show, banded by QB Kerf tiers (QB1 at top). | ☐ |
+| 8 | With Position = **All**, click **Kerf Pos Rank** | The app **auto-switches Position to QB** (positional rank needs one position) and shows QB tiers. | ☐ |
+| 9 | While positionally sorted, set Position back to **All** (or SuperFlex/Flex) | Sort falls back to Kerf Ovr Rank order with **no bands**, until you click a rank header again. | ☐ |
+| 10 | Sort by **Ovr ECR**, then **Dyn Ovr ECR** | Bands change to ECR-overall, then Dynasty-overall tiers — the band set follows the sort field. | ☐ |
+| 11 | Edit a **Ceiling** box (pre-filled with Kerf Value) | The row updates immediately and the value stays as you sort/filter. | ☐ |
+| 12 | Reload the page | Ceilings reset — expected for this prototype. | ☐ |
 
-> *### Closing a month*
-> ***Setup:** log in as the demo bookkeeper; use `samples/bank-march.csv` (400 rows, 12 deliberate mismatches).*
->
-> *| 1 | Upload the CSV on the Import screen | "400 transactions imported" within ~10 seconds | ☐ |*
-> *| 2 | Open the Matches screen | "388 of 400 matched", 12 in the exception queue | ☐ |*
-> *| 3 | Match one exception by hand | It leaves the queue; the count drops to 11 | ☐ |*
-> *| 4 | Reload the page | The count is still 11 — the match was actually saved, not just shown | ☐ |*
+### The view system (Phase 2)
+
+| # | Do this | You should see | Pass? |
+| --- | --- | --- | --- |
+| 1 | Roster toggle → **Free Agents** | Only free agents show (no team, "—" salary). The **Manager** dropdown greys out. | ☐ |
+| 2 | Roster toggle → **Rostered**; then pick a **Manager** (team) | Rostered shows all managers' players, no free agents; picking a team narrows to that team. **All** shows everyone incl. free agents. | ☐ |
+| 3 | Click **Columns**, untick **Owner** and **Salary** | Those columns vanish; the count on the button drops. **Player** can't be unticked. | ☐ |
+| 4 | **Drag** a column header (e.g. Edge) left or right | The column moves to where you drop it; the order sticks. | ☐ |
+| 5 | Open the **View** menu → **Auction Prep** | Columns, sort, and filters snap to the auction preset (free agents, auction column set). Try the other presets. | ☐ |
+| 6 | Change something (hide a column), then **Save as new**, name it | Your view appears under "My views" and is selected. | ☐ |
+| 7 | Switch to another view, then back to yours; then **reload the page** | Your saved view is still there after reload (stored in this browser). | ☐ |
+| 8 | Select your custom view → **Delete** | It's removed; the table returns to Full. (Default views can't be deleted or overwritten — only "Save as new".) | ☐ |
+| 9 | Click **📖 Data Dictionary** (bottom), expand a field's **Details**, close with ✕ / Esc / clicking outside | A pop-up lists every column with a one-line definition; engine/market fields show a **Placeholder** chip; Details expands bullets. | ☐ |
 
 ## Edge cases and things that should fail gracefully
 
-*What happens at the boundaries, and when a user does something wrong. Products break here, not on the happy path.*
-
 | # | Try this | It should | Pass? |
 | --- | --- | --- | --- |
-| 1 | [the bad input / the empty state / the huge file] | [fail clearly, with a way out — never crash, never silently do nothing] | ☐ |
-
-> *| 1 | Upload a CSV from a bank format we do not recognize | Show "unrecognized format" with a support link — not a blank screen and not a half-imported month | ☐ |*
-> *| 2 | Upload the same statement twice | Detect the duplicate and refuse — double-importing a month silently corrupts the books | ☐ |*
+| 1 | Filter to a rival team **and** a position with no players on it (e.g. a team with no TE) | Show "No players match these filters." — never a blank/broken table. | ☐ |
+| 2 | Clear a Ceiling box (delete the number) | Treat it as 0 rather than breaking the row. | ☐ |
+| 3 | Narrow the browser window | The table scrolls sideways inside its own box; the horizontal scrollbar is reachable **without scrolling to the bottom**, and the header stays pinned while you scroll rows. | ☐ |
+| 4 | Sort by **Ovr ECR**, then **Dyn Ovr ECR** (regression: tier-band bug) | Tier bands are clean — in order, no repeats — and there is **no console error**. | ☐ |
+| 5 | Open the browser console on load (regression: hydration bug) | **No hydration / console errors** appear. | ☐ |
 
 ## Security and permissions checks
 
-*Run these whenever anything touches login, permissions, or payments. The failure mode here is invisible, which is exactly why it needs a deliberate check.*
-
-| # | Check | It should | Pass? |
-| --- | --- | --- | --- |
-| 1 | Log in as user A, try to open user B's data by URL | Refuse — not merely hide the link | ☐ |
-| 2 | Log out and open a signed-in page directly | Redirect to login | ☐ |
+Not applicable to this prototype. It has no login, no accounts, no permissions, no database, no network calls, and no user input beyond the in-memory Ceiling boxes. This is deliberate — Issue #1 is UI-only precisely so no sensitive surfaces exist yet. Add this section when real data ingestion or deployment lands.
 
 ## Known-failing / untested
 
-*What we know is not verified. An untested area is not a passing area, and pretending otherwise is how a doc like this starts lying.*
-
 | Area | State | Why |
 | --- | --- | --- |
-| [area] | Failing / Untested | [reason] |
+| Click-level interactions in a real browser (sort, filter, inline edit) | Untested by automation | The pure logic under them (tier rules, derivation) is unit-tested; the DOM wiring is not yet — covered by the manual checks above. Add component tests (Testing Library) when it stabilizes. |
+| Everything downstream of mock data | Not built | No real data, engine, or persistence exists yet — see [`pm/current_state.md`](pm/current_state.md). |
 
 ---
 

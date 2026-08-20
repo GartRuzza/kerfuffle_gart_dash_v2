@@ -47,6 +47,160 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-07 · 2026-08-20 · Roster filtering: 3-way status toggle + Manager dropdown
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Product (UX) |
+| **Decided by** | Owner |
+
+**The question**
+How should the owner filter the table by who holds a player — and, crucially, how do you express "free agents only" (which the Auction and Waiver lenses need)?
+
+**What we decided**
+Two orthogonal controls: a **3-way roster-status toggle** — **All / Rostered / Free Agents** — beside a **Manager dropdown** (All / a specific team). The combined rule (in the `owner` column's `filterFn`, `components/columns.tsx`): if the toggle is **Free Agents**, show only FAs (Manager ignored, dropdown disabled); else if a **specific Manager** is chosen, show that team; else **Rostered** = all rostered minus FAs, **All** = everyone including FAs. This replaced an earlier "Free Agents in the dropdown + an include-FA checkbox" model.
+
+**Why**
+The dropdown-plus-checkbox model couldn't cleanly express "free agents only." Splitting *roster status* (the toggle) from *which manager* (the dropdown) makes every combination meaningful and reads at a glance. The default views rely on it (Auction/Waivers → Free Agents; Trades → Rostered; Start/Sit → a Manager).
+
+**What we gave up**
+A tiny redundancy: with a specific Manager selected, "All" vs "Rostered" makes no difference (a team has no FAs). Accepted — it keeps the two controls independent and predictable.
+
+**What would make us reconsider**
+A real need to view "a team plus the free-agent pool" together, or added positions (K/DST) that change what "rostered" means.
+
+---
+
+### D-06 · 2026-08-20 · Tier bands as a sort-driven, field-specific overlay
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Product (UX), load-bearing |
+| **Decided by** | Owner |
+
+**The question**
+How do tiers appear in the table, and how do they interact with sorting and the position filter?
+
+**What we decided**
+Tiers are **not a column** — they render as **FantasyPros-style band rows** between tier groups, and the behavior is a small state machine centralized in **`lib/tierRules.ts`** (unit-tested):
+- Bands show **only** when the active sort is one of six rank columns; the band set is **specific to the sort field** (Kerf / ECR / Dynasty × overall / positional).
+- **Overall-rank** sort → overall tiers (position filter just narrows rows). **Positional-rank** sort needs a single position: triggering it on a multi-position (All/SuperFlex/Flex) **auto-switches the position to QB**; switching *to* a multi-position while positionally sorted **clears the sort** (back to the default overall order, no bands).
+- Default/load: active Kerf-Ovr-Rank sort → overall Kerf tiers on.
+- For contiguity, every rank column sorts by a **unique derived rank** (the two overall-ECR columns use `ovrEcrRank`/`dynOvrRank`, not the raw ECR which has ties).
+
+**Why**
+It matches the owner's mental model (a tiered board you re-tier by choosing a ranking) and vision principle 4 (tiers, not decimal ranks). Centralizing the rules keeps intricate, coupled behavior testable and in one place.
+
+**What we gave up**
+Simplicity: this is the most intricate UI logic in the app, and tiers are (for now) **mock** bucketings by rank — real tiers come from the engine (Kerf) and FantasyPros (ECR). "Ovr ECR" also now shows a contiguous overall rank rather than the raw consensus number (revisit at ingestion if the raw ECR is wanted).
+
+**What would make us reconsider**
+Real tier data arriving with its own grouping semantics, or the owner wanting tiers visible regardless of sort. Any change goes in `lib/tierRules.ts`, never scattered into components.
+
+---
+
+### D-05 · 2026-08-20 · Saved views persisted in localStorage; @dnd-kit for column reorder
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Technical (product-approved) |
+| **Decided by** | Owner (persistence mechanism, drag approach) |
+
+**The question**
+How should the table remember user-created "views" (column choices, order, sort, filters) between sessions, and how should columns be reordered?
+
+**What we decided**
+Persist **custom views in the browser's localStorage** (`lib/views.ts`), keyed `gartdash.customViews.v1`; built-in default views stay in code. Reorder columns by **dragging headers**, using **@dnd-kit** bound to TanStack's `columnOrder`.
+
+**Why**
+localStorage fits the local-first, single-user, no-backend prototype: views survive reloads with zero infrastructure. @dnd-kit is the standard, well-maintained, accessible drag toolkit and integrates cleanly with TanStack column ordering; the owner explicitly chose real drag over a lighter reorder UI.
+
+**What we gave up**
+localStorage is **per-browser and not synced** across machines, and it's the first persisted client state (a small step up in complexity). @dnd-kit adds a dependency. Both accepted for the UX; real cross-device sync waits for a backend (deployment era).
+
+**What would make us reconsider**
+Web deployment with multiple devices, or a login — then views (and other state) move to a real per-user store behind the API, and localStorage becomes a cache at most.
+
+---
+
+### D-04 · 2026-08-20 · Vitest for unit testing
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Technical |
+| **Decided by** | Claude Code + owner request for strong validations |
+
+**The question**
+How do we validate the app's growing pure logic (mock-data derivation, the tier/sort/position state machine) beyond build + eyeballing?
+
+**What we decided**
+Add **Vitest** as the test runner (`npm test`), with unit tests co-located in `lib/*.test.ts`. Tests cover the pure logic only; UI interaction checks stay manual for now.
+
+**Why**
+The owner asked for a strong validation gate at each component. The tier state machine and derived ranks/tiers are exactly the kind of tricky pure logic that benefits from fast unit tests. Vitest is TS-native, near-zero-config with our stack, and reusable as the app grows.
+
+**What we gave up**
+A new dev dependency and the small upkeep of tests. Accepted — it directly serves correctness and the owner's request.
+
+**What would make us reconsider**
+Nothing likely. If we later add component/E2E testing we'd extend (Testing Library / Playwright), not replace, Vitest.
+
+---
+
+### D-03 · 2026-08-20 · Dark theme (Gamecast-style), dark-only for now
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Both (product look + technical) |
+| **Decided by** | Owner |
+
+**The question**
+What visual direction should the table take — and light, dark, or both?
+
+**What we decided**
+A **dark, Gamecast-style** theme with a teal/cyan accent and compact rows, **dark-only** for now (no light/dark toggle yet). Expressed entirely through the design tokens (D-02).
+
+**Why**
+The owner's primary reference (Gamecast) is dark; dark-only avoids ~1.5–2× the styling/testing work of maintaining both themes for a single-user local prototype. The token layer keeps a future light theme cheap.
+
+**What we gave up**
+A light mode (and the FantasyPros-style light look). Recoverable later: because colors are tokens, adding a light theme is a config/variant change, not a rewrite.
+
+**What would make us reconsider**
+The owner wanting to present/use the tool somewhere a light theme reads better, or accessibility needs. Then we add a light token set + a toggle.
+
+---
+
+### D-02 · 2026-08-19 · Semantic design-token layer for styling
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Technical |
+| **Decided by** | Claude Code proposal + owner approval |
+
+**The question**
+How do we keep colors and styling consistent across the app as more components are built, instead of hardcoding the palette into every file?
+
+**What we decided**
+Define a **semantic design-token layer** once in [`../tailwind.config.ts`](../tailwind.config.ts) — roles like `yours`, `market`, `edge`, `tier`, `warning`, plus a neutral base (`surface`, `ink`, `line`, `brand`) — and require components to style with those token names, never raw Tailwind color classes (`bg-sky-50`). Applied to the player-table prototype as the first consumer; the token values map to the exact shades already in use (no visual change).
+
+**Why**
+The prototype is the foundation of the real tool, and more components are coming. A single source of truth for the palette gives consistency by default, one-place restyling/rebranding, and a clear path to dark mode. The owner asked for this structure *before* giving visual feedback, so that feedback lands as a one-file change rather than an edit spread across many components.
+
+**What we gave up**
+A little indirection — `bg-yours-surface` requires knowing it maps to sky-50 — versus the immediacy of raw Tailwind classes. Accepted: the names are self-documenting by role, and the config is short and centralized.
+
+**What would make us reconsider**
+Adopting a full component/design-system library with its own theming — we'd align the tokens to that instead. (If the app somehow stayed a single component forever, the layer would be mild overhead; that is not the trajectory.)
+
+---
+
 ### D-01 · 2026-08-19 · Tech stack: Next.js + TypeScript
 
 | | |

@@ -1,4 +1,4 @@
-# Release Notes — [PRODUCT NAME]
+# Release Notes — Gart Dash
 
 > **How to use this doc**
 > **Owner:** Claude Code.
@@ -41,19 +41,73 @@
 
 <!-- Newest entry goes directly below this line. -->
 
-### *[2026-03-14] — Bank import and matching (example entry — delete me)*
+## 2026-08-20 — Table redesign, part 3 (Data Dictionary)
 
-> ***New***
-> *- You can import a bank statement as a CSV file. We recognize 3 bank formats today.*
-> *- Ledgerly now matches transactions to invoices automatically when the amount is identical and the dates are close, and puts everything it is unsure about into an exception queue for you to review.*
->
-> ***Known issues***
-> *- Roughly 40% of real transactions still land in the exception queue, because we cannot yet match partial payments, bundled payments, or payments with bank fees deducted. This means closing a month still takes real manual work — the product does not yet deliver on its main promise. Fuzzy matching is next.*
-> *- Files over 5,000 rows will time out.*
-> *- If your bank's CSV format is not one of the 3 we know, the import will fail and there is currently no way to fix it yourself.*
->
-> ***Requires action from you***
-> *- Run the database migration before this version will start.*
+**New**
+- A **📖 Data Dictionary** button at the bottom opens a pop-up that explains **every column** — a one-line definition, plus a **"Details"** you can expand for more on how it's built and where it comes from.
+
+**Known issues / not yet done**
+- Most entries are **placeholders** (marked as such) — the real "where it comes from / how it's calculated" text gets written after we do the data discovery and build the valuation engine. The structure is ready; only the words are pending.
+
+This completes the three-part redesign. Next up is the real work: verifying the CBS and FantasyPros data sources.
+
+## 2026-08-20 — Filter tweaks + two fixes
+
+**Improved**
+- The roster control is now a **three-way toggle** — **All / Rostered / Free Agents** — sitting next to a **Manager** dropdown (All, or a specific team). Cleaner than the old dropdown-plus-checkbox.
+- The table now has a **sticky header** and its own scroll area, so you can reach the **side-to-side scrollbar without scrolling to the bottom** of the list.
+
+**Fixed**
+- **Tier bands** no longer break (duplicate or show out of order) when you sort by **Ovr ECR** or **Dyn Ovr ECR**. Those columns now show a clean overall rank.
+- Removed a **console error** on load related to column dragging (drag now starts up after the page loads).
+
+## 2026-08-20 — Table redesign, part 2 (filters, columns you control, and saved views)
+
+**New**
+- **Roster dropdown** — one menu to pick All Players, Free Agents, or a specific team, plus a separate **"Include free agents"** checkbox to fold free agents into the All-Players or a team view.
+- **Choose your columns** — a **Columns** button lets you show or hide any column (Player always stays).
+- **Reorder columns** — **drag a column header** left or right to rearrange the table.
+- **Saved views** — five ready-made views mirroring how you actually use the tool: **Full, Auction Prep, Waivers, Trades, Start/Sit**. Pick one from the **View** menu and the columns, sort, and filters all snap into place. **Save your own** arrangements as named views with "Save as new" — they're remembered on this computer between sessions.
+
+**Known issues / not yet done**
+- Everything is still **mock data** (amber banner).
+- Saved views are remembered **per browser** (not synced across devices).
+- Ceilings still reset on reload (you chose to keep it that way for now).
+- Next up (**part 3**): the **data dictionary** — a pop-up explaining what each column means and where it comes from.
+
+## 2026-08-20 — Table redesign, part 1 (new dark look + more columns)
+
+**New / Improved**
+- The whole table has a new **dark dashboard look** with a teal accent, tighter rows, and a centered "Gart Dash" title.
+- **Position is now a colored badge** — QB green, RB red, WR blue, TE tan (DST purple is ready for later).
+- **Tiers now show as banded separators** (like FantasyPros) instead of a colored column. They appear when you sort by a ranking column, and the bands match whatever ranking you sorted by — Kerf or ECR or Dynasty, overall or by-position. Sort by something that isn't a ranking (e.g. Proj Points) and the bands step aside.
+- **More ranking columns:** Kerf Overall Rank and Kerf Position Rank; ECR split into Overall and Position; Dynasty split into Overall and Position.
+- Columns are now grouped by tint into **GartStats / Market / Contract Info**, with a small color key. "Ceiling" and "Edge" are unchanged in meaning; "Market Price" now reads "Market Value."
+- A **Position dropdown** (All, SuperFlex, Flex, or a single position) replaces the position buttons. Picking a single position while sorted by a position-rank shows that position's tiers; the app handles the awkward combinations for you.
+
+**Known issues / not yet done**
+- Everything is still **mock data** (the amber banner says so); the six tier sets are placeholder groupings until the real engine and rankings exist.
+- The filter-bar overhaul (one team dropdown + a free-agent toggle + choosing/reordering columns + saving custom views) is **coming in part 2**. The data dictionary is **part 3**.
+- Ceilings still reset on reload; still local-only.
+
+## 2026-08-19 — Player table prototype (local, mock data)
+
+**New**
+- You can open Gart Dash locally and use the player table for the first time. Install once with `npm install`, then run `npm run dev` and open http://localhost:3000 — no login, one screen.
+- The table shows ~80 players (real NFL names) across QB/RB/WR/TE, split across the free-agent pool, your Rangoon Raccoons roster, and three rival rosters.
+- Your numbers and the market's numbers sit side by side: KERF Rank, Proj Pts, KERF Value, and an editable Ceiling (tinted blue) next to Market Price, ECR, and Dynasty ECR (tinted gray), with an **Edge** column between them — your value minus market price, green when you're higher, red when lower — so the gap reads at a glance.
+- The table already carries **KERF Rank** (our positional rank, e.g. RB1) and **Proj Pts** (projected KERFUFFLE points) — the shared fields the waiver, trade, and start/sit views will reuse, not just the auction ones.
+- Sort by any sortable column. Filter by roster (all players / your roster / free agents / a specific rival team) and by position; the two filters combine.
+- Tiers show as colored badges, so a close call looks close instead of a decimal pecking order.
+- Type your own number in any **Ceiling** box; it updates that row immediately and holds for the session.
+
+**Known issues**
+- Every number is invented mock data — a permanent amber banner says so. Nothing here reflects real CBS or FantasyPros data yet.
+- Ceilings reset when you reload the page (expected for this prototype).
+- Not deployed anywhere; local only.
+
+**Requires action from you**
+- Have Node.js installed. Run `npm install` once, then `npm run dev` whenever you want to open the table.
 
 ---
 
