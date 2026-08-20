@@ -18,17 +18,17 @@ import FilterBar, { type PosFilter, type RosterFilter } from "./FilterBar";
 
 /** Tint for the group-header cells so "Yours" vs "The Market" is obvious. */
 function groupHeaderTint(id: string): string {
-  if (id === "yoursGroup") return "bg-sky-100 text-sky-900";
-  if (id === "marketGroup") return "bg-slate-200 text-slate-700";
-  if (id === "edge") return "bg-emerald-50 text-emerald-800";
-  return "text-slate-600";
+  if (id === "yoursGroup") return "bg-yours-header text-yours-strong";
+  if (id === "marketGroup") return "bg-market-header text-market-text";
+  if (id === "edge") return "bg-edge-surface text-edge-text";
+  return "text-ink-muted";
 }
 
 /** Tint for leaf header + body cells so the paired columns read as a block. */
 function leafTint(id: string): string {
-  if (YOURS_COLUMNS.has(id)) return "bg-sky-50";
-  if (MARKET_COLUMNS.has(id)) return "bg-slate-100";
-  if (id === "edge") return "bg-emerald-50";
+  if (YOURS_COLUMNS.has(id)) return "bg-yours-surface";
+  if (MARKET_COLUMNS.has(id)) return "bg-market-surface";
+  if (id === "edge") return "bg-edge-surface";
   return "";
 }
 
@@ -83,11 +83,11 @@ export default function PlayerTable() {
         total={data.length}
       />
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+      <div className="overflow-x-auto rounded-lg border border-line shadow-sm">
         <table className="w-full border-collapse text-sm">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-slate-200">
+              <tr key={headerGroup.id} className="border-b border-line">
                 {headerGroup.headers.map((header) => {
                   const isLeaf = header.subHeaders.length === 0;
                   const canSort = isLeaf && header.column.getCanSort();
@@ -134,7 +134,7 @@ export default function PlayerTable() {
             {table.getRowModel().rows.map((row) => (
               <tr
                 key={row.id}
-                className="border-b border-slate-100 last:border-0 hover:bg-amber-50/40"
+                className="border-b border-line-subtle last:border-0 hover:bg-warning-hover/40"
               >
                 {row.getVisibleCells().map((cell) => (
                   <td
@@ -150,7 +150,7 @@ export default function PlayerTable() {
               <tr>
                 <td
                   colSpan={table.getAllLeafColumns().length}
-                  className="px-3 py-8 text-center text-slate-500"
+                  className="px-3 py-8 text-center text-ink-subtle"
                 >
                   No players match these filters.
                 </td>
@@ -160,12 +160,12 @@ export default function PlayerTable() {
         </table>
       </div>
 
-      <p className="mt-3 text-xs text-slate-500">
-        Blue = <span className="font-semibold text-sky-700">your numbers</span>{" "}
+      <p className="mt-3 text-xs text-ink-subtle">
+        Blue = <span className="font-semibold text-yours-text">your numbers</span>{" "}
         (KERF Value &amp; Ceiling). Gray ={" "}
-        <span className="font-semibold text-slate-600">the market</span> (Price,
+        <span className="font-semibold text-market-text">the market</span> (Price,
         ECR, Dynasty ECR).{" "}
-        <span className="font-semibold text-emerald-700">Edge</span> = KERF Value −
+        <span className="font-semibold text-edge-up">Edge</span> = KERF Value −
         Market Price. Edit any Ceiling; changes hold for this session and reset on
         reload.
       </p>

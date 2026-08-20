@@ -47,6 +47,31 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-02 · 2026-08-19 · Semantic design-token layer for styling
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Technical |
+| **Decided by** | Claude Code proposal + owner approval |
+
+**The question**
+How do we keep colors and styling consistent across the app as more components are built, instead of hardcoding the palette into every file?
+
+**What we decided**
+Define a **semantic design-token layer** once in [`../tailwind.config.ts`](../tailwind.config.ts) — roles like `yours`, `market`, `edge`, `tier`, `warning`, plus a neutral base (`surface`, `ink`, `line`, `brand`) — and require components to style with those token names, never raw Tailwind color classes (`bg-sky-50`). Applied to the player-table prototype as the first consumer; the token values map to the exact shades already in use (no visual change).
+
+**Why**
+The prototype is the foundation of the real tool, and more components are coming. A single source of truth for the palette gives consistency by default, one-place restyling/rebranding, and a clear path to dark mode. The owner asked for this structure *before* giving visual feedback, so that feedback lands as a one-file change rather than an edit spread across many components.
+
+**What we gave up**
+A little indirection — `bg-yours-surface` requires knowing it maps to sky-50 — versus the immediacy of raw Tailwind classes. Accepted: the names are self-documenting by role, and the config is short and centralized.
+
+**What would make us reconsider**
+Adopting a full component/design-system library with its own theming — we'd align the tokens to that instead. (If the app somehow stayed a single component forever, the layer would be mild overhead; that is not the trajectory.)
+
+---
+
 ### D-01 · 2026-08-19 · Tech stack: Next.js + TypeScript
 
 | | |

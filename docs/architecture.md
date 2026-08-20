@@ -24,7 +24,7 @@ Everything the product will become — CBS + FantasyPros ingestion, the valuatio
 | --- | --- | --- | --- |
 | Frontend | Next.js (App Router) + React + TypeScript | One language across the whole app; best-in-class React ecosystem for a rich interactive table; local now, web-deployable later with no rework | [D-01](decision_log.md) |
 | Data grid | [TanStack Table](https://tanstack.com/table) v8 | Handles exactly the sort / filter / grouped-columns / editable-cell behavior that *is* the product | D-01 |
-| Styling | [Tailwind CSS](https://tailwindcss.com) v3 | Fast, consistent styling in-markup; no separate design system to maintain for a solo owner | D-01 |
+| Styling | [Tailwind CSS](https://tailwindcss.com) v3 + a semantic design-token layer | Fast, consistent styling in-markup; a single-source-of-truth palette so every component stays consistent and a restyle is one file | D-01, D-02 |
 | Data source | In-repo mock fixture (`lib/mockData.ts`) | Prototype only — real data (CBS API, FantasyPros) is unverified and deliberately deferred (roadmap #2–3) | — |
 | Backend / API | **(planned)** — Next.js server routes | Real data ingestion + engine live here later, behind a clean boundary | D-01 |
 | Database | **(planned / none yet)** | No schema exists; mock data is a flat fixture, not a data model | — |
@@ -36,6 +36,28 @@ Everything the product will become — CBS + FantasyPros ingestion, the valuatio
 - **The mock-data boundary — `lib/mockData.ts` is the only place invented data enters.** Every component reads the typed `Player` / `PlayerRow` shapes from `lib/types.ts`; none of them know the numbers are fake. When real CBS/FantasyPros data arrives, this one module is replaced (with a server route that returns the same shapes) and the UI does not change. **Do not scatter mock values through components**, and **do not grow a database around the `Player` type** — it is a fixture shape, not a schema. If a real schema becomes necessary, stop and flag the owner.
 - **One table, many filters.** There is exactly one table component. Flows differ only by how it is filtered (roster, position). Never add a dedicated per-flow screen (a "waiver screen", a "trade screen") that duplicates the table — that is the drift [`user_flows.md`](user_flows.md) exists to prevent.
 - **The prototype does no I/O.** No network, no storage, no login. State lives in React memory and resets on reload. This is deliberate for Issue #1 (UI-only, no sensitive surfaces).
+
+## Styling & design tokens
+
+All styling uses **Tailwind CSS with a semantic design-token layer** defined once in
+[`tailwind.config.ts`](../tailwind.config.ts) — the single source of truth for the palette.
+Components reference tokens by **role, not hue** (`bg-yours-surface`, `text-edge-up`,
+`bg-tier-1`, `text-ink-muted`, `border-line`), never raw Tailwind colors like `bg-sky-50`.
+Change the look — restyle, rebrand, or add dark mode later — in that one file, and every
+current and future component follows.
+
+| Token group | Role | Examples |
+| --- | --- | --- |
+| `surface`, `ink`, `line`, `brand` | Neutral base — backgrounds, text, borders, primary control | `bg-surface`, `text-ink-muted`, `border-line` |
+| `yours` | The owner's KERFUFFLE numbers (blue) | `bg-yours-surface`, `text-yours-text`, `border-yours-border` |
+| `market` | Market consensus / price (gray) | `bg-market-surface`, `text-market-text` |
+| `edge` | The value-vs-price gap | `text-edge-up` (green), `text-edge-down` (red) |
+| `tier` | Tier badges 1–6 | `bg-tier-1` … `bg-tier-6` |
+| `warning` | The MOCK-DATA banner | `bg-warning-surface`, `text-warning-text` |
+
+**Rule for any new component:** style with these tokens. If a role you need is missing, add a
+token to `tailwind.config.ts` rather than hardcoding a color in the component. See
+[`decision_log.md`](decision_log.md) D-02.
 
 ## Key flows
 

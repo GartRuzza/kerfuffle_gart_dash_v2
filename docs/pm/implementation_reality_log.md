@@ -53,6 +53,24 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-19 — Follow-up: semantic design-token layer for styling
+
+**Ticket / Issue:** [#1](../../../../issues/1) (same build cycle) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** Yes — an owner-requested structural improvement
+
+**What happened**
+Reviewing the styling, the owner asked whether it was built for expandability — specifically whether there was a single style-guide/token file that components pull from, so a second module would stay consistent. There wasn't: colors were hardcoded as raw Tailwind classes (e.g. `bg-sky-50`) repeated across 8 files, and `tailwind.config.ts` defined no palette. At his direction I introduced a **semantic design-token layer** (D-02): the palette is now defined once in `tailwind.config.ts` by role (`yours`, `market`, `edge`, `tier`, `warning`, plus neutral `surface`/`ink`/`line`/`brand`), and all 8 files were refactored to use those tokens.
+
+**Deviations / why:** A structural refactor beyond Issue #1's scope, done because the owner wanted the foundation right before layering on visual feedback — which is sound: the token layer means his coming feedback is a one-file change.
+
+**Product implications**
+No user-facing change — the tokens map to the exact shades already in use, so the app looks the same. The one deliberate visual delta: tier badges now use a single subtle neutral ring instead of a per-tier darker ring. Verified: `npm run build` passes, no raw color classes remain in `app/`/`components/`, and each token compiles to its expected color.
+
+**Technical tradeoffs and debt:** None of note. Slight indirection (token name vs. raw color), accepted for the single-source-of-truth payoff. Neutrals are tokenized too, so dark mode later is a config change rather than a rewrite.
+
+**Follow-up decisions needed from the product owner:** None. (The owner has visual feedback coming next — it now lands in `tailwind.config.ts`.)
+
+---
+
 ### 2026-08-19 — Follow-up: shared-table columns for the non-auction flows (Proj Pts, KERF Rank)
 
 **Ticket / Issue:** [#1](../../../../issues/1) (same build cycle) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** Yes — a small, owner-directed scope addition

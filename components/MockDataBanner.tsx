@@ -9,7 +9,7 @@ export default function MockDataBanner() {
   return (
     <div
       role="alert"
-      className="sticky top-0 z-50 w-full border-b border-amber-500 bg-amber-400 px-4 py-2 text-center text-sm font-semibold text-amber-950 shadow-sm"
+      className="sticky top-0 z-50 w-full border-b border-warning-border bg-warning-surface px-4 py-2 text-center text-sm font-semibold text-warning-text shadow-sm"
     >
       ⚠ MOCK DATA — not real league data. Invented salaries &amp; values, for
       layout only.

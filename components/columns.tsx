@@ -24,9 +24,9 @@ export const columns: ColumnDef<PlayerRow>[] = [
     cell: (info) => {
       const v = info.getValue<string>();
       return v === "FA" ? (
-        <span className="italic text-slate-400">FA</span>
+        <span className="italic text-ink-faint">FA</span>
       ) : (
-        <span className="text-slate-700">{v}</span>
+        <span className="text-ink-muted">{v}</span>
       );
     },
   },
@@ -34,7 +34,7 @@ export const columns: ColumnDef<PlayerRow>[] = [
     accessorKey: "name",
     header: "Player",
     cell: (info) => (
-      <span className="font-medium text-slate-900">{info.getValue<string>()}</span>
+      <span className="font-medium text-ink">{info.getValue<string>()}</span>
     ),
   },
   {
@@ -62,7 +62,7 @@ export const columns: ColumnDef<PlayerRow>[] = [
         header: "KERF Rank",
         enableSorting: false, // a positional label (RB1); sort by value/points instead
         cell: (info) => (
-          <span className="font-semibold text-sky-800">
+          <span className="font-semibold text-yours-text">
             {info.getValue<string>()}
           </span>
         ),
@@ -101,7 +101,7 @@ export const columns: ColumnDef<PlayerRow>[] = [
     cell: (info) => {
       const v = info.getValue<number>();
       const cls =
-        v > 0 ? "text-emerald-600" : v < 0 ? "text-rose-600" : "text-slate-400";
+        v > 0 ? "text-edge-up" : v < 0 ? "text-edge-down" : "text-edge-flat";
       const sign = v > 0 ? "+" : v < 0 ? "−" : "";
       return (
         <span className={`font-bold tabular-nums ${cls}`}>
