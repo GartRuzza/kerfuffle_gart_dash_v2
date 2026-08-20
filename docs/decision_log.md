@@ -47,6 +47,60 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-07 · 2026-08-20 · Roster filtering: 3-way status toggle + Manager dropdown
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Product (UX) |
+| **Decided by** | Owner |
+
+**The question**
+How should the owner filter the table by who holds a player — and, crucially, how do you express "free agents only" (which the Auction and Waiver lenses need)?
+
+**What we decided**
+Two orthogonal controls: a **3-way roster-status toggle** — **All / Rostered / Free Agents** — beside a **Manager dropdown** (All / a specific team). The combined rule (in the `owner` column's `filterFn`, `components/columns.tsx`): if the toggle is **Free Agents**, show only FAs (Manager ignored, dropdown disabled); else if a **specific Manager** is chosen, show that team; else **Rostered** = all rostered minus FAs, **All** = everyone including FAs. This replaced an earlier "Free Agents in the dropdown + an include-FA checkbox" model.
+
+**Why**
+The dropdown-plus-checkbox model couldn't cleanly express "free agents only." Splitting *roster status* (the toggle) from *which manager* (the dropdown) makes every combination meaningful and reads at a glance. The default views rely on it (Auction/Waivers → Free Agents; Trades → Rostered; Start/Sit → a Manager).
+
+**What we gave up**
+A tiny redundancy: with a specific Manager selected, "All" vs "Rostered" makes no difference (a team has no FAs). Accepted — it keeps the two controls independent and predictable.
+
+**What would make us reconsider**
+A real need to view "a team plus the free-agent pool" together, or added positions (K/DST) that change what "rostered" means.
+
+---
+
+### D-06 · 2026-08-20 · Tier bands as a sort-driven, field-specific overlay
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Product (UX), load-bearing |
+| **Decided by** | Owner |
+
+**The question**
+How do tiers appear in the table, and how do they interact with sorting and the position filter?
+
+**What we decided**
+Tiers are **not a column** — they render as **FantasyPros-style band rows** between tier groups, and the behavior is a small state machine centralized in **`lib/tierRules.ts`** (unit-tested):
+- Bands show **only** when the active sort is one of six rank columns; the band set is **specific to the sort field** (Kerf / ECR / Dynasty × overall / positional).
+- **Overall-rank** sort → overall tiers (position filter just narrows rows). **Positional-rank** sort needs a single position: triggering it on a multi-position (All/SuperFlex/Flex) **auto-switches the position to QB**; switching *to* a multi-position while positionally sorted **clears the sort** (back to the default overall order, no bands).
+- Default/load: active Kerf-Ovr-Rank sort → overall Kerf tiers on.
+- For contiguity, every rank column sorts by a **unique derived rank** (the two overall-ECR columns use `ovrEcrRank`/`dynOvrRank`, not the raw ECR which has ties).
+
+**Why**
+It matches the owner's mental model (a tiered board you re-tier by choosing a ranking) and vision principle 4 (tiers, not decimal ranks). Centralizing the rules keeps intricate, coupled behavior testable and in one place.
+
+**What we gave up**
+Simplicity: this is the most intricate UI logic in the app, and tiers are (for now) **mock** bucketings by rank — real tiers come from the engine (Kerf) and FantasyPros (ECR). "Ovr ECR" also now shows a contiguous overall rank rather than the raw consensus number (revisit at ingestion if the raw ECR is wanted).
+
+**What would make us reconsider**
+Real tier data arriving with its own grouping semantics, or the owner wanting tiers visible regardless of sort. Any change goes in `lib/tierRules.ts`, never scattered into components.
+
+---
+
 ### D-05 · 2026-08-20 · Saved views persisted in localStorage; @dnd-kit for column reorder
 
 | | |

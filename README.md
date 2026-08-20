@@ -40,8 +40,10 @@ This project's source of truth is its docs, not any chat history. **Start here:*
 | Layer | What we use |
 | --- | --- |
 | App | **Next.js (App Router) + TypeScript** — one local-first app, web-deployable later. See [`docs/decision_log.md`](docs/decision_log.md) D-01. |
-| Table | **TanStack Table** v8 (sort / filter / grouped columns / editable cells) |
-| Styling | **Tailwind CSS** v3 |
+| Table | **TanStack Table** v8 (sort / filter / column show-hide + reorder / editable cells); **@dnd-kit** for header drag |
+| Styling | **Tailwind CSS** v3 with a semantic design-token layer, dark theme (D-02, D-03) |
+| Testing | **Vitest** — `npm test` (D-04) |
+| Persistence | Browser **localStorage** for saved views only (D-05) |
 | Data | Mock in-repo fixture for now — real CBS + FantasyPros data is deferred (roadmap #2–3). |
 
 ## Running it locally
@@ -53,7 +55,7 @@ npm install     # once
 npm run dev      # then open http://localhost:3000
 ```
 
-That opens the player-table prototype — one screen, mock data, no login. Ceilings you type reset on reload (expected for the prototype).
+That opens the player-table prototype — one screen, mock data, no login. Ceilings you type reset on reload (expected for the prototype). Run the unit tests with `npm test`.
 
 ## How we work
 

@@ -1,96 +1,59 @@
-# Data Model — [PRODUCT NAME]
+# Data Model — Gart Dash
 
 > **How to use this doc**
 > **Owner:** Claude Code. **Any change here needs the product owner's approval before it is made** — schema changes are among the hardest things to reverse once real user data exists.
 > **Update when:** Entities, fields, relationships, or permission rules change. Update it **with** the migration, not after.
 > **This doc contains:** The entities, how they relate, and the rules that protect the data.
 > **This doc never contains:** Speculative tables. If it is not in a migration, it is not in this doc — mark planned entities **(planned)** explicitly.
->
-> **Read this before building any feature that stores data.** It exists to stop each new feature from inventing its own slightly different shape of the same thing.
->
-> *Examples are in italics and refer to a fictional product, "Ledgerly." Delete them as you fill each section in.*
 
-**Last updated:** [YYYY-MM-DD] · **Latest migration:** [name / timestamp]
+**Last updated:** 2026-08-20 · **Latest migration:** none (no database exists yet)
 
 ---
 
-## The entities, in plain English
+## There is no real data model yet — on purpose
 
-*Before the tables: what things exist in this product, and how do they relate? Written so a non-technical reader can check whether it matches how the business actually works — which is the cheapest place to catch a modelling mistake.*
+Gart Dash is currently a **UI prototype on mock data**. There is **no database, no schema, and no migrations.** This is deliberate: per the roadmap, we do not design real data structures until data discovery (roadmap #2–3) proves what CBS and FantasyPros actually expose. The two data shapes that exist today are **not** a schema and must not be treated as one:
 
-> *A **user** is a bookkeeper. She has many **clients**. Each client has many **invoices** (what they are owed) and many **transactions** (what actually moved through the bank). A **match** links one transaction to one invoice — and a match is a record in its own right, not a column, because we need to know who made it, when, and how confident we were.*
+### 1. The mock player fixture — `lib/mockData.ts` / `lib/types.ts`
 
-## Diagram
+A flat, hand-authored + derived array of ~80 players (the `Player` type). It is a **fixture for the UI**, not a persisted entity. When real ingestion lands, this whole module is replaced by a server route returning the same shape; the UI does not change. Fields, in brief:
 
-```
-[user] 1---* [client] 1---* [invoice]
-                  |              |
-                  1              1
-                  *              *
-            [transaction] *---1 [match]
-```
+- **Hand-authored:** `id`, `name`, `pos`, `nflTeam`, `owner` (fantasy manager or `FA`), `kerfValue`, `marketPrice`, `ecr`, `dynastyEcr`, `salary`, `contractYears`, plus a legacy `tier` (unused).
+- **Derived in code (all mock):** `projPts`; the ranks `kerfOvrRank`, `kerfPosRank`, `ovrEcrRank`, `posEcr`, `dynOvrRank`, `dynPosEcr`; and the six tier dimensions `kerfOvrTier`, `kerfPosTier`, `ovrEcrTier`, `posEcrTier`, `dynOvrTier`, `dynPosTier`. Real values come from the CBS/FantasyPros pipeline and the valuation engine later.
+- The editable **`ceiling`** (`PlayerRow`) is in-memory only and resets on reload.
 
-*Keep it text-based so it survives in Git and an agent can read it.*
+⚠ **Do not grow a database around the `Player` type.** If a real schema becomes necessary, **stop and flag the owner** (per Issue #1).
 
-## Entities
+### 2. Saved-view configs — browser localStorage
 
-### [entity_name]
+The only persisted data. Custom **views** (UI config: which columns show, their order, the sort, the filters) are stored under the key `gartdash.customViews.v1` in the browser's localStorage (see `lib/views.ts`, decision [D-05](decision_log.md)). This is **UI configuration, not domain data** — no player, league, or personal data lives there. It is per-browser and not synced.
 
-*[One line: what this represents in the real world, and what it does not.]*
+## Entities (planned)
 
-| Field | Type | Notes / constraints |
-| --- | --- | --- |
-| `id` | uuid | PK |
-| `created_at` | timestamptz | |
-| [field] | [type] | [required? unique? default? what it means] |
-
-**Relationships:** [belongs to X; has many Y]
-**Owned by:** [which user or account can see this row — the rule enforced in code]
-
-> *### match*
-> *Records that we believe a transaction pays an invoice. Not a column on `transaction`, because one payment can cover several invoices.*
->
-> *| Field | Type | Notes |*
-> *| `transaction_id` | uuid | FK → transaction |*
-> *| `invoice_id` | uuid | FK → invoice |*
-> *| `confidence` | numeric | 0–1. Below 0.9 the match goes to the exception queue rather than being applied. |*
-> *| `confirmed_by` | uuid \| null | Null means the system matched it; set means a human accepted it. We must always be able to tell these apart. |*
+**(planned — none built.)** The real entities will be defined during/after data discovery. Expected shape, at a high level (not yet designed, subject to what the sources expose): players, their KERFUFFLE-adjusted values and tiers (engine output), league rosters/contracts/salaries and the transaction log (CBS), and market rankings (FantasyPros). None of this is modelled yet.
 
 ## Rules that protect the data
 
-*The invariants. Things that must never be true, no matter what a feature wants. An agent that breaks one of these has broken the product even if the tests pass.*
-
-- [Rule] — [why]
-
-> *- A transaction may never be matched to an invoice belonging to a different client. This is the error that destroys trust in the product.*
-> *- Nothing is hard-deleted. Bookkeeping is an audit trail; use `deleted_at`.*
-> *- Money is stored in integer minor units (cents), never as a float.*
+- **No schema is introduced without owner approval.** Introducing a real database/schema is a sensitive change (CLAUDE.md) — stop and flag first.
+- **localStorage holds UI config only** — never player, league, or personal data, and nothing sensitive.
+- The mock fixture is the **single** place invented data enters (`lib/mockData.ts`); components consume typed shapes and never hard-code data.
 
 ## Access and permissions
 
-*Who can read and write what, and where that is enforced. Say where in the code the rule lives — a permission rule that exists only in this doc is a permission rule that does not exist.*
-
-| Entity | Who can read | Who can write | Enforced where |
-| --- | --- | --- | --- |
-| [entity] | [rule] | [rule] | [file / policy] |
+Not applicable yet. Single-user, local-only, no accounts, no database, no network. (Vision non-goal: no multi-user, ever, without a deliberate reversal.)
 
 ## AI-generated data
 
-*If any field is produced by a model rather than a human, it must be traceable and distinguishable. Delete this section if the product has no AI-generated content.*
-
-- **Which fields:** [list]
-- **How we know it was AI-generated:** [the column that records it]
-- **What we store about the generation:** [model, prompt version, timestamp, confidence]
-- **Can a human override it?** [yes/no, and how the override is recorded]
+None. No field in the prototype is model-generated; all mock values are hand-authored or deterministically derived in code.
 
 ## Migrations
 
 | | |
 | --- | --- |
-| **Where they live** | [path] |
-| **How to run them** | [command] |
-| **Rules** | Never hand-edit the database. Never edit a migration that has already run — write a new one. |
+| **Where they live** | none yet (no database) |
+| **How to run them** | n/a |
+| **Rules** | When a database is introduced: never hand-edit it; never edit a migration that has already run — write a new one; and update this doc **with** the migration. |
 
 ---
 
-**Related docs:** [`architecture.md`](architecture.md) (where this data sits) · [`decision_log.md`](decision_log.md) (why it is shaped this way) · [`pm/implementation_reality_log.md`](pm/implementation_reality_log.md) (log it there when a data constraint forces a change to the product plan)
+**Related docs:** [`architecture.md`](architecture.md) (where this data sits — the mock-data boundary) · [`decision_log.md`](decision_log.md) (D-05: localStorage for view configs) · [`pm/implementation_reality_log.md`](pm/implementation_reality_log.md) (log it there when a data constraint forces a change to the product plan)
