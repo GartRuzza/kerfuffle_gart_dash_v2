@@ -34,7 +34,7 @@ There is no automated interaction/unit suite yet — deliberately out of scope f
 | # | Do this | You should see | Pass? |
 | --- | --- | --- | --- |
 | 1 | Open the page | One screen: the player table. No login, no other pages. An amber **"MOCK DATA — not real league data"** bar across the top. | ☐ |
-| 2 | Count the columns and read the header | Owner, Player, Pos, Team, Tier, then a blue **"Yours"** group (KERF Value, Ceiling), an **Edge** column, a gray **"The Market"** group (Market Price, ECR, Dynasty ECR), then Salary, Contract. "Showing 79 of 79 players." | ☐ |
+| 2 | Count the columns and read the header | Owner, Player, Pos, Team, Tier, then a blue **"Yours"** group (KERF Rank, Proj Pts, KERF Value, Ceiling), an **Edge** column, a gray **"The Market"** group (Market Price, ECR, Dynasty ECR), then Salary, Contract. "Showing 79 of 79 players." | ☐ |
 | 3 | Scan the Edge column | A mix of green (+) and red (−) dollar values — your value vs. the market gap, readable at a glance. | ☐ |
 | 4 | Click the **"KERF Value"** header | Rows re-sort by that column; clicking again reverses the order (arrow indicator flips). | ☐ |
 | 5 | Click the **"Edge"** header | Rows re-sort by edge; the biggest green (best value vs. market) can be brought to the top. | ☐ |
@@ -46,6 +46,8 @@ There is no automated interaction/unit suite yet — deliberately out of scope f
 | 11 | Note a player's Ceiling box | It is pre-filled with that player's KERF Value and is an editable number box. | ☐ |
 | 12 | Type a new number into a Ceiling box | That row updates immediately and the value stays as you sort/filter. | ☐ |
 | 13 | Reload the page | Ceilings reset to KERF Value — expected and acceptable for this prototype. | ☐ |
+| 14 | Read the **KERF Rank** column, then filter to one position | Each player shows a positional rank from our KERFUFFLE value (e.g. the top WR is WR1). It is a label, so it does not sort — sort by Proj Pts or KERF Value instead. | ☐ |
+| 15 | Click the **Proj Pts** header | Rows re-sort by projected KERFUFFLE points (a mock projection); clicking again reverses it. | ☐ |
 
 ## Edge cases and things that should fail gracefully
 

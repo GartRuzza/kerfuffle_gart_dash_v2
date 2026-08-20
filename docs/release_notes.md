@@ -46,7 +46,8 @@
 **New**
 - You can open Gart Dash locally and use the player table for the first time. Install once with `npm install`, then run `npm run dev` and open http://localhost:3000 — no login, one screen.
 - The table shows ~80 players (real NFL names) across QB/RB/WR/TE, split across the free-agent pool, your Rangoon Raccoons roster, and three rival rosters.
-- Your numbers and the market's numbers sit side by side: KERF Value and an editable Ceiling (tinted blue) next to Market Price, ECR, and Dynasty ECR (tinted gray), with an **Edge** column between them — your value minus market price, green when you're higher, red when lower — so the gap reads at a glance.
+- Your numbers and the market's numbers sit side by side: KERF Rank, Proj Pts, KERF Value, and an editable Ceiling (tinted blue) next to Market Price, ECR, and Dynasty ECR (tinted gray), with an **Edge** column between them — your value minus market price, green when you're higher, red when lower — so the gap reads at a glance.
+- The table already carries **KERF Rank** (our positional rank, e.g. RB1) and **Proj Pts** (projected KERFUFFLE points) — the shared fields the waiver, trade, and start/sit views will reuse, not just the auction ones.
 - Sort by any sortable column. Filter by roster (all players / your roster / free agents / a specific rival team) and by position; the two filters combine.
 - Tiers show as colored badges, so a close call looks close instead of a decimal pecking order.
 - Type your own number in any **Ceiling** box; it updates that row immediately and holds for the session.

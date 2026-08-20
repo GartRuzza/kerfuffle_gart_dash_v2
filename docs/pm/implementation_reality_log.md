@@ -53,6 +53,22 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-19 — Follow-up: shared-table columns for the non-auction flows (Proj Pts, KERF Rank)
+
+**Ticket / Issue:** [#1](../../../../issues/1) (same build cycle) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** Yes — a small, owner-directed scope addition
+
+**What happened**
+Reviewing the auction-focused prototype, the owner noted it lacked fields the *other* flows (waivers, trades, start/sit) need — projections and rankings — and asked where they were. Per the product's "one table, many filters" rule, two are genuine shared-table fields, so at his direction I added mock **Proj Pts** (projected KERFUFFLE points) and **KERF Rank** (positional rank from KERFUFFLE value, e.g. "RB1") to the "Yours" column group. Proj Pts is derived from the mock KERF value (not an independent projection); KERF Rank is computed from value ordering — both clearly mock. The remaining fields the review surfaced (waiver bid range, remaining cap, trade side-by-side + cap legality, start/sit matchup data, drill-into-inputs) are per-lens or engine-dependent and were logged to [`../feature_backlog.md`](../feature_backlog.md) rather than faked onto the auction view.
+
+**Product implications**
+The prototype now shows a fuller version of the shared table, so the owner's reactions cover the non-auction flows too — not just auction prep. Nothing about scope for the *real* build changed; the per-lens fields still arrive with their flows (roadmap Phase 2 / #6–7).
+
+**Deviations / why:** A deliberate step beyond Issue #1's fixed column list, made on the owner's explicit call during review — the kind of change the UI-only prototype exists to invite. `npm run build` passes; render of both columns verified.
+
+**Follow-up decisions needed from the product owner:** None new.
+
+---
+
 ### 2026-08-19 — Player table prototype (UI only, mock data)
 
 **Ticket / Issue:** [#1](../../../../issues/1) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** No

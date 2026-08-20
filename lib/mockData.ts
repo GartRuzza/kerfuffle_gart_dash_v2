@@ -1,4 +1,7 @@
-import { FREE_AGENT, MY_TEAM, type Player } from "./types";
+import { FREE_AGENT, MY_TEAM, POSITIONS, type Player, type Position } from "./types";
+
+/** The hand-authored fields. `kerfRank` and `projPts` are derived below. */
+type RawPlayer = Omit<Player, "kerfRank" | "projPts">;
 
 /**
  * ⚠ MOCK DATA — NOT REAL LEAGUE DATA.
@@ -20,7 +23,7 @@ export const BAVARIAN = "Bavarian Bandits";
 export const NASHVILLE = "Nashville Narwhals";
 export const SYDNEY = "Sydney Sasquatch";
 
-export const MOCK_PLAYERS: Player[] = [
+const RAW_PLAYERS: RawPlayer[] = [
   // ---- Quarterbacks (superflex → premium) ----
   { id: "qb-allen", name: "Josh Allen", pos: "QB", nflTeam: "BUF", owner: MY_TEAM, tier: 1, kerfValue: 68, marketPrice: 60, ecr: 1, dynastyEcr: 2, salary: 62, contractYears: 2 },
   { id: "qb-mahomes", name: "Patrick Mahomes", pos: "QB", nflTeam: "KC", owner: BAVARIAN, tier: 1, kerfValue: 64, marketPrice: 66, ecr: 3, dynastyEcr: 1, salary: 65, contractYears: 2 },
@@ -108,6 +111,38 @@ export const MOCK_PLAYERS: Player[] = [
   { id: "te-kraft", name: "Tucker Kraft", pos: "TE", nflTeam: "GB", owner: FREE_AGENT, tier: 5, kerfValue: 23, marketPrice: 20, ecr: 54, dynastyEcr: 31, salary: 0, contractYears: null },
   { id: "te-loveland", name: "Colston Loveland", pos: "TE", nflTeam: "CHI", owner: FREE_AGENT, tier: 6, kerfValue: 18, marketPrice: 15, ecr: 62, dynastyEcr: 34, salary: 0, contractYears: null },
 ];
+
+// --- Derived "Yours" fields (mock) -----------------------------------------
+// projPts: a mock projected-KERFUFFLE-points number, shaped from KERF value with
+// a small deterministic wobble so it reads like an independent projection rather
+// than a copy of the value. The real one is the engine's output (roadmap #4–6).
+// kerfRank: positional rank taken straight from KERFUFFLE value (best value in a
+// position = rank 1), e.g. "RB1" — our counterpart to the market's ECR.
+
+const POS_PROJ_BASE: Record<Position, number> = { QB: 120, RB: 90, WR: 90, TE: 80 };
+const POS_PROJ_SCALE: Record<Position, number> = { QB: 3.4, RB: 3.6, WR: 3.1, TE: 3.4 };
+
+function mockProjPts(p: RawPlayer): number {
+  const texture = ((p.ecr * 3 + p.dynastyEcr) % 9) - 4;
+  return Math.round(
+    POS_PROJ_BASE[p.pos] + p.kerfValue * POS_PROJ_SCALE[p.pos] + texture,
+  );
+}
+
+const kerfRankById: Record<string, number> = {};
+for (const pos of POSITIONS) {
+  RAW_PLAYERS.filter((p) => p.pos === pos)
+    .sort((a, b) => b.kerfValue - a.kerfValue)
+    .forEach((p, i) => {
+      kerfRankById[p.id] = i + 1;
+    });
+}
+
+export const MOCK_PLAYERS: Player[] = RAW_PLAYERS.map((p) => ({
+  ...p,
+  projPts: mockProjPts(p),
+  kerfRank: `${p.pos}${kerfRankById[p.id]}`,
+}));
 
 /** Distinct fantasy-team names (excludes free agents), owner's team first. */
 export const TEAMS: string[] = [

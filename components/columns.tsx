@@ -58,6 +58,23 @@ export const columns: ColumnDef<PlayerRow>[] = [
     header: "Yours",
     columns: [
       {
+        accessorKey: "kerfRank",
+        header: "KERF Rank",
+        enableSorting: false, // a positional label (RB1); sort by value/points instead
+        cell: (info) => (
+          <span className="font-semibold text-sky-800">
+            {info.getValue<string>()}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "projPts",
+        header: "Proj Pts",
+        cell: (info) => (
+          <span className="tabular-nums">{info.getValue<number>()}</span>
+        ),
+      },
+      {
         accessorKey: "kerfValue",
         header: "KERF Value",
         cell: (info) => (
@@ -144,6 +161,11 @@ export const columns: ColumnDef<PlayerRow>[] = [
 ];
 
 /** Leaf column ids that belong to the "Yours" group (for tinting). */
-export const YOURS_COLUMNS = new Set(["kerfValue", "ceiling"]);
+export const YOURS_COLUMNS = new Set([
+  "kerfRank",
+  "projPts",
+  "kerfValue",
+  "ceiling",
+]);
 /** Leaf column ids that belong to the "The Market" group (for tinting). */
 export const MARKET_COLUMNS = new Set(["marketPrice", "ecr", "dynastyEcr"]);

@@ -1,4 +1,4 @@
-# Feature Backlog — [PRODUCT NAME]
+# Feature Backlog — Gart Dash
 
 > **How to use this doc**
 > **Owner:** Shared. Anyone — you, PM Claude, Claude Code — may add to it.
@@ -10,7 +10,7 @@
 >
 > *Examples are in italics and refer to a fictional product, "Ledgerly." Delete them as you fill each section in.*
 
-**Last updated:** [YYYY-MM-DD]
+**Last updated:** 2026-08-19
 
 ---
 
@@ -20,9 +20,13 @@
 
 | Added | Idea | Where it came from |
 | --- | --- | --- |
-| [YYYY-MM-DD] | [one line] | [user, support ticket, our own head, a QA failure] |
+| 2026-08-19 | **Waiver: suggested FAB bid-range column** — KERF value run through the league price curve, historical FAB winning bids as comparables, bounded by rivals' remaining cap. A per-lens add-on to the shared table, not a base column. Belongs to the waiver lens (roadmap Phase 2 #1). | Owner review of the Issue #1 prototype |
+| 2026-08-19 | **Remaining cap / FAB space indicator** — so bids and ceilings can be weighed against what's left. Ties to the auction cap-sum check (roadmap #7) and the waiver lens. | Owner review of the Issue #1 prototype |
+| 2026-08-19 | **Trade: side-by-side comparison + cap-legality check** — both sides in KERFUFFLE points, roster-aware value, contracts vs. curve, $500 legality for both teams. Per-lens add-on for the trade lens (roadmap Phase 2 #2). | Owner review of the Issue #1 prototype |
+| 2026-08-19 | **Start/sit: matchup / this-week data** — opponent and weekly projection on the roster-filtered table. Needs a weekly data pipeline; not modeled yet (roadmap "Later"). | Owner review of the Issue #1 prototype |
+| 2026-08-19 | **Drill-into-inputs** ("why did RB18 become RB11") — expose the inputs behind each KERF value/rank. Named in Issue #1 as the *next* prototype iteration; needs the real engine (roadmap #6). | Owner review of the Issue #1 prototype |
 
-> *| 2026-03-20 | Let the user map CSV columns herself when we don't recognize the bank format | Third support email this month — same problem every time |*
+> These five were surfaced when the owner reviewed the auction-focused prototype and asked where the fields for the *other* flows live. Two general shared-table fields he asked for — **Projected KERFUFFLE points** and **KERF Rank** (positional) — were added to the prototype immediately (mock); the five above are per-lens or engine-dependent and wait for their flows.
 
 ## Candidates — thought about, not scheduled
 

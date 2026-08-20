@@ -28,6 +28,10 @@ export interface Player {
   owner: string;
   /** Tier group; 1 = best. Small integers — grouping, not a decimal rank. */
   tier: number;
+  /** "YOURS": our positional rank from KERFUFFLE value, e.g. "RB1". Derived. */
+  kerfRank: string;
+  /** "YOURS": projected KERFUFFLE fantasy points (mock — the engine's raw output). */
+  projPts: number;
   /** "YOURS": the tool's KERFUFFLE-adjusted value, in $. */
   kerfValue: number;
   /** "THE MARKET": expected auction / market price, in $. */
