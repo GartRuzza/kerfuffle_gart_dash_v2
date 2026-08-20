@@ -28,7 +28,7 @@ export default function EditableCeilingCell({
         const next = e.target.value === "" ? 0 : Number(e.target.value);
         table.options.meta?.updateCeiling(row.index, Number.isNaN(next) ? 0 : next);
       }}
-      className="w-16 rounded border border-yours-border bg-surface px-1.5 py-0.5 text-right tabular-nums text-yours-strong shadow-sm focus:border-yours-focus focus:outline-none focus:ring-1 focus:ring-yours-focus"
+      className="w-16 rounded border border-line-strong bg-surface-raised px-1.5 py-0.5 text-right tabular-nums text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
     />
   );
 }

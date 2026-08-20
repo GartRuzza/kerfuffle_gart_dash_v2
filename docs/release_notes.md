@@ -41,6 +41,21 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-20 — Table redesign, part 1 (new dark look + more columns)
+
+**New / Improved**
+- The whole table has a new **dark dashboard look** with a teal accent, tighter rows, and a centered "Gart Dash" title.
+- **Position is now a colored badge** — QB green, RB red, WR blue, TE tan (DST purple is ready for later).
+- **Tiers now show as banded separators** (like FantasyPros) instead of a colored column. They appear when you sort by a ranking column, and the bands match whatever ranking you sorted by — Kerf or ECR or Dynasty, overall or by-position. Sort by something that isn't a ranking (e.g. Proj Points) and the bands step aside.
+- **More ranking columns:** Kerf Overall Rank and Kerf Position Rank; ECR split into Overall and Position; Dynasty split into Overall and Position.
+- Columns are now grouped by tint into **GartStats / Market / Contract Info**, with a small color key. "Ceiling" and "Edge" are unchanged in meaning; "Market Price" now reads "Market Value."
+- A **Position dropdown** (All, SuperFlex, Flex, or a single position) replaces the position buttons. Picking a single position while sorted by a position-rank shows that position's tiers; the app handles the awkward combinations for you.
+
+**Known issues / not yet done**
+- Everything is still **mock data** (the amber banner says so); the six tier sets are placeholder groupings until the real engine and rankings exist.
+- The filter-bar overhaul (one team dropdown + a free-agent toggle + choosing/reordering columns + saving custom views) is **coming in part 2**. The data dictionary is **part 3**.
+- Ceilings still reset on reload; still local-only.
+
 ## 2026-08-19 — Player table prototype (local, mock data)
 
 **New**

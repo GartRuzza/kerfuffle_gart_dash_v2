@@ -1,81 +1,82 @@
 import type { Config } from "tailwindcss";
-import colors from "tailwindcss/colors";
 
 /**
- * Design tokens — the single source of truth for Gart Dash's look.
+ * Design tokens — the single source of truth for Gart Dash's look (dark theme).
  *
- * Style components with these SEMANTIC names (role, not hue): `bg-yours-surface`,
- * `text-edge-up`, `bg-tier-1`, `text-ink-muted`, `border-line` — NEVER raw Tailwind
- * colors like `bg-sky-50` in a component. To restyle the app (or add dark mode / a
- * rebrand), change the values HERE and every current and future component follows.
+ * Style components with these SEMANTIC names (role, not hue): `bg-surface`,
+ * `text-ink-muted`, `bg-pos-qb`, `bg-group-gart`, `text-accent` — NEVER raw
+ * Tailwind colors in a component. To restyle / rebrand / add a light theme later,
+ * change values HERE and every component follows.
  *
- * See docs/architecture.md → "Styling & design tokens" and decision_log D-02.
+ * See docs/architecture.md → "Styling & design tokens" and decision_log D-02, D-03.
  */
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        // --- Neutral base (the app's grays) ---
+        // --- Neutral base (dark) ---
         surface: {
-          DEFAULT: colors.white, // cards, inputs, buttons
-          muted: colors.slate[50], // page background
-          subtle: colors.slate[100], // hover / faint fills
+          DEFAULT: "#161d2b", // cards, table surface
+          muted: "#0f1420", // page background (darkest)
+          subtle: "#1e2738", // hover / raised rows
+          raised: "#232d40", // controls (inputs, buttons)
         },
         ink: {
-          DEFAULT: colors.slate[900], // primary text
-          muted: colors.slate[600], // secondary text
-          subtle: colors.slate[500], // labels, captions
-          faint: colors.slate[400], // de-emphasized / empty
+          DEFAULT: "#e6ebf2", // primary text
+          muted: "#9aa7bd", // secondary text
+          subtle: "#6b7a93", // labels, captions
+          faint: "#4a5670", // disabled / empty
         },
         line: {
-          DEFAULT: colors.slate[200], // default borders / dividers
-          subtle: colors.slate[100], // faint row dividers
-          strong: colors.slate[300], // input / control borders
+          DEFAULT: "#2a3548", // default borders / dividers
+          subtle: "#212b3d", // faint row dividers
+          strong: "#3a4760", // control borders / emphasis
         },
-        brand: {
-          DEFAULT: colors.slate[900], // primary/active control
-          contrast: colors.white, // text on brand
+        // --- Teal/cyan accent ---
+        accent: {
+          DEFAULT: "#2dd4bf", // active / selected / links
+          strong: "#14b8a6", // pressed
+          soft: "#193640", // subtle accent-tinted fill
+          contrast: "#04231f", // text on an accent fill
+        },
+        brand: { DEFAULT: "#2dd4bf", contrast: "#04231f" },
+
+        // --- Position badge fills (white text sits on these) ---
+        pos: {
+          qb: "#15803d", // dark green
+          rb: "#b91c1c", // dark red
+          wr: "#1d4ed8", // dark blue
+          te: "#8a6a3b", // dark tan
+          dst: "#7e22ce", // purple
         },
 
-        // --- "Yours": the owner's KERFUFFLE numbers ---
-        yours: {
-          surface: colors.sky[50], // column tint
-          header: colors.sky[100], // group-header tint
-          border: colors.sky[300], // input border
-          focus: colors.sky[500], // input focus ring
-          text: colors.sky[800],
-          strong: colors.sky[900],
+        // --- Column-group tints (subtle, on dark) + a legend swatch each ---
+        group: {
+          gart: "#15242e", // GartStats (teal-leaning)
+          "gart-key": "#2dd4bf",
+          market: "#1a2233", // Market (neutral)
+          "market-key": "#8aa0c6",
+          contract: "#211e17", // Contract Info (warm)
+          "contract-key": "#c9a24b",
         },
-        // --- "The Market": consensus / price ---
-        market: {
-          surface: colors.slate[100], // column tint
-          header: colors.slate[200], // group-header tint
-          text: colors.slate[700],
-        },
-        // --- Edge: the gap between the two ---
-        edge: {
-          up: colors.emerald[600], // we value above market
-          down: colors.rose[600], // we value below market
-          flat: colors.slate[400], // no gap
-          surface: colors.emerald[50], // column tint
-          text: colors.emerald[800], // group-header text
-        },
-        // --- Tier badges (1 = best) ---
+
+        // --- Tier separator band (FantasyPros-style) ---
         tier: {
-          "1": colors.violet[600],
-          "2": colors.blue[600],
-          "3": colors.emerald[600],
-          "4": colors.amber[500],
-          "5": colors.orange[500],
-          "6": colors.rose[500],
+          band: "#1b2740",
+          text: "#93a4c6",
+          line: "#3a4760",
         },
-        // --- MOCK-DATA warning banner ---
+
+        // --- Edge column (plain, no up/down color) ---
+        edge: { DEFAULT: "#c3ccdb" },
+
+        // --- MOCK-DATA warning banner (stays high-visibility on dark) ---
         warning: {
-          surface: colors.amber[400],
-          border: colors.amber[500],
-          text: colors.amber[950],
-          hover: colors.amber[50], // row hover accent
+          surface: "#f59e0b",
+          border: "#b45309",
+          text: "#1a1205",
+          hover: "#1f2636",
         },
       },
     },

@@ -1,22 +1,30 @@
-import type { ColumnDef } from "@tanstack/react-table";
-import type { PlayerRow } from "@/lib/types";
-import TierBadge from "./TierBadge";
+import type { CellContext, ColumnDef } from "@tanstack/react-table";
+import { FLEX_POSITIONS, type PlayerRow, type Position } from "@/lib/types";
+import PositionBadge from "./PositionBadge";
 import EditableCeilingCell from "./EditableCeilingCell";
 
 const dollars = (n: number) => `$${n}`;
 
+/** Positional-rank cells render as "WR3" (position + within-position rank). */
+const posRankCell = (info: CellContext<PlayerRow, unknown>) => (
+  <span className="tabular-nums">
+    {info.row.original.pos}
+    {info.getValue<number>()}
+  </span>
+);
+
+const num = (info: CellContext<PlayerRow, unknown>) => (
+  <span className="tabular-nums">{info.getValue<number>()}</span>
+);
+
 /**
- * Column definitions for the player table.
- *
- * The "both numbers" pairing (vision principle 2) is expressed structurally:
- *  - a "Yours" group  → KERF Value + editable Ceiling
- *  - an "Edge" column → KERF Value − Market Price (the gap, as one sortable number)
- *  - a "The Market" group → Market Price + ECR + Dynasty ECR
- *
- * Group/leaf ids are used by PlayerTable to tint the columns (Yours vs Market)
- * so the gap reads at a glance.
+ * Flat column set. Groupings (GartStats / Market / Contract Info) are shown by
+ * cell tint + a legend, not by spanning headers. The six rank columns
+ * (kerfOvrRank, kerfPosRank, ecr, posEcr, dynastyEcr, dynPosEcr) drive tier bands
+ * — see lib/tierRules.ts.
  */
 export const columns: ColumnDef<PlayerRow>[] = [
+  // --- Identity ---
   {
     accessorKey: "owner",
     header: "Owner",
@@ -40,59 +48,38 @@ export const columns: ColumnDef<PlayerRow>[] = [
   {
     accessorKey: "pos",
     header: "Pos",
-    filterFn: "equalsString",
+    enableSorting: false,
+    filterFn: (row, columnId, value: string) => {
+      const pos = row.getValue(columnId) as Position;
+      if (value === "ALL" || value === "SUPERFLEX") return true;
+      if (value === "FLEX") return FLEX_POSITIONS.includes(pos);
+      return pos === value;
+    },
+    cell: (info) => <PositionBadge pos={info.getValue<string>()} />,
+  },
+  { accessorKey: "nflTeam", header: "Team" },
+
+  // --- GartStats ---
+  { accessorKey: "kerfOvrRank", header: "Kerf Ovr Rank", cell: num },
+  { accessorKey: "kerfPosRank", header: "Kerf Pos Rank", cell: posRankCell },
+  { accessorKey: "projPts", header: "Proj Points", cell: num },
+  {
+    accessorKey: "kerfValue",
+    header: "Kerf Value",
+    cell: (info) => (
+      <span className="font-semibold tabular-nums">
+        {dollars(info.getValue<number>())}
+      </span>
+    ),
   },
   {
-    accessorKey: "nflTeam",
-    header: "Team",
-  },
-  {
-    accessorKey: "tier",
-    header: "Tier",
-    cell: (info) => <TierBadge tier={info.getValue<number>()} />,
+    accessorKey: "ceiling",
+    header: "Ceiling",
+    enableSorting: true,
+    cell: EditableCeilingCell,
   },
 
-  // ---- "Yours" group: the owner's numbers ----
-  {
-    id: "yoursGroup",
-    header: "Yours",
-    columns: [
-      {
-        accessorKey: "kerfRank",
-        header: "KERF Rank",
-        enableSorting: false, // a positional label (RB1); sort by value/points instead
-        cell: (info) => (
-          <span className="font-semibold text-yours-text">
-            {info.getValue<string>()}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "projPts",
-        header: "Proj Pts",
-        cell: (info) => (
-          <span className="tabular-nums">{info.getValue<number>()}</span>
-        ),
-      },
-      {
-        accessorKey: "kerfValue",
-        header: "KERF Value",
-        cell: (info) => (
-          <span className="font-semibold tabular-nums">
-            {dollars(info.getValue<number>())}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "ceiling",
-        header: "Ceiling",
-        enableSorting: true,
-        cell: EditableCeilingCell,
-      },
-    ],
-  },
-
-  // ---- Edge: the gap between the two, as one sortable number ----
+  // --- Edge (plain, no color) ---
   {
     id: "edge",
     header: "Edge",
@@ -100,54 +87,35 @@ export const columns: ColumnDef<PlayerRow>[] = [
     sortDescFirst: true,
     cell: (info) => {
       const v = info.getValue<number>();
-      const cls =
-        v > 0 ? "text-edge-up" : v < 0 ? "text-edge-down" : "text-edge-flat";
       const sign = v > 0 ? "+" : v < 0 ? "−" : "";
       return (
-        <span className={`font-bold tabular-nums ${cls}`}>
+        <span className="tabular-nums text-edge">
           {sign}${Math.abs(v)}
         </span>
       );
     },
   },
 
-  // ---- "The Market" group: the consensus / price numbers ----
+  // --- Market ---
   {
-    id: "marketGroup",
-    header: "The Market",
-    columns: [
-      {
-        accessorKey: "marketPrice",
-        header: "Market Price",
-        cell: (info) => (
-          <span className="tabular-nums">{dollars(info.getValue<number>())}</span>
-        ),
-      },
-      {
-        accessorKey: "ecr",
-        header: "ECR",
-        cell: (info) => (
-          <span className="tabular-nums">{info.getValue<number>()}</span>
-        ),
-      },
-      {
-        accessorKey: "dynastyEcr",
-        header: "Dynasty ECR",
-        cell: (info) => (
-          <span className="tabular-nums">{info.getValue<number>()}</span>
-        ),
-      },
-    ],
+    accessorKey: "marketPrice",
+    header: "Market Value",
+    cell: (info) => (
+      <span className="tabular-nums">{dollars(info.getValue<number>())}</span>
+    ),
   },
+  { accessorKey: "ecr", header: "Ovr ECR", cell: num },
+  { accessorKey: "posEcr", header: "Pos ECR", cell: posRankCell },
+  { accessorKey: "dynastyEcr", header: "Dyn Ovr ECR", cell: num },
+  { accessorKey: "dynPosEcr", header: "Dyn Pos ECR", cell: posRankCell },
 
+  // --- Contract Info ---
   {
     accessorKey: "salary",
     header: "Salary",
     cell: (info) => {
       const v = info.getValue<number>();
-      return (
-        <span className="tabular-nums">{v > 0 ? dollars(v) : "—"}</span>
-      );
+      return <span className="tabular-nums">{v > 0 ? dollars(v) : "—"}</span>;
     },
   },
   {
@@ -160,12 +128,19 @@ export const columns: ColumnDef<PlayerRow>[] = [
   },
 ];
 
-/** Leaf column ids that belong to the "Yours" group (for tinting). */
-export const YOURS_COLUMNS = new Set([
-  "kerfRank",
+/** Leaf column ids per group, for cell tinting. */
+export const GART_COLUMNS = new Set([
+  "kerfOvrRank",
+  "kerfPosRank",
   "projPts",
   "kerfValue",
   "ceiling",
 ]);
-/** Leaf column ids that belong to the "The Market" group (for tinting). */
-export const MARKET_COLUMNS = new Set(["marketPrice", "ecr", "dynastyEcr"]);
+export const MARKET_COLUMNS = new Set([
+  "marketPrice",
+  "ecr",
+  "posEcr",
+  "dynastyEcr",
+  "dynPosEcr",
+]);
+export const CONTRACT_COLUMNS = new Set(["salary", "contractYears"]);

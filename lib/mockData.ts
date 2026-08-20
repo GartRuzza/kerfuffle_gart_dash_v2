@@ -1,7 +1,20 @@
 import { FREE_AGENT, MY_TEAM, POSITIONS, type Player, type Position } from "./types";
 
-/** The hand-authored fields. `kerfRank` and `projPts` are derived below. */
-type RawPlayer = Omit<Player, "kerfRank" | "projPts">;
+/** The hand-authored fields. Everything else on `Player` is derived below. */
+type RawPlayer = Omit<
+  Player,
+  | "projPts"
+  | "kerfOvrRank"
+  | "kerfPosRank"
+  | "posEcr"
+  | "dynPosEcr"
+  | "kerfOvrTier"
+  | "kerfPosTier"
+  | "ovrEcrTier"
+  | "posEcrTier"
+  | "dynOvrTier"
+  | "dynPosTier"
+>;
 
 /**
  * ⚠ MOCK DATA — NOT REAL LEAGUE DATA.
@@ -112,12 +125,12 @@ const RAW_PLAYERS: RawPlayer[] = [
   { id: "te-loveland", name: "Colston Loveland", pos: "TE", nflTeam: "CHI", owner: FREE_AGENT, tier: 6, kerfValue: 18, marketPrice: 15, ecr: 62, dynastyEcr: 34, salary: 0, contractYears: null },
 ];
 
-// --- Derived "Yours" fields (mock) -----------------------------------------
-// projPts: a mock projected-KERFUFFLE-points number, shaped from KERF value with
-// a small deterministic wobble so it reads like an independent projection rather
-// than a copy of the value. The real one is the engine's output (roadmap #4–6).
-// kerfRank: positional rank taken straight from KERFUFFLE value (best value in a
-// position = rank 1), e.g. "RB1" — our counterpart to the market's ECR.
+// --- Derived fields (all mock) ---------------------------------------------
+// projPts: a mock projected-KERFUFFLE-points number, shaped from Kerf value with
+// a small deterministic wobble so it reads like an independent projection.
+// Ranks: overall + positional, by Kerf value / ECR / dynasty ECR.
+// Tiers: one dimension per rank column that shows bands. Real tiers come from the
+// engine (Kerf) and FantasyPros (ECR) later — these are bucketed by rank for now.
 
 const POS_PROJ_BASE: Record<Position, number> = { QB: 120, RB: 90, WR: 90, TE: 80 };
 const POS_PROJ_SCALE: Record<Position, number> = { QB: 3.4, RB: 3.6, WR: 3.1, TE: 3.4 };
@@ -129,20 +142,68 @@ function mockProjPts(p: RawPlayer): number {
   );
 }
 
-const kerfRankById: Record<string, number> = {};
-for (const pos of POSITIONS) {
-  RAW_PLAYERS.filter((p) => p.pos === pos)
-    .sort((a, b) => b.kerfValue - a.kerfValue)
-    .forEach((p, i) => {
-      kerfRankById[p.id] = i + 1;
-    });
+// Cumulative upper-bound of each tier's rank. Rank 1..6 = tier 1, 7..12 = tier 2…
+const OVERALL_TIER_BREAKS = [6, 12, 20, 30, 42, 56, 72];
+const POSITIONAL_TIER_BREAKS = [3, 6, 10, 15, 21];
+
+/** Map a 1-based rank to a tier number given cumulative break points. */
+export function tierFromRank(rank: number, breaks: number[]): number {
+  for (let i = 0; i < breaks.length; i++) {
+    if (rank <= breaks[i]) return i + 1;
+  }
+  return breaks.length + 1;
 }
 
-export const MOCK_PLAYERS: Player[] = RAW_PLAYERS.map((p) => ({
-  ...p,
-  projPts: mockProjPts(p),
-  kerfRank: `${p.pos}${kerfRankById[p.id]}`,
-}));
+/** Assign 1-based ranks over a list, best-first per `betterFirst`. */
+function rankMap(
+  players: RawPlayer[],
+  betterFirst: (a: RawPlayer, b: RawPlayer) => number,
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  [...players].sort(betterFirst).forEach((p, i) => {
+    out[p.id] = i + 1;
+  });
+  return out;
+}
+
+// Overall ranks (best first)
+const kerfOvrRankById = rankMap(RAW_PLAYERS, (a, b) => b.kerfValue - a.kerfValue);
+const ovrEcrRankById = rankMap(RAW_PLAYERS, (a, b) => a.ecr - b.ecr);
+const dynOvrRankById = rankMap(RAW_PLAYERS, (a, b) => a.dynastyEcr - b.dynastyEcr);
+
+// Positional ranks (within each position)
+const kerfPosRankById: Record<string, number> = {};
+const posEcrById: Record<string, number> = {};
+const dynPosById: Record<string, number> = {};
+for (const pos of POSITIONS) {
+  const group = RAW_PLAYERS.filter((p) => p.pos === pos);
+  Object.assign(kerfPosRankById, rankMap(group, (a, b) => b.kerfValue - a.kerfValue));
+  Object.assign(posEcrById, rankMap(group, (a, b) => a.ecr - b.ecr));
+  Object.assign(dynPosById, rankMap(group, (a, b) => a.dynastyEcr - b.dynastyEcr));
+}
+
+export const MOCK_PLAYERS: Player[] = RAW_PLAYERS.map((p): Player => {
+  const kerfOvrRank = kerfOvrRankById[p.id];
+  const kerfPosRank = kerfPosRankById[p.id];
+  const posEcr = posEcrById[p.id];
+  const dynPosEcr = dynPosById[p.id];
+  const ovrEcrRank = ovrEcrRankById[p.id];
+  const dynOvrRank = dynOvrRankById[p.id];
+  return {
+    ...p,
+    projPts: mockProjPts(p),
+    kerfOvrRank,
+    kerfPosRank,
+    posEcr,
+    dynPosEcr,
+    kerfOvrTier: tierFromRank(kerfOvrRank, OVERALL_TIER_BREAKS),
+    kerfPosTier: tierFromRank(kerfPosRank, POSITIONAL_TIER_BREAKS),
+    ovrEcrTier: tierFromRank(ovrEcrRank, OVERALL_TIER_BREAKS),
+    posEcrTier: tierFromRank(posEcr, POSITIONAL_TIER_BREAKS),
+    dynOvrTier: tierFromRank(dynOvrRank, OVERALL_TIER_BREAKS),
+    dynPosTier: tierFromRank(dynPosEcr, POSITIONAL_TIER_BREAKS),
+  };
+}).sort((a, b) => a.kerfOvrRank - b.kerfOvrRank);
 
 /** Distinct fantasy-team names (excludes free agents), owner's team first. */
 export const TEAMS: string[] = [

@@ -47,6 +47,56 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-04 · 2026-08-20 · Vitest for unit testing
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Technical |
+| **Decided by** | Claude Code + owner request for strong validations |
+
+**The question**
+How do we validate the app's growing pure logic (mock-data derivation, the tier/sort/position state machine) beyond build + eyeballing?
+
+**What we decided**
+Add **Vitest** as the test runner (`npm test`), with unit tests co-located in `lib/*.test.ts`. Tests cover the pure logic only; UI interaction checks stay manual for now.
+
+**Why**
+The owner asked for a strong validation gate at each component. The tier state machine and derived ranks/tiers are exactly the kind of tricky pure logic that benefits from fast unit tests. Vitest is TS-native, near-zero-config with our stack, and reusable as the app grows.
+
+**What we gave up**
+A new dev dependency and the small upkeep of tests. Accepted — it directly serves correctness and the owner's request.
+
+**What would make us reconsider**
+Nothing likely. If we later add component/E2E testing we'd extend (Testing Library / Playwright), not replace, Vitest.
+
+---
+
+### D-03 · 2026-08-20 · Dark theme (Gamecast-style), dark-only for now
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Both (product look + technical) |
+| **Decided by** | Owner |
+
+**The question**
+What visual direction should the table take — and light, dark, or both?
+
+**What we decided**
+A **dark, Gamecast-style** theme with a teal/cyan accent and compact rows, **dark-only** for now (no light/dark toggle yet). Expressed entirely through the design tokens (D-02).
+
+**Why**
+The owner's primary reference (Gamecast) is dark; dark-only avoids ~1.5–2× the styling/testing work of maintaining both themes for a single-user local prototype. The token layer keeps a future light theme cheap.
+
+**What we gave up**
+A light mode (and the FantasyPros-style light look). Recoverable later: because colors are tokens, adding a light theme is a config/variant change, not a rewrite.
+
+**What would make us reconsider**
+The owner wanting to present/use the tool somewhere a light theme reads better, or accessibility needs. Then we add a light token set + a toggle.
+
+---
+
 ### D-02 · 2026-08-19 · Semantic design-token layer for styling
 
 | | |

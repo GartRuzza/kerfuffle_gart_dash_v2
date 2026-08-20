@@ -1,39 +1,49 @@
 "use client";
 
-import { FREE_AGENT, MY_TEAM, POSITIONS, type Position } from "@/lib/types";
+import { FREE_AGENT, MY_TEAM, type PositionFilter } from "@/lib/types";
 
 /** "ALL" = no roster filter; "FA" = free agents; otherwise a fantasy team name. */
 export type RosterFilter = string;
-/** "ALL" = no position filter; otherwise a Position. */
-export type PosFilter = "ALL" | Position;
 
 interface Props {
   teams: string[];
   rosterFilter: RosterFilter;
   onRosterChange: (v: RosterFilter) => void;
-  posFilter: PosFilter;
-  onPosChange: (v: PosFilter) => void;
+  positionFilter: PositionFilter;
+  onPositionChange: (v: PositionFilter) => void;
   shown: number;
   total: number;
 }
 
+const POSITION_OPTIONS: { value: PositionFilter; label: string }[] = [
+  { value: "ALL", label: "All Positions" },
+  { value: "SUPERFLEX", label: "SuperFlex (QB/RB/WR/TE)" },
+  { value: "FLEX", label: "Flex (RB/WR/TE)" },
+  { value: "QB", label: "QB" },
+  { value: "RB", label: "RB" },
+  { value: "WR", label: "WR" },
+  { value: "TE", label: "TE" },
+];
+
 const btn = (active: boolean) =>
   `rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
     active
-      ? "bg-brand text-brand-contrast shadow"
-      : "bg-surface text-ink-muted ring-1 ring-line-strong hover:bg-surface-subtle"
+      ? "bg-accent text-accent-contrast shadow"
+      : "bg-surface-raised text-ink-muted ring-1 ring-line-strong hover:bg-surface-subtle"
   }`;
+
+const selectCls =
+  "rounded-md border border-line-strong bg-surface-raised px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
 
 export default function FilterBar({
   teams,
   rosterFilter,
   onRosterChange,
-  posFilter,
-  onPosChange,
+  positionFilter,
+  onPositionChange,
   shown,
   total,
 }: Props) {
-  // Rival teams = everyone in the picker who isn't the owner's team.
   const rivals = teams.filter((t) => t !== MY_TEAM);
 
   return (
@@ -42,34 +52,21 @@ export default function FilterBar({
         <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-ink-subtle">
           Roster
         </span>
-        <button
-          type="button"
-          className={btn(rosterFilter === "ALL")}
-          onClick={() => onRosterChange("ALL")}
-        >
+        <button type="button" className={btn(rosterFilter === "ALL")} onClick={() => onRosterChange("ALL")}>
           All players
         </button>
-        <button
-          type="button"
-          className={btn(rosterFilter === MY_TEAM)}
-          onClick={() => onRosterChange(MY_TEAM)}
-        >
+        <button type="button" className={btn(rosterFilter === MY_TEAM)} onClick={() => onRosterChange(MY_TEAM)}>
           My roster
         </button>
-        <button
-          type="button"
-          className={btn(rosterFilter === FREE_AGENT)}
-          onClick={() => onRosterChange(FREE_AGENT)}
-        >
+        <button type="button" className={btn(rosterFilter === FREE_AGENT)} onClick={() => onRosterChange(FREE_AGENT)}>
           Free agents
         </button>
-
         <label className="ml-1 flex items-center gap-1.5 text-sm text-ink-muted">
           <span className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
             A team
           </span>
           <select
-            className="rounded-md border border-line-strong bg-surface px-2 py-1.5 text-sm text-ink focus:border-ink-subtle focus:outline-none focus:ring-1 focus:ring-ink-subtle"
+            className={selectCls}
             value={rivals.includes(rosterFilter) ? rosterFilter : ""}
             onChange={(e) => {
               if (e.target.value) onRosterChange(e.target.value);
@@ -89,27 +86,20 @@ export default function FilterBar({
         <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-ink-subtle">
           Position
         </span>
-        <button
-          type="button"
-          className={btn(posFilter === "ALL")}
-          onClick={() => onPosChange("ALL")}
+        <select
+          className={selectCls}
+          value={positionFilter}
+          onChange={(e) => onPositionChange(e.target.value as PositionFilter)}
         >
-          All
-        </button>
-        {POSITIONS.map((p) => (
-          <button
-            key={p}
-            type="button"
-            className={btn(posFilter === p)}
-            onClick={() => onPosChange(p)}
-          >
-            {p}
-          </button>
-        ))}
+          {POSITION_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
 
         <span className="ml-auto text-sm text-ink-subtle">
-          Showing <span className="font-semibold text-ink">{shown}</span> of{" "}
-          {total} players
+          Showing <span className="font-semibold text-ink">{shown}</span> of {total} players
         </span>
       </div>
     </div>

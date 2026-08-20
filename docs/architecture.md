@@ -8,7 +8,7 @@
 >
 > **Describe what is real.** If a component is planned but not built, mark it **(planned)** explicitly.
 
-**Last updated:** 2026-08-19 · **Reflects commit:** feat/issue-1-player-table-prototype (Issue #1)
+**Last updated:** 2026-08-20 · **Reflects commit:** feat/issue-1-player-table-prototype (table redesign, Phase 1)
 
 ---
 
@@ -24,7 +24,8 @@ Everything the product will become — CBS + FantasyPros ingestion, the valuatio
 | --- | --- | --- | --- |
 | Frontend | Next.js (App Router) + React + TypeScript | One language across the whole app; best-in-class React ecosystem for a rich interactive table; local now, web-deployable later with no rework | [D-01](decision_log.md) |
 | Data grid | [TanStack Table](https://tanstack.com/table) v8 | Handles exactly the sort / filter / grouped-columns / editable-cell behavior that *is* the product | D-01 |
-| Styling | [Tailwind CSS](https://tailwindcss.com) v3 + a semantic design-token layer | Fast, consistent styling in-markup; a single-source-of-truth palette so every component stays consistent and a restyle is one file | D-01, D-02 |
+| Styling | [Tailwind CSS](https://tailwindcss.com) v3 + a semantic design-token layer, **dark theme** | Fast, consistent styling in-markup; a single-source-of-truth palette so every component stays consistent and a restyle is one file | D-01, D-02, D-03 |
+| Testing | [Vitest](https://vitest.dev) (`npm test`) | Fast, TS-native unit tests for the pure logic (mock-data derivation, tier/sort/position rules) | D-04 |
 | Data source | In-repo mock fixture (`lib/mockData.ts`) | Prototype only — real data (CBS API, FantasyPros) is unverified and deliberately deferred (roadmap #2–3) | — |
 | Backend / API | **(planned)** — Next.js server routes | Real data ingestion + engine live here later, behind a clean boundary | D-01 |
 | Database | **(planned / none yet)** | No schema exists; mock data is a flat fixture, not a data model | — |
@@ -41,25 +42,35 @@ Everything the product will become — CBS + FantasyPros ingestion, the valuatio
 
 All styling uses **Tailwind CSS with a semantic design-token layer** defined once in
 [`tailwind.config.ts`](../tailwind.config.ts) — the single source of truth for the palette.
-Components reference tokens by **role, not hue** (`bg-yours-surface`, `text-edge-up`,
-`bg-tier-1`, `text-ink-muted`, `border-line`), never raw Tailwind colors like `bg-sky-50`.
-Change the look — restyle, rebrand, or add dark mode later — in that one file, and every
-current and future component follows.
+The theme is **dark** (D-03). Components reference tokens by **role, not hue**
+(`bg-surface`, `text-ink-muted`, `bg-pos-qb`, `bg-group-gart`, `text-accent`), never raw
+Tailwind colors like `bg-sky-50`. Change the look — restyle, rebrand, or add a light theme
+later — in that one file, and every current and future component follows.
 
 | Token group | Role | Examples |
 | --- | --- | --- |
-| `surface`, `ink`, `line`, `brand` | Neutral base — backgrounds, text, borders, primary control | `bg-surface`, `text-ink-muted`, `border-line` |
-| `yours` | The owner's KERFUFFLE numbers (blue) | `bg-yours-surface`, `text-yours-text`, `border-yours-border` |
-| `market` | Market consensus / price (gray) | `bg-market-surface`, `text-market-text` |
-| `edge` | The value-vs-price gap | `text-edge-up` (green), `text-edge-down` (red) |
-| `tier` | Tier badges 1–6 | `bg-tier-1` … `bg-tier-6` |
+| `surface`, `ink`, `line` | Neutral base — backgrounds, text, borders | `bg-surface`, `text-ink-muted`, `border-line` |
+| `accent`, `brand` | Teal accent — active/selected/links, primary control | `bg-accent`, `text-accent` |
+| `pos` | Position badge fills | `bg-pos-qb` `bg-pos-rb` `bg-pos-wr` `bg-pos-te` `bg-pos-dst` |
+| `group` | Column-group tints (+ legend swatches) | `bg-group-gart`, `bg-group-market`, `bg-group-contract` |
+| `tier` | Tier separator band | `bg-tier-band`, `text-tier-text` |
+| `edge` | The Edge value (plain) | `text-edge` |
 | `warning` | The MOCK-DATA banner | `bg-warning-surface`, `text-warning-text` |
 
 **Rule for any new component:** style with these tokens. If a role you need is missing, add a
 token to `tailwind.config.ts` rather than hardcoding a color in the component. See
-[`decision_log.md`](decision_log.md) D-02.
+[`decision_log.md`](decision_log.md) D-02, D-03.
 
 ## Key flows
+
+### Tier bands & the sort/position rules
+
+Tier bands are not a column — they are separator rows injected between tier groups, and their
+behavior is a small state machine that lives **entirely in [`lib/tierRules.ts`](../lib/tierRules.ts)**
+(unit-tested). Rule of thumb: bands show only when the *active sort* is one of the six rank
+columns; the band set matches that field; positional-rank sorts require a single position
+(triggering one auto-switches to QB; switching to a multi-position clears the sort). Any change
+to this behavior goes in that one module — never spread the rules into components.
 
 ### Rendering the table
 

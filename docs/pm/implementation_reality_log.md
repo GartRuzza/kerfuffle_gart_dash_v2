@@ -53,6 +53,38 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-20 — Table redesign Phase 1: dark theme, columns, tier bands
+
+**Ticket / Issue:** [#1](../../../../issues/1) (owner design feedback) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** N/A (new, owner-directed redesign, phased 1 of 3)
+
+**Original intent**
+Owner feedback asked to mirror a dark Gamecast/FantasyPros aesthetic and substantially expand the table: dark theme, colored position badges, tier *bands* (not a column) with field-specific tier sets and a coupled sort↔position rule set, a position dropdown with SuperFlex/Flex, expanded/renamed rank+ECR columns, group tints + a color key, and a sleeker sort caret. Agreed to build in **three phases**; this is Phase 1 (look + columns + tier logic). Phase 2 = the view system (filter-bar redesign, column show/hide, drag-reorder, saved views on localStorage, via @dnd-kit). Phase 3 = the data-dictionary popup.
+
+**What was actually built**
+All of Phase 1. Dark tokens (teal accent, compact) — the design-token layer from D-02 made this a config-level change. Six mock tier dimensions and the sort/position/tier state machine, both **unit-tested** in `lib/tierRules.ts` + `lib/mockData.ts`. The position dropdown, badges, regrouped/renamed columns, plain Edge, group legend. **Vitest** was added as the test runner (14 tests).
+
+**Deviations & decisions worth noting**
+- **Scope nudge:** the position dropdown (with SuperFlex/Flex) was pulled into Phase 1 because the tier bands depend on it. The rest of the filter bar stays Phase 2.
+- **Default-tier vs revert nuance (owner-resolved):** load shows Kerf-Ovr-Rank tiers ON; leaving a positional sort by picking a multi-position clears the sort → same base order, tiers OFF. Implemented as "bands show only when the *active* sort is a rank column," so clearing the sort naturally removes bands.
+- **SuperFlex == All** with the current data (only QB/RB/WR/TE) — kept anyway at owner's request for future-proofing.
+- **Tiers are mock** (bucketed by rank). Real tiers come from the engine (Kerf) and FantasyPros (ECR) later.
+- Added **Vitest** — a new dev dependency (see decision_log D-04).
+
+**Product implications**
+The owner now has the near-final look and the full column/tier behavior to react to, on mock data. Nothing about the real build changed. Interactive view features (hiding/reordering columns, saving views) and the data dictionary are explicitly still to come (Phases 2–3).
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| The sort↔position↔tier coupling is intricate stateful UI | It's the owner's designed behavior | Could grow hard to reason about if scattered | Mitigated: all rules live in `lib/tierRules.ts` with unit tests |
+| Six mock tier dimensions bucketed by rank | Real tiering needs the engine/FantasyPros | Bands aren't "real" groupings yet | Replaced when engine/ECR tiers land |
+| Legacy `tier` field left on the data (unused) | Avoided editing 79 rows | Minor dead field | Delete when convenient |
+
+**Follow-up decisions needed from the product owner:** None new — Phase 2 questions (free-agent toggle logic, default-view contents, drag UX) come when we start it.
+
+---
+
 ### 2026-08-19 — Follow-up: semantic design-token layer for styling
 
 **Ticket / Issue:** [#1](../../../../issues/1) (same build cycle) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** Yes — an owner-requested structural improvement

@@ -8,7 +8,7 @@
 >
 > **The rule that makes this doc real:** a feature is not "Built" in [`pm/current_state.md`](pm/current_state.md) until the checks below pass. When a check fails, that feature's status changes — to Partial, or to a known bug. Test results are the evidence behind every status in that doc, which is why this one keeps it honest.
 
-**Last updated:** 2026-08-19 · **Last full pass:** 2026-08-19 (automated build + render verified by Claude Code; the manual interaction checks below are ready for the owner to run) · **Result:** Automated checks pass; manual interaction checks pending owner sign-off.
+**Last updated:** 2026-08-20 · **Last full pass:** 2026-08-20 (unit tests + build + rendered-DOM verified by Claude Code; the manual interaction checks below are ready for the owner to run) · **Result:** Automated checks pass (14 unit tests + clean build); manual interaction checks pending owner sign-off.
 
 ---
 
@@ -16,38 +16,34 @@
 
 | | |
 | --- | --- |
-| **How to run them** | `npm run build` (compiles, type-checks, and lints the whole app). |
-| **What they cover** | The app compiles with no type or lint errors, and the page renders with all ~80 players, every column, the tier badges, the color-coded Edge values, and the 79 editable Ceiling inputs present in the server-rendered HTML. |
-| **What they do not cover** | Click-level interactions — sorting on header click, the filter buttons/dropdown, and inline Ceiling edits updating state. These are standard library behavior and compile cleanly, but are verified by the manual checks below, not by an automated suite. |
-| **Currently passing?** | Yes — `npm run build` passes clean as of 2026-08-19. |
-
-There is no automated interaction/unit suite yet — deliberately out of scope for a mock-data UI prototype (see [`pm/roadmap.md`](pm/roadmap.md) #1). Add one when the table stabilizes on real data.
+| **How to run them** | `npm test` (Vitest unit tests) and `npm run build` (compile + type-check + lint). |
+| **What they cover** | **Unit (14 tests):** mock-data derivation — 79 players, unique overall ranks, clean 1..N positional ranks, tier ranges; and the tier/sort/position **state machine** — which bands show for each sort×position, the auto-switch-to-QB effect, and the revert-to-no-tiers effect. **Build:** the whole app compiles clean and the page server-renders with every column, the tier bands, position badges, and the editable Ceiling inputs. |
+| **What they do not cover** | Click-level interactions in a real browser (sorting on click, the dropdowns, inline Ceiling edits updating state). The *logic* behind them is unit-tested; the wiring is verified by the manual checks below. |
+| **Currently passing?** | Yes — `npm test` (14/14) and `npm run build` pass clean as of 2026-08-20. |
 
 ## Manual checks — the critical flows
 
 *This prototype serves [`user_flows.md`](user_flows.md) flow 1 (Auction prep), seeded with mock data. Run these after `npm install`.*
 
-### Auction-prep table (prototype)
+### The table (prototype, v2 dark redesign)
 
 **Setup:** In a terminal in the project folder, run `npm install` once, then `npm run dev`. Open http://localhost:3000.
 
 | # | Do this | You should see | Pass? |
 | --- | --- | --- | --- |
-| 1 | Open the page | One screen: the player table. No login, no other pages. An amber **"MOCK DATA — not real league data"** bar across the top. | ☐ |
-| 2 | Count the columns and read the header | Owner, Player, Pos, Team, Tier, then a blue **"Yours"** group (KERF Rank, Proj Pts, KERF Value, Ceiling), an **Edge** column, a gray **"The Market"** group (Market Price, ECR, Dynasty ECR), then Salary, Contract. "Showing 79 of 79 players." | ☐ |
-| 3 | Scan the Edge column | A mix of green (+) and red (−) dollar values — your value vs. the market gap, readable at a glance. | ☐ |
-| 4 | Click the **"KERF Value"** header | Rows re-sort by that column; clicking again reverses the order (arrow indicator flips). | ☐ |
-| 5 | Click the **"Edge"** header | Rows re-sort by edge; the biggest green (best value vs. market) can be brought to the top. | ☐ |
-| 6 | Click **"My roster"** | Only Rangoon Raccoons players remain; the "Showing X of 79" count drops. | ☐ |
-| 7 | Click **"Free agents"** | Only players marked **FA** remain (no contract, "—" salary). | ☐ |
-| 8 | Choose a rival from the **"A team"** dropdown | Only that team's players remain. | ☐ |
-| 9 | With a roster filter active, click a position (e.g. **QB**) | The two filters combine — only that roster's QBs show. Click **All** on both to reset. | ☐ |
-| 10 | Read the Tier column | Colored **T1–T6** badges, visually distinct — a close call looks close, not a decimal rank. | ☐ |
-| 11 | Note a player's Ceiling box | It is pre-filled with that player's KERF Value and is an editable number box. | ☐ |
-| 12 | Type a new number into a Ceiling box | That row updates immediately and the value stays as you sort/filter. | ☐ |
-| 13 | Reload the page | Ceilings reset to KERF Value — expected and acceptable for this prototype. | ☐ |
-| 14 | Read the **KERF Rank** column, then filter to one position | Each player shows a positional rank from our KERFUFFLE value (e.g. the top WR is WR1). It is a label, so it does not sort — sort by Proj Pts or KERF Value instead. | ☐ |
-| 15 | Click the **Proj Pts** header | Rows re-sort by projected KERFUFFLE points (a mock projection); clicking again reverses it. | ☐ |
+| 1 | Open the page | One **dark** screen: the player table, centered "Gart Dash" title, amber **"MOCK DATA"** bar on top. No login. | ☐ |
+| 2 | Read the header | Owner, Player, Pos, Team, then GartStats (Kerf Ovr Rank, Kerf Pos Rank, Proj Points, Kerf Value, Ceiling), Edge, Market (Market Value, Ovr ECR, Pos ECR, Dyn Ovr ECR, Dyn Pos ECR), Contract Info (Salary, Contract). A **color key** shows the three group tints. "Showing 79 of 79 players." | ☐ |
+| 3 | Look at the Pos column | Each is a **colored badge** — QB green, RB red, WR blue, TE tan. | ☐ |
+| 4 | On first load | Rows are sorted by **Kerf Ovr Rank** and **"Tier 1 / Tier 2 / …" band rows** separate the tiers. | ☐ |
+| 5 | Click the **Proj Points** header | Rows re-sort; the **tier bands disappear** (Proj Points isn't a rank column). Filled caret shows the sort direction. | ☐ |
+| 6 | Click **Kerf Ovr Rank** again | Overall Kerf tier bands come back. | ☐ |
+| 7 | Set Position = **QB**, then click **Kerf Pos Rank** | Only QBs show, banded by QB Kerf tiers (QB1 at top). | ☐ |
+| 8 | With Position = **All**, click **Kerf Pos Rank** | The app **auto-switches Position to QB** (positional rank needs one position) and shows QB tiers. | ☐ |
+| 9 | While positionally sorted, set Position back to **All** (or SuperFlex/Flex) | Sort falls back to Kerf Ovr Rank order with **no bands**, until you click a rank header again. | ☐ |
+| 10 | Sort by **Ovr ECR**, then **Dyn Ovr ECR** | Bands change to ECR-overall, then Dynasty-overall tiers — the band set follows the sort field. | ☐ |
+| 11 | Roster filter: **My roster** / **Free agents** / a rival via **"A team"** | Rows narrow accordingly; count updates. Combines with the Position dropdown. | ☐ |
+| 12 | Edit a **Ceiling** box (pre-filled with Kerf Value) | The row updates immediately and the value stays as you sort/filter. | ☐ |
+| 13 | Reload the page | Ceilings reset — expected for this prototype. | ☐ |
 
 ## Edge cases and things that should fail gracefully
 
@@ -65,7 +61,7 @@ Not applicable to this prototype. It has no login, no accounts, no permissions, 
 
 | Area | State | Why |
 | --- | --- | --- |
-| Click-level interactions (sort, filter, inline edit) | Untested by automation | No interaction/unit suite yet (out of scope for the prototype); covered by the manual checks above. |
+| Click-level interactions in a real browser (sort, filter, inline edit) | Untested by automation | The pure logic under them (tier rules, derivation) is unit-tested; the DOM wiring is not yet — covered by the manual checks above. Add component tests (Testing Library) when it stabilizes. |
 | Everything downstream of mock data | Not built | No real data, engine, or persistence exists yet — see [`pm/current_state.md`](pm/current_state.md). |
 
 ---

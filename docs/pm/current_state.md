@@ -8,7 +8,7 @@
 >
 > **Read this doc before any planning or building.** It is the grounding doc — it exists to stop us from assuming a feature is built when it is not.
 
-**Last updated:** 2026-08-19 · **Updated by:** Claude Code (Issue #1 build) · **Reflects commit:** feat/issue-1-player-table-prototype
+**Last updated:** 2026-08-20 · **Updated by:** Claude Code (table redesign, Phase 1) · **Reflects commit:** feat/issue-1-player-table-prototype
 
 ---
 
@@ -22,7 +22,7 @@
 
 | Feature / capability | Status | Notes |
 | --- | --- | --- |
-| Player table (prototype) | **Built** | Local Next.js app, mock data only. Sort, roster + position filters, tier badges, color-coded Edge column, inline-editable Ceiling, permanent MOCK-DATA banner. See details below. |
+| Player table (prototype) | **Built** | Local Next.js app, mock data only. Dark theme; position badges; FantasyPros-style tier bands (rank-sorted); expanded rank/ECR columns; position dropdown (incl. SuperFlex/Flex); inline-editable Ceiling; MOCK-DATA banner. See details below. |
 | Player table (on real data) | Not built | Waits on data ingestion + engine (roadmap #2–6). |
 | CBS API ingestion | Not built | Access itself is unproven — spike is roadmap item #2 |
 | FantasyPros ingestion | Not built | Access method is an open decision (roadmap decision #2) |
@@ -36,9 +36,9 @@
 
 Nothing is in a Partial state. The player table prototype is fully Built **as a prototype** — but note precisely what "Built" means here, so it is never mistaken for the real feature:
 
-**Player table prototype — what it does:** runs locally (`npm install`, then `npm run dev`, at http://localhost:3000) as one screen; ~80 real-name players across QB/RB/WR/TE spanning a free-agent pool, the Rangoon Raccoons' roster, and 3 rival rosters; the column set Owner, Player, Pos, Team, Tier, **KERF Rank, Proj Pts,** KERF Value, Ceiling, Edge, Market Price, ECR, Dynasty ECR, Salary, Contract; the "Yours" vs "The Market" columns visually grouped and color-tinted with an Edge column between them; sorting; roster + position filters that combine; colored tier badges; an inline-editable Ceiling pre-seeded to KERF Value that holds for the session; and an always-visible MOCK-DATA banner. (KERF Rank = our positional rank from KERFUFFLE value; Proj Pts = a mock projected-points number — both are shared-table fields serving the waiver/trade/start-sit flows too, added after owner review.)
+**Player table prototype — what it does (after the v2 redesign, Phase 1):** runs locally (`npm install`, then `npm run dev`, at http://localhost:3000) as one screen with a **dark theme**; ~80 real-name players across QB/RB/WR/TE spanning a free-agent pool, the Rangoon Raccoons' roster, and 3 rival rosters; columns Owner, Player, **Pos (colored badge)**, Team, **Kerf Ovr Rank, Kerf Pos Rank,** Proj Points, Kerf Value, Ceiling, Edge (plain), Market Value, **Ovr ECR, Pos ECR, Dyn Ovr ECR, Dyn Pos ECR,** Salary, Contract; columns tinted into **GartStats / Market / Contract Info** groups with a color-key legend (no spanning headers); sorting with a sleek filled-caret; **FantasyPros-style tier bands** that appear only when sorted by one of the six rank columns, with the band set specific to the sort field (Kerf/ECR/Dynasty × overall/positional) and the coupled sort↔position rules (auto-switch to QB / revert to no-tiers) centralized in `lib/tierRules.ts`; a **position dropdown** (All, SuperFlex, Flex, QB/RB/WR/TE); the existing roster filter (restyled); an inline-editable Ceiling; and an always-visible MOCK-DATA banner.
 
-**What it deliberately does *not* do:** no real data (all values hand-authored), no valuation engine, no drill-into-inputs, no cap-sum check, no suggested/roster-aware ceiling, no persistence (ceilings reset on reload), no accounts, no deployment, no data schema. These are all out of scope for Issue #1 and belong to later roadmap items.
+**What it deliberately does *not* do:** no real data (all values, ranks, and the six mock tier dimensions are hand-authored or derived, not computed by an engine); no filter-bar redesign (single team dropdown + free-agent toggle + column picker + saved/custom views — that's **Phase 2**); no column show/hide or drag-reorder yet (Phase 2); no data-dictionary popup (**Phase 3**); no persistence (ceilings reset on reload); no accounts, no deployment, no real data schema. DST has a badge color but no DST players exist in the mock data.
 
 ## Current limitations
 
@@ -62,9 +62,11 @@ Nothing is in a Partial state. The player table prototype is fully Built **as a 
 | **Active branch** | feat/issue-1-player-table-prototype |
 | **Deployed to production** | No. Nothing is deployed anywhere. |
 | **Environments live** | Local only — `npm run dev` at http://localhost:3000 |
-| **Tests** | No automated suite yet. `npm run build` (compile + type-check + lint) passes; render verified. Interactive checks are manual — see [`../qa_test_plan.md`](../qa_test_plan.md). |
+| **Tests** | **Vitest unit tests** (`npm test`) — 14 passing, covering mock-data derivation and the tier/sort/position rules. `npm run build` (compile + type-check + lint) passes; render verified. UI interaction checks remain manual — see [`../qa_test_plan.md`](../qa_test_plan.md). |
 
 ## Latest implementation summary
+
+**2026-08-20 — Table redesign, Phase 1 of 3 (dark theme + columns + tier bands).** On owner feedback, the prototype was redesigned toward a dark, Gamecast-style dashboard (teal accent, compact rows, centered "Gart Dash" title). Position cells became colored badges (QB/RB/WR/TE/DST). The single tier column was replaced by **FantasyPros-style tier bands** driven by six mock tier dimensions (Kerf/ECR/Dynasty × overall/positional); bands appear only under a matching rank sort, with the coupled sort↔position behaviour (auto-switch to QB, revert-to-no-tiers) centralized and unit-tested in `lib/tierRules.ts`. Columns were expanded/renamed (Kerf Ovr + Pos Rank; Ovr/Pos ECR; Dyn Ovr/Pos ECR; Market Value; Proj Points), regrouped into GartStats/Market/Contract-Info tints with a color key, and Edge made plain. A position dropdown (incl. SuperFlex/Flex) was added. **Vitest** was introduced (14 tests). This is Phase 1; the filter-bar/view system (Phase 2) and data dictionary (Phase 3) are not yet built. Validated by unit tests + clean build + rendered-DOM checks.
 
 **2026-08-19 — Player table prototype built (Issue #1, UI only, mock data).** The first product code landed: a single-screen Next.js (App Router) + TypeScript app, styled with Tailwind, table powered by TanStack Table v8, on the stack decided in [`../decision_log.md`](../decision_log.md) D-01. It renders 79 hand-authored mock players across QB/RB/WR/TE (free-agent pool + Rangoon Raccoons + 3 rivals) with the full column set, grouped "Yours" vs "The Market" columns and a color-coded Edge column, sorting, combining roster + position filters, colored tier badges, an inline-editable Ceiling pre-seeded to KERF Value, and a permanent MOCK-DATA banner. Runs locally with `npm install` then `npm run dev`. All data is mock; no engine, no schema, no persistence, no deployment. `npm run build` passes; interactive QA is manual (owner sign-off pending) — see [`../qa_test_plan.md`](../qa_test_plan.md). After an owner review the same day, two shared-table columns (KERF Rank, Proj Pts) were added to serve the non-auction flows, and the per-lens fields (waiver bid range, remaining cap, trade compare, matchup) were logged to [`../feature_backlog.md`](../feature_backlog.md). Styling was then refactored onto a semantic design-token layer (all colors defined once in `tailwind.config.ts`, components reference role-based tokens) — no visual change; see [`../decision_log.md`](../decision_log.md) D-02.
 
