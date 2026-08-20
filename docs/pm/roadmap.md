@@ -44,7 +44,7 @@ The auction date is fixed and weeks away. It is the hard constraint on everythin
 
 | # | Item | Why now | Depends on |
 | --- | --- | --- | --- |
-| 1 | **Player table prototype — UI only** | The owner prototypes what's useful before anything is engineered: columns, filters, sort, tiers, and the editable-ceiling column, iterated on cheaply. Mock data uses real NFL player names with realistic-but-invented salaries (sourced via web search). **UI only — no hard data schema until item 2–3 discovery reports back.** Simple as possible, but on the stack we keep: this is the foundation of the real table, not a throwaway. | Stack decision (Open decision #4) |
+| 1 | **Player table prototype — UI only** | The owner prototypes what's useful before anything is engineered: columns, filters, sort, tiers, and the editable-ceiling column, iterated on cheaply. Mock data uses real NFL player names with realistic-but-invented salaries (sourced via web search). **UI only — no hard data schema until item 2–3 discovery reports back.** Simple as possible, but on the stack we keep: this is the foundation of the real table, not a throwaway. | Stack decided (D-01) — GitHub Issue #1 |
 | 2 | **Spike + data discovery: CBS API** | Highest architectural risk. Auth via the mobile OAuth flow against the actual KERFUFFLE league, then a full inventory: what's accessible, formats, historical depth, whether contract *lengths* live in CBS or only salaries, barriers and risks. Timeboxed to days. | nothing |
 | 3 | **Spike + data discovery: FantasyPros + joint discovery** | Access is unsolved (API is approval-gated; fallbacks: scrape, manual export — manual is acceptable for MVP and cannot block the auction). Then discovery of how the two sources work *together*, especially player-ID matching between CBS and FantasyPros — the expected ugliest part. | nothing (parallel to #2) |
 | 4 | **Valuation engine core** | The KERFUFFLE re-projection mechanism only: scoring translation and superflex/positional adjustment. Minimal — it exists to be tested, not admired. | #2, #3 |
@@ -83,7 +83,7 @@ The auction date is fixed and weeks away. It is the hard constraint on everythin
 | 1 | Where does contract-length data actually live? CBS holds salaries, but lengths may only exist in the Commissioner's sheet / TRUFFLEdash | Scope of CBS spike (#2); whether the pipeline needs a second source (sheet import) | CBS custom fields vs. Google Sheet import vs. manual entry | Owner (confirm during #2) | Open |
 | 2 | FantasyPros access method | Data pipeline (#3) and everything downstream | API application vs. scrape vs. manual export (manual acceptable for MVP) | Owner, informed by spike #3 | Open |
 | 3 | Auction-day fallback if the calendar wins | Nothing yet — but deciding in advance beats deciding in panic | Engine + manual data entry vs. going in with spreadsheets as usual | Owner | Open |
-| 4 | Tech stack | Item #1 (the prototype is built on the keepable foundation) | Claude Code proposes with reasoning (constraint: local-first, web-deployable later); owner approves; logged in [`decision_log.md`](../decision_log.md) | Owner approves | Open |
+| 4 | Tech stack | Item #1 (the prototype is built on the keepable foundation) | Chosen: Next.js + TypeScript + TanStack Table + Tailwind (local-first, web-deployable later) | Owner approved | **Resolved 2026-08-19 — [`decision_log.md`](../decision_log.md) D-01** |
 
 ---
 
