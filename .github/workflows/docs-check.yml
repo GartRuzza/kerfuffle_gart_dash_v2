@@ -38,6 +38,7 @@ jobs:
       - name: Check that code changes come with doc changes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}   # tell gh which repo to query; without it `gh pr diff` falls back to local git and fails (no checkout in this job)
           PR: ${{ github.event.pull_request.number }}
           SKIP_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no-docs-needed') }}
         run: |
