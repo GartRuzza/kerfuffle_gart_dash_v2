@@ -1,4 +1,4 @@
-# Implementation Reality Log — [PRODUCT NAME]
+# Implementation Reality Log — Gart Dash
 
 > **How to use this doc**
 > **Owner:** Claude Code (the implementing agent), read by the product owner and PM Claude.
@@ -53,23 +53,34 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
-### *[2026-03-14] — Bank import and matching (example entry — delete me)*
+### 2026-08-19 — Player table prototype (UI only, mock data)
 
-> ***Ticket:** #12 · **Branch:** feat/bank-import · **Deviated from plan:** Yes*
->
-> ***Original intent:** Ship bank CSV import plus a matching engine that handles both exact and fuzzy matches, so a bookkeeper can reconcile a full month with minimal manual review.*
->
-> ***What was actually built:** CSV import for 3 bank formats, and exact-amount matching only (identical amount, date within 3 days). Fuzzy matching was not built.*
->
-> ***Deviations:** Fuzzy matching was cut entirely.*
->
-> ***Why we deviated:** The plan treated fuzzy matching as one more matching rule. It is not — partial payments, bundled payments, and deducted fees each need their own logic and a confidence score, and there is no way to tell whether the results are good without labelled real-world data, which we do not have. Building it blind would have produced a system that is confidently wrong, which the "never guess silently" principle rules out.*
->
-> ***Product implications:** About 40% of real transactions still fall through to manual review, so the core promise — reconcile a month in one sitting — is **not** met by this release. The MVP is not shippable to a real bookkeeper yet. Fuzzy matching should move to the top of Now, and it is bigger than one ticket.*
->
-> ***Technical tradeoffs and debt:** Import is capped at 5,000 rows (no streaming) because a naive in-memory parse was faster to ship. It will break for the first mid-size firm; roughly a day to fix.*
->
-> ***Follow-up decisions needed:** Do we buy or hand-label a set of real reconciled transactions to evaluate fuzzy matching against? Blocks all fuzzy-matching work.*
+**Ticket / Issue:** [#1](../../../../issues/1) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** No
+
+**Original intent**
+Build the centerpiece player table as a clickable local prototype on mock data — one screen, ~80 real-name players with invented salaries, the full column set, sort plus roster/position filters, tier badges, an inline-editable Ceiling, and a permanent "MOCK DATA" indicator — on the keepable stack (Next.js/TypeScript, D-01), so the owner can react before any real data pipeline or valuation engine is built.
+
+**What was actually built**
+Exactly that. A single-screen Next.js (App Router) + TypeScript app, styled with Tailwind, table powered by TanStack Table v8. 79 hand-authored mock players across QB/RB/WR/TE spanning the free-agent pool, the Rangoon Raccoons' roster, and three rival rosters. Columns: Owner, Player, Pos, Team, Tier (color badge), KERF Value, Ceiling (editable), Edge, Market Price, ECR, Dynasty ECR, Salary, Contract. Runs with `npm install` then `npm run dev` at http://localhost:3000 — no login, no second screen, no data schema, no engine.
+
+**Deviations**
+None from the approved plan. Three owner-approved choices were folded in during planning (confirmed before building, not deviations): a derived **Edge** column (KERF Value − Market Price, color-coded, sortable); an **Owner** column showing the fantasy team; and the Ceiling column **pre-seeded** with each player's KERF Value. All three go slightly beyond the issue's literal column list.
+
+**Product implications**
+The owner can now open a realistic auction-prep table locally and feel out what's useful — sort it, filter it to roster views, read tiers, type ceilings — and tell us what to change before we build the real pipeline and engine. It is a prototype: every number is invented and resets on reload; it reflects no real league state.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| 3 high-severity npm advisories in Next 15's transitive deps (postcss build tooling; sharp image lib) | The only patch bumps Next to v16 — a breaking major-dependency change, which is the owner's call | Negligible for a local, no-image, no-untrusted-input prototype; would matter before any web deployment | ~half a day to move to Next 16 and re-verify |
+| Mock data is a flat in-repo fixture (`lib/mockData.ts`), not a schema | Deliberate — no real sources verified yet (roadmap #2–3) | None now, provided it is never mistaken for a real data model | Replaced wholesale when real ingestion lands |
+| No automated tests; verification is build/lint + manual QA | Prototype with throwaway data; owner approved in the plan | Sort/filter/edit interactions aren't regression-guarded | Add component tests once the table stabilizes on real data |
+
+**Follow-up decisions needed from the product owner**
+
+- [ ] Upgrade to Next.js 16 to clear the 3 npm advisories? — blocks nothing now; settle it before any web deployment.
+- [ ] After using the prototype: which columns / filters / interactions to change — the whole reason it shipped. Feeds roadmap #6 (table on real data).
 
 ---
 

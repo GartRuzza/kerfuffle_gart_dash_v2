@@ -2,7 +2,7 @@
 
 **Gart Dash gives the Rangoon Raccoons owner two numbers side by side — what a player is worth in KERFUFFLE and what he costs — so every bid, claim, start, and trade is made on a visible edge instead of a gut feel.**
 
-**Status:** Concept — docs written, no code yet
+**Status:** Prototype — the player table (UI only, mock data) is built; see [`docs/pm/current_state.md`](docs/pm/current_state.md)
 **Live at:** not deployed (local-first by design)
 
 ---
@@ -39,11 +39,21 @@ This project's source of truth is its docs, not any chat history. **Start here:*
 
 | Layer | What we use |
 | --- | --- |
-| All layers | **Not chosen yet.** Claude Code proposes (constraint: local-first, web-deployable later), owner approves, logged in [`docs/decision_log.md`](docs/decision_log.md). Roadmap open decision #4. |
+| App | **Next.js (App Router) + TypeScript** — one local-first app, web-deployable later. See [`docs/decision_log.md`](docs/decision_log.md) D-01. |
+| Table | **TanStack Table** v8 (sort / filter / grouped columns / editable cells) |
+| Styling | **Tailwind CSS** v3 |
+| Data | Mock in-repo fixture for now — real CBS + FantasyPros data is deferred (roadmap #2–3). |
 
 ## Running it locally
 
-Nothing to run yet — no code exists. This section gets filled in with the first build.
+Requires [Node.js](https://nodejs.org). From the project folder:
+
+```
+npm install     # once
+npm run dev      # then open http://localhost:3000
+```
+
+That opens the player-table prototype — one screen, mock data, no login. Ceilings you type reset on reload (expected for the prototype).
 
 ## How we work
 
@@ -61,7 +71,7 @@ Follow [`docs/qa_test_plan.md`](docs/qa_test_plan.md) once checks exist. A featu
 
 ## Known limitations
 
-- Nothing is built. There is no code.
+- Only the player-table **prototype** exists, and it runs on **mock data** — invented salaries and values, not real league data.
 - Neither data source is verified: CBS API access and FantasyPros access are both unproven (roadmap items #2–3).
 - Contract-length data may not live in CBS at all (roadmap open decision #1).
 - The 2026 Free Agent Auction is the fixed deadline the whole Now column is scoped to.

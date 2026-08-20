@@ -1,4 +1,4 @@
-# QA & Test Plan — [PRODUCT NAME]
+# QA & Test Plan — Gart Dash
 
 > **How to use this doc**
 > **Owner:** Claude Code writes and maintains it; the product owner runs the manual checks.
@@ -7,10 +7,8 @@
 > **This doc never contains:** Test code. This is the human-readable plan; the code lives in the test suite.
 >
 > **The rule that makes this doc real:** a feature is not "Built" in [`pm/current_state.md`](pm/current_state.md) until the checks below pass. When a check fails, that feature's status changes — to Partial, or to a known bug. Test results are the evidence behind every status in that doc, which is why this one keeps it honest.
->
-> *Examples are in italics and refer to a fictional product, "Ledgerly." Delete them as you fill each section in.*
 
-**Last updated:** [YYYY-MM-DD] · **Last full pass:** [YYYY-MM-DD] · **Result:** [pass / fail — what failed]
+**Last updated:** 2026-08-19 · **Last full pass:** 2026-08-19 (automated build + render verified by Claude Code; the manual interaction checks below are ready for the owner to run) · **Result:** Automated checks pass; manual interaction checks pending owner sign-off.
 
 ---
 
@@ -18,59 +16,55 @@
 
 | | |
 | --- | --- |
-| **How to run them** | `[command]` |
-| **What they cover** | [in plain English — which parts of the product] |
-| **What they do not cover** | [be honest; this is the gap the manual checks must fill] |
-| **Currently passing?** | [yes / no — which are failing] |
+| **How to run them** | `npm run build` (compiles, type-checks, and lints the whole app). |
+| **What they cover** | The app compiles with no type or lint errors, and the page renders with all ~80 players, every column, the tier badges, the color-coded Edge values, and the 79 editable Ceiling inputs present in the server-rendered HTML. |
+| **What they do not cover** | Click-level interactions — sorting on header click, the filter buttons/dropdown, and inline Ceiling edits updating state. These are standard library behavior and compile cleanly, but are verified by the manual checks below, not by an automated suite. |
+| **Currently passing?** | Yes — `npm run build` passes clean as of 2026-08-19. |
+
+There is no automated interaction/unit suite yet — deliberately out of scope for a mock-data UI prototype (see [`pm/roadmap.md`](pm/roadmap.md) #1). Add one when the table stabilizes on real data.
 
 ## Manual checks — the critical flows
 
-*One block per critical flow in [`user_flows.md`](user_flows.md). Written as steps a non-technical person can follow without help. If a step needs the console, a database client, or a developer, rewrite it — a check only you can run is a check that will not get run.*
+*This prototype serves [`user_flows.md`](user_flows.md) flow 1 (Auction prep), seeded with mock data. Run these after `npm install`.*
 
-### [Flow name]
+### Auction-prep table (prototype)
 
-**Setup:** [what you need before you start — a test account, a sample file]
+**Setup:** In a terminal in the project folder, run `npm install` once, then `npm run dev`. Open http://localhost:3000.
 
 | # | Do this | You should see | Pass? |
 | --- | --- | --- | --- |
-| 1 | [action] | [expected result — precise enough to be wrong] | ☐ |
-| 2 | [action] | [expected] | ☐ |
-
-> *### Closing a month*
-> ***Setup:** log in as the demo bookkeeper; use `samples/bank-march.csv` (400 rows, 12 deliberate mismatches).*
->
-> *| 1 | Upload the CSV on the Import screen | "400 transactions imported" within ~10 seconds | ☐ |*
-> *| 2 | Open the Matches screen | "388 of 400 matched", 12 in the exception queue | ☐ |*
-> *| 3 | Match one exception by hand | It leaves the queue; the count drops to 11 | ☐ |*
-> *| 4 | Reload the page | The count is still 11 — the match was actually saved, not just shown | ☐ |*
+| 1 | Open the page | One screen: the player table. No login, no other pages. An amber **"MOCK DATA — not real league data"** bar across the top. | ☐ |
+| 2 | Count the columns and read the header | Owner, Player, Pos, Team, Tier, then a blue **"Yours"** group (KERF Value, Ceiling), an **Edge** column, a gray **"The Market"** group (Market Price, ECR, Dynasty ECR), then Salary, Contract. "Showing 79 of 79 players." | ☐ |
+| 3 | Scan the Edge column | A mix of green (+) and red (−) dollar values — your value vs. the market gap, readable at a glance. | ☐ |
+| 4 | Click the **"KERF Value"** header | Rows re-sort by that column; clicking again reverses the order (arrow indicator flips). | ☐ |
+| 5 | Click the **"Edge"** header | Rows re-sort by edge; the biggest green (best value vs. market) can be brought to the top. | ☐ |
+| 6 | Click **"My roster"** | Only Rangoon Raccoons players remain; the "Showing X of 79" count drops. | ☐ |
+| 7 | Click **"Free agents"** | Only players marked **FA** remain (no contract, "—" salary). | ☐ |
+| 8 | Choose a rival from the **"A team"** dropdown | Only that team's players remain. | ☐ |
+| 9 | With a roster filter active, click a position (e.g. **QB**) | The two filters combine — only that roster's QBs show. Click **All** on both to reset. | ☐ |
+| 10 | Read the Tier column | Colored **T1–T6** badges, visually distinct — a close call looks close, not a decimal rank. | ☐ |
+| 11 | Note a player's Ceiling box | It is pre-filled with that player's KERF Value and is an editable number box. | ☐ |
+| 12 | Type a new number into a Ceiling box | That row updates immediately and the value stays as you sort/filter. | ☐ |
+| 13 | Reload the page | Ceilings reset to KERF Value — expected and acceptable for this prototype. | ☐ |
 
 ## Edge cases and things that should fail gracefully
 
-*What happens at the boundaries, and when a user does something wrong. Products break here, not on the happy path.*
-
 | # | Try this | It should | Pass? |
 | --- | --- | --- | --- |
-| 1 | [the bad input / the empty state / the huge file] | [fail clearly, with a way out — never crash, never silently do nothing] | ☐ |
-
-> *| 1 | Upload a CSV from a bank format we do not recognize | Show "unrecognized format" with a support link — not a blank screen and not a half-imported month | ☐ |*
-> *| 2 | Upload the same statement twice | Detect the duplicate and refuse — double-importing a month silently corrupts the books | ☐ |*
+| 1 | Filter to a rival team **and** a position with no players on it (e.g. a team with no TE) | Show "No players match these filters." — never a blank/broken table. | ☐ |
+| 2 | Clear a Ceiling box (delete the number) | Treat it as 0 rather than breaking the row. | ☐ |
+| 3 | Narrow the browser window | The table scrolls sideways inside its own box; the page itself does not break its layout. | ☐ |
 
 ## Security and permissions checks
 
-*Run these whenever anything touches login, permissions, or payments. The failure mode here is invisible, which is exactly why it needs a deliberate check.*
-
-| # | Check | It should | Pass? |
-| --- | --- | --- | --- |
-| 1 | Log in as user A, try to open user B's data by URL | Refuse — not merely hide the link | ☐ |
-| 2 | Log out and open a signed-in page directly | Redirect to login | ☐ |
+Not applicable to this prototype. It has no login, no accounts, no permissions, no database, no network calls, and no user input beyond the in-memory Ceiling boxes. This is deliberate — Issue #1 is UI-only precisely so no sensitive surfaces exist yet. Add this section when real data ingestion or deployment lands.
 
 ## Known-failing / untested
 
-*What we know is not verified. An untested area is not a passing area, and pretending otherwise is how a doc like this starts lying.*
-
 | Area | State | Why |
 | --- | --- | --- |
-| [area] | Failing / Untested | [reason] |
+| Click-level interactions (sort, filter, inline edit) | Untested by automation | No interaction/unit suite yet (out of scope for the prototype); covered by the manual checks above. |
+| Everything downstream of mock data | Not built | No real data, engine, or persistence exists yet — see [`pm/current_state.md`](pm/current_state.md). |
 
 ---
 

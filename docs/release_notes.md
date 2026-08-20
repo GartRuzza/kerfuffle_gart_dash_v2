@@ -1,4 +1,4 @@
-# Release Notes — [PRODUCT NAME]
+# Release Notes — Gart Dash
 
 > **How to use this doc**
 > **Owner:** Claude Code.
@@ -41,19 +41,23 @@
 
 <!-- Newest entry goes directly below this line. -->
 
-### *[2026-03-14] — Bank import and matching (example entry — delete me)*
+## 2026-08-19 — Player table prototype (local, mock data)
 
-> ***New***
-> *- You can import a bank statement as a CSV file. We recognize 3 bank formats today.*
-> *- Ledgerly now matches transactions to invoices automatically when the amount is identical and the dates are close, and puts everything it is unsure about into an exception queue for you to review.*
->
-> ***Known issues***
-> *- Roughly 40% of real transactions still land in the exception queue, because we cannot yet match partial payments, bundled payments, or payments with bank fees deducted. This means closing a month still takes real manual work — the product does not yet deliver on its main promise. Fuzzy matching is next.*
-> *- Files over 5,000 rows will time out.*
-> *- If your bank's CSV format is not one of the 3 we know, the import will fail and there is currently no way to fix it yourself.*
->
-> ***Requires action from you***
-> *- Run the database migration before this version will start.*
+**New**
+- You can open Gart Dash locally and use the player table for the first time. Install once with `npm install`, then run `npm run dev` and open http://localhost:3000 — no login, one screen.
+- The table shows ~80 players (real NFL names) across QB/RB/WR/TE, split across the free-agent pool, your Rangoon Raccoons roster, and three rival rosters.
+- Your numbers and the market's numbers sit side by side: KERF Value and an editable Ceiling (tinted blue) next to Market Price, ECR, and Dynasty ECR (tinted gray), with an **Edge** column between them — your value minus market price, green when you're higher, red when lower — so the gap reads at a glance.
+- Sort by any sortable column. Filter by roster (all players / your roster / free agents / a specific rival team) and by position; the two filters combine.
+- Tiers show as colored badges, so a close call looks close instead of a decimal pecking order.
+- Type your own number in any **Ceiling** box; it updates that row immediately and holds for the session.
+
+**Known issues**
+- Every number is invented mock data — a permanent amber banner says so. Nothing here reflects real CBS or FantasyPros data yet.
+- Ceilings reset when you reload the page (expected for this prototype).
+- Not deployed anywhere; local only.
+
+**Requires action from you**
+- Have Node.js installed. Run `npm install` once, then `npm run dev` whenever you want to open the table.
 
 ---
 
