@@ -47,6 +47,31 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-09 · 2026-08-20 · FantasyPros data via the official API (HOF tier); join to CBS on `cbs_player_id`
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Technical + Product (data sourcing + a recurring cost) |
+| **Decided by** | Claude Code (spike #7) + owner (chose the API path, approved the HOF upgrade) |
+
+**The question**
+How do we get FantasyPros expert-consensus rankings/tiers — the roadmap listed three candidates: the API (thought to be approval-gated), scraping, or manual export (roadmap open decision #2) — and how do we match FantasyPros players to CBS players (the roadmap's "expected ugliest part")?
+
+**What we decided**
+Ingest FantasyPros data through its **official JSON REST API** (`https://api.fantasypros.com/public/v2/json`, `x-api-key` header), on the paid **HOF tier (~$9/mo)**, and **join to CBS on the `cbs_player_id`** that FantasyPros publishes on every player. Not scraping (prohibited by their terms), not manual export (unnecessary).
+
+**Why**
+Proven empirically in the spike: the API is now self-serve (not approval-gated as the roadmap assumed), authenticates with a simple key, and returns exactly what the engine needs — `rank_ecr`, `pos_rank`, `tier`, and the expert spread — across redraft/dynasty and all scoring formats. The feared player-matching problem evaporated: FantasyPros hands back a `cbs_player_id` that equals CBS's own id (confirmed against real CBS ids — Chase, Nacua, McCaffrey), so the join is a direct id map, not fuzzy name matching. The free tier is a top-10-of-520 preview (`public_api_limited: true`), so the full board requires HOF — a small, sanctioned, license-clean recurring cost that fits a single-user, non-commercial, local tool.
+
+**What we gave up**
+A zero-cost path. The free tier can't feed production (10 of 520 players), so the product now depends on a ~$108/yr subscription. We also accept a single-vendor dependency for ECR/tiers (mitigated: the `cbs_player_id` join and cached pulls make swapping providers a contained change if ever needed). And we took the HOF unlock partly on faith — at decision time the upgrade hadn't propagated to the key (still reported `tier: free`); the full-list + projections/metadata/ADP/news unlock must be confirmed on a re-run before the engine build.
+
+**What would make us reconsider**
+HOF failing to lift the cap or open the gated endpoints (regenerate the key, then escalate); FantasyPros changing its API terms to bar our personal-use case; the tool ever being shared/sold (would require a commercial license); or the subscription cost no longer being worth it versus a cheaper/free ECR source (e.g. Fantasy Nerds) — the `cbs_player_id`-keyed, cached ingestion is deliberately swappable. Full evidence: [`fantasypros_data_discovery.md`](fantasypros_data_discovery.md).
+
+---
+
 ### D-08 · 2026-08-20 · CBS data via authenticated HTML scraping; contract length comes from CBS
 
 | | |

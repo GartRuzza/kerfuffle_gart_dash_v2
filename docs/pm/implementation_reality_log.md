@@ -53,6 +53,42 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-20 — FantasyPros data discovery spike (issue #7, roadmap #3)
+
+**Ticket / Issue:** [#7](../../../../issues/7) · **Branch:** spike/issue-7-fantasypros-discovery · **Deviated from plan:** Yes — reality was *easier* than the plan feared, on the two hardest points.
+
+**Original intent**
+Timeboxed spike to prove FantasyPros access and, above all, solve the roadmap's "expected ugliest part" — matching FantasyPros players to CBS players. The roadmap assumed FantasyPros access was **approval-gated** (fallbacks: scrape, or manual export) and that player-ID matching would be a messy name/team/position problem.
+
+**What was actually built / found**
+A read-only discovery harness (`spikes/fantasypros-api/` — `pull.mjs`, `match.mjs`, README, `.env.example`) and a findings report ([`../fantasypros_data_discovery.md`](../fantasypros_data_discovery.md)). Findings:
+- FantasyPros has an **official JSON API that is self-serve, not approval-gated.** A free key authenticates immediately (`x-api-key`).
+- Rankings return everything the engine needs: **ECR, positional rank, tiers, and the expert spread**, across redraft + dynasty + ROS + weekly and PPR/half/standard, from 99 experts.
+- **The join is trivial, not ugly:** every FantasyPros player carries a **`cbs_player_id`** equal to CBS's own id. Confirmed against real CBS ids (Chase `2966320`, Nacua `3121687`, McCaffrey `2136743`). No fuzzy matching needed.
+- **The real constraint is cost, not access:** the free tier is a **top-10-of-520 preview** (`public_api_limited: true`) and blocks projections/metadata/ADP/news (`403`). The full board needs the **HOF tier (~$9/mo)**.
+
+**Deviations**
+Two, both favorable: access was **self-serve, not approval-gated**, and the player-match was a **direct id join, not fuzzy matching**. One scope deviation by owner decision: the **manual-export fallback was not tested** (API-only spike). And a reality the plan didn't name: the free tier is preview-only, so the product now depends on a **paid subscription**.
+
+**Why we deviated**
+FantasyPros shipped a real self-serve API since the roadmap was written, and — unusually helpfully — publishes the CBS id directly, which collapses the entire cross-source matching problem. The cost gate is simply how FantasyPros monetizes the API (free = preview).
+
+**Product implications**
+FantasyPros ingestion is **viable**, and the scariest architectural risk (joining two independent player universes) is effectively gone — a direct `cbs_player_id` map replaces what could have been a brittle, error-prone matcher. Both data sources (#2 CBS, #3 FantasyPros) are now access-proven, so the **valuation engine (#4) is unblocked**. The cost: the tool now requires a **~$108/yr FantasyPros HOF subscription** to function on real data (the owner upgraded). One thing is **assumed, not yet confirmed**: that HOF lifts the 10-of-520 cap and opens the gated endpoints — the key hadn't propagated to HOF at write-time, so a confirming re-run is owed before the engine build. Downstream planning may proceed on the GO, but should treat "full 520-player board" as confirmed-pending until that re-run.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| A paid single-vendor dependency (FantasyPros HOF ~$108/yr) for ECR/tiers | It's the source the product is defined around, and the only one that publishes the CBS id | Ongoing cost; a provider outage/price change hits ingestion | Cached, `cbs_player_id`-keyed ingestion keeps a provider swap contained |
+| HOF unlock assumed, not verified | The key hadn't propagated at write-time; owner didn't want to block on it | Engine could be planned against a board we haven't actually pulled in full | One re-run of `pull.mjs` once the key is live (expect ~520 rows, `public_api_limited: false`) |
+| Rate limiting observed (429 on bursts) | Free-tier throttling | Naive per-view fetching would get throttled | Ingestion must pull-and-cache + refresh on a schedule (noted in findings §5) |
+
+**Follow-up decisions needed from the product owner**
+- [ ] None blocking. When ingestion is built, the HOF **API key is a credential** (local env only, never committed). The one owed action is a **confirming re-run** once the key reflects HOF — not a decision, just verification.
+
+---
+
 ### 2026-08-20 — CBS data discovery spike (issue #5, roadmap #2)
 
 **Ticket / Issue:** [#5](../../../../issues/5) · **Branch:** spike/issue-5-cbs-api-discovery · **Deviated from plan:** Yes — the *method* is not what the plan assumed.

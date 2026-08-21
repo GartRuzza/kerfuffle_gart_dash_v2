@@ -6,7 +6,7 @@
 > **This doc contains:** What we are building next, in what order, and why that order.
 > **This doc never contains:** Claims about what is already built. An item sitting in "Now" may not exist yet — [`current_state.md`](current_state.md) is the only doc that says what is real.
 
-**Last updated:** 2026-08-19
+**Last updated:** 2026-08-20
 
 ---
 
@@ -81,7 +81,7 @@ The auction date is fixed and weeks away. It is the hard constraint on everythin
 | # | Decision needed | What it blocks | Options under consideration | Owner | Status |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Where does contract-length data actually live? CBS holds salaries, but lengths may only exist in the Commissioner's sheet / TRUFFLEdash | Scope of CBS spike (#2); whether the pipeline needs a second source (sheet import) | CBS custom fields vs. Google Sheet import vs. manual entry | Owner (confirm during #2) | **Resolved 2026-08-20 — contract length IS in CBS** (per-player "Contract" column on roster pages; spike #5 / issue #5). No second source needed for it. See [`../cbs_data_discovery.md`](../cbs_data_discovery.md), [`../decision_log.md`](../decision_log.md) D-08. |
-| 2 | FantasyPros access method | Data pipeline (#3) and everything downstream | API application vs. scrape vs. manual export (manual acceptable for MVP) | Owner, informed by spike #3 | Open |
+| 2 | FantasyPros access method | Data pipeline (#3) and everything downstream | API application vs. scrape vs. manual export (manual acceptable for MVP) | Owner, informed by spike #3 | **Resolved 2026-08-20 — official FantasyPros API on the HOF tier (~$9/mo)** (spike #7 / issue #7). Not scraping, not manual export. The API is self-serve (not approval-gated as assumed); the CBS↔FP join is a **direct `cbs_player_id` match**. Free tier is a 10-of-520 preview, so HOF is required for the full board (owner upgraded; unlock pending confirmation). See [`../fantasypros_data_discovery.md`](../fantasypros_data_discovery.md), [`../decision_log.md`](../decision_log.md) D-09. |
 | 3 | Auction-day fallback if the calendar wins | Nothing yet — but deciding in advance beats deciding in panic | Engine + manual data entry vs. going in with spreadsheets as usual | Owner | Open |
 | 4 | Tech stack | Item #1 (the prototype is built on the keepable foundation) | Chosen: Next.js + TypeScript + TanStack Table + Tailwind (local-first, web-deployable later) | Owner approved | **Resolved 2026-08-19 — [`decision_log.md`](../decision_log.md) D-01** |
 | 5 | CBS auth durability: how do we keep data refreshes working as the session cookie expires? | Whether the tool needs periodic manual re-connect vs. can refresh unattended; the security tradeoff of storing the password | (a) manual cookie re-extraction each session (~weekly; no password stored) vs. (b) automated login storing CBS username+password locally vs. (c) longer-lived "keep me signed in" cookie | Owner (when CBS ingestion is built) | Open — raised by spike #5. Cookie observed stamped ~30 days; real lifetime being measured. Default leaning (a). See [`../cbs_data_discovery.md`](../cbs_data_discovery.md) §4. |
