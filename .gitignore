@@ -33,3 +33,7 @@ next-env.d.ts
 /spikes/cbs-api/.env
 /spikes/cbs-api/output/
 /spikes/cbs-api/*.har
+
+# FantasyPros API spike (issue #7) — never commit the API key or pulled data
+/spikes/fantasypros-api/.env
+/spikes/fantasypros-api/output/
