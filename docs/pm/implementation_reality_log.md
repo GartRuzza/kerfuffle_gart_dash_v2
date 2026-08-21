@@ -53,6 +53,41 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-20 — CBS data discovery spike (issue #5, roadmap #2)
+
+**Ticket / Issue:** [#5](../../../../issues/5) · **Branch:** spike/issue-5-cbs-api-discovery · **Deviated from plan:** Yes — the *method* is not what the plan assumed.
+
+**Original intent**
+Timeboxed spike to prove CBS access against the real league and inventory the data — especially whether **contract length** lives in CBS. The issue assumed the likely path was the documented CBS v3 JSON API (`access_token` + `response_format=json`).
+
+**What was actually built / found**
+A read-only discovery harness (`spikes/cbs-api/`) and a findings report ([`../cbs_data_discovery.md`](../cbs_data_discovery.md)). We proved we can pull real KERFUFFLE data — but **not** the way the issue assumed:
+- The **old JSON API is dead.** `…/fantasy/<method>/?response_format=json` returns the web page (HTML), not JSON, even authenticated. The `access_token` route is gone.
+- The **working method is authenticated HTML scraping**: the modern league site renders data into page tables, gated only by the owner's **session cookie**. Every team's roster, the FA pool, transactions, rules/scoring, and draft/auction values are reachable read-only at clean URLs.
+- **Contract length IS in CBS** — a per-player "Contract" column (1–4 yrs) beside Salary. Confirmed against the owner's real roster.
+
+**Deviations**
+The auth mechanism (session cookie, not `access_token`) and the data format (HTML tables, not JSON) both differ from the issue's assumption. The plan's fallback intuition — "re-extract the token from the browser" (already in `user_flows.md`) — turned out to be exactly right; the automated-login path was moot.
+
+**Why we deviated**
+CBS deprecated and then effectively removed the public v3 fantasy API; the current site is a server-rendered app. We discovered this empirically by probing hosts and then analysing a browser HAR the owner captured.
+
+**Product implications**
+CBS ingestion is **viable** and the biggest unknown is retired: contract length is available, so we do **not** need a Commissioner's-sheet import for it (roadmap open decision #1 → resolved). The engine and lenses can plan on real rosters, salaries, contracts, transactions, and scoring. Two capabilities are **not yet proven** and become their own follow-ups: pulling a **specific past season** (the backtest needs this — the year filter is JS/POST-driven, not a URL param) and reading **FAB winning-bid amounts** (the waiver price curve needs this). Ingestion also now implies a per-refresh **cookie re-extraction** step and a real schema — both deliberately deferred until the ingestion build.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| Ingestion will parse HTML, not consume an API | CBS offers no working API | Parser is sensitive to CBS layout changes | Keep it thin/central; re-verify if a page changes |
+| Auth is a session cookie that expires | It's the only thing that works | Data goes stale (~weekly) until re-extracted | Build re-extraction + a clear "stale/expired" state |
+| Historical-season + FAB-bid retrieval unsolved | Out of this spike's timebox | Blocks backtest (#5) and waiver curve until solved | Focused follow-up spikes when those items come up |
+
+**Follow-up decisions needed from the product owner**
+- [ ] None blocking now. When ingestion is built, storing the session cookie is a **secrets/credentials** matter (local env only, never committed) and introducing a real **schema** is a sensitive change — both will be flagged then.
+
+---
+
 ### 2026-08-20 — Table redesign Phase 3: data dictionary shell (placeholders)
 
 **Ticket / Issue:** [#1](../../../../issues/1) (owner design feedback) · **Branch:** feat/issue-1-player-table-prototype · **Deviated from plan:** No (owner asked for structure now, content later)

@@ -8,7 +8,7 @@
 >
 > **Read this doc before any planning or building.** It is the grounding doc — it exists to stop us from assuming a feature is built when it is not.
 
-**Last updated:** 2026-08-20 · **Updated by:** Claude Code (table redesign, Phase 2) · **Reflects commit:** feat/issue-1-player-table-prototype
+**Last updated:** 2026-08-20 · **Updated by:** Claude Code (CBS data discovery spike, issue #5) · **Reflects commit:** spike/issue-5-cbs-api-discovery
 
 ---
 
@@ -24,7 +24,7 @@
 | --- | --- | --- |
 | Player table (prototype) | **Built** | Local Next.js app, mock data only. Dark theme; position badges; tier bands; expanded columns; roster/manager + position filters; column show/hide + drag-reorder; saved views (localStorage); inline-editable Ceiling; **data-dictionary overlay (placeholder content)**; MOCK-DATA banner. The 3-phase redesign is complete. See details below. |
 | Player table (on real data) | Not built | Waits on data ingestion + engine (roadmap #2–6). |
-| CBS API ingestion | Not built | Access itself is unproven — spike is roadmap item #2 |
+| CBS API ingestion | Not built | **Access now PROVEN read-only** (spike, issue #5): auth via the owner's session cookie; data is server-rendered **HTML** at clean league URLs (old JSON API is dead); **contract length confirmed present**. The ingestion module itself is not built. Full findings: [`../cbs_data_discovery.md`](../cbs_data_discovery.md). |
 | FantasyPros ingestion | Not built | Access method is an open decision (roadmap decision #2) |
 | Valuation engine (core or complete) | Not built | — |
 | Backtest | Not built | — |
@@ -49,8 +49,8 @@ Nothing is in a Partial state. The player table prototype is fully Built **as a 
 - **Everything in the table is mock data.** Real NFL names, but invented salaries, values, tiers, and rankings — authored only to exercise the UI. Nothing is computed; nothing is real.
 - **Limited persistence.** Custom *views* persist in browser localStorage (per browser, not synced); everything else — including edited ceilings — resets on reload. No database, no accounts.
 - **Local only.** The app is not deployed anywhere; it runs on the owner's machine via `npm run dev`.
-- Neither data source (CBS API, FantasyPros) is verified to be accessible. All plans downstream of data assume the spikes (roadmap #2–3) succeed in some form.
-- Contract-length data location is unknown — possibly not in CBS at all (roadmap open decision #1).
+- **CBS access is now verified (read-only)** via the session-cookie + HTML-parse method (spike #5); **FantasyPros access is still unproven** (roadmap item #3). Downstream plans still assume that second spike succeeds in some form.
+- **Contract-length location resolved (spike #5): CBS exposes per-player contract length** (a "Contract" column, 1–4 yrs, on roster pages) — this closes roadmap open decision #1. Two things remain unsolved in CBS: programmatic **historical-season** retrieval (the year filter is JS/POST-driven) and **FAB winning-bid amounts** in the transaction log. See [`../cbs_data_discovery.md`](../cbs_data_discovery.md).
 - Next.js 15 pulls in 3 high-severity npm advisories through build-time transitive deps (postcss; sharp, which we don't use). The only patch upgrades Next to v16, a breaking major-dependency change — deferred as a follow-up decision (see reality log). Negligible risk for a local, no-image prototype.
 
 ## Known bugs
@@ -70,6 +70,8 @@ Nothing is in a Partial state. The player table prototype is fully Built **as a 
 | **Tests** | **Vitest unit tests** (`npm test`) — 21 passing, covering mock-data derivation (incl. the unique-rank invariant), the tier/sort/position rules, the saved-views model, and data-dictionary coverage. `npm run build` passes; render verified. UI interaction checks (drag, show/hide, save view, open dictionary) remain manual — see [`../qa_test_plan.md`](../qa_test_plan.md). |
 
 ## Latest implementation summary
+
+**2026-08-20 — CBS data discovery spike (issue #5, roadmap #2).** Proved, against the real KERFUFFLE league, that we can pull live data read-only. The old CBS v3 JSON API is dead; the working path is **authenticated HTML fetch + parse** — the modern league site renders data into page tables, gated only by the owner's **session cookie**. Reachable read-only: every team's roster (`/teams/roster-report/{teamId}/1`, teams 1–12) with **salary and contract length**, the free-agent pool (`/players`), the transaction log (`/transactions`, filterable 2024–26), league scoring/settings (`/rules`), and draft/auction values (`/draft/results`). **Contract length is present** (closes open decision #1); players carry a stable **CBS numeric id** (the FantasyPros join key). Validated by parsing the owner's real roster and confirming the numbers with him. Deliverables: a discovery report ([`../cbs_data_discovery.md`](../cbs_data_discovery.md)) and throwaway read-only tooling in `spikes/cbs-api/` (not part of the app). No product code, schema, or app change. Unsolved follow-ups: historical-season fetch and FAB bid amounts. Nothing was ever written to CBS; the cookie and pulled data are git-ignored.
 
 **2026-08-20 — Table redesign, Phase 3 of 3 (data dictionary shell).** Added the Data Dictionary overlay: a button at the bottom opens a modal defining each column — a one-line definition (kept under 15 words) plus an expandable bulleted deep-dive (mechanics + source). Content is intentionally **mostly placeholder** (flagged per field) pending data discovery and the engine; the structure (`lib/dataDictionary.ts` + `components/DataDictionary.tsx`) is stable so later issues just fill in text. A coverage unit test guarantees every column has an entry (21 tests total). This completes the 3-phase redesign. Validated: unit tests + clean build + rendered-DOM check.
 
