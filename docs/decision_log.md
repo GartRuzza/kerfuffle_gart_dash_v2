@@ -47,6 +47,31 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-08 · 2026-08-20 · CBS data via authenticated HTML scraping; contract length comes from CBS
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Technical + Product (data sourcing) |
+| **Decided by** | Claude Code (spike #5) + owner (confirmed the data) |
+
+**The question**
+How do we get real KERFUFFLE data out of CBS, and — the open one (roadmap decision #1) — where does player **contract length** come from?
+
+**What we decided**
+Ingest CBS data by **authenticated HTML fetch + parse**: send the owner's browser **session cookie** to the league's clean URLs (`/teams/roster-report/{teamId}/1`, `/players`, `/transactions`, `/rules`, `/draft/results`) and parse the server-rendered tables. And take **contract length from CBS itself** (the per-player "Contract" column), not from the Commissioner's sheet.
+
+**Why**
+Proven empirically in the spike: CBS's old v3 JSON API is dead (it returns HTML even with `response_format=json`/`access_token`), but the modern site renders every record we need into page HTML, gated only by the session cookie. Contract length turned out to be a first-class column on the roster pages (confirmed against the owner's real roster), which removes the need for a second data source for it.
+
+**What we gave up**
+The robustness of a real API. HTML parsing is sensitive to CBS layout changes, and the session cookie expires (needs periodic re-extraction). We accept this because it's the only thing that works, it's one league's rarely-changing pages, and read-only scraping of one's own league is low-risk. We also did **not** solve two things here: fetching a specific **past season** (needed for the backtest) and reading **FAB bid amounts** (needed for the price curve) — both deferred to focused follow-ups.
+
+**What would make us reconsider**
+CBS shipping a usable API again (switch to it), CBS blocking or materially changing the pages (revisit the parser or the whole approach), or contract length disappearing from the roster view (fall back to the Commissioner's-sheet import from roadmap decision #1). Full evidence: [`cbs_data_discovery.md`](cbs_data_discovery.md).
+
+---
+
 ### D-07 · 2026-08-20 · Roster filtering: 3-way status toggle + Manager dropdown
 
 | | |

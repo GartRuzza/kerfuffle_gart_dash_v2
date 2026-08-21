@@ -32,6 +32,8 @@ The only persisted data. Custom **views** (UI config: which columns show, their 
 
 **(planned — none built.)** The real entities will be defined during/after data discovery. Expected shape, at a high level (not yet designed, subject to what the sources expose): players, their KERFUFFLE-adjusted values and tiers (engine output), league rosters/contracts/salaries and the transaction log (CBS), and market rankings (FantasyPros). None of this is modelled yet.
 
+**Informed by the CBS discovery spike (issue #5 — [`cbs_data_discovery.md`](cbs_data_discovery.md)):** CBS is confirmed to expose, per player, a stable **CBS numeric player id** (the intended FantasyPros join key), name, NFL team, position, **salary**, and **contract length** (years remaining, 1–4). Per-team rosters (12 teams), the free-agent pool, the transaction log (2024–26), scoring/settings, and draft/auction values are all reachable read-only. This is **proven source shape, still not a schema** — do not build tables from it until the ingestion issue is scoped and approved. Two fields the engine/lenses will want are **not yet retrievable** and remain open: historical-season data (backtest) and FAB winning-bid amounts (price curve).
+
 ## Rules that protect the data
 
 - **No schema is introduced without owner approval.** Introducing a real database/schema is a sensitive change (CLAUDE.md) — stop and flag first.
