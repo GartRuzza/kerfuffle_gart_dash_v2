@@ -8,7 +8,7 @@
 >
 > **Describe what is real.** If a component is planned but not built, mark it **(planned)** explicitly.
 
-**Last updated:** 2026-08-20 · **Reflects commit:** feat/issue-1-player-table-prototype (table redesign, Phase 1)
+**Last updated:** 2026-08-24 · **Reflects commit:** feat/issue-1-player-table-prototype (table redesign, Phase 1). *Planned storage architecture recorded from decision [D-10](decision_log.md) — no code change.*
 
 ---
 
@@ -29,8 +29,9 @@ Everything the product will become — CBS + FantasyPros ingestion, the valuatio
 | Drag & drop | [@dnd-kit](https://dndkit.com) | Accessible column-header drag-to-reorder, bound to TanStack `columnOrder` | D-05 |
 | Persistence | Browser **localStorage** (custom views only) | Local-first: saved views survive reloads with no backend. Per-browser, not synced. | D-05 |
 | Data source | In-repo mock fixture (`lib/mockData.ts`) | Prototype only — real data (CBS API, FantasyPros) is unverified and deliberately deferred (roadmap #2–3) | — |
-| Backend / API | **(planned)** — Next.js server routes | Real data ingestion + engine live here later, behind a clean boundary | D-01 |
-| Database | **(planned / none yet)** | No schema exists; mock data is a flat fixture, not a data model | — |
+| Backend / API | **(planned)** — Next.js server routes | Real data ingestion + engine live here later, behind a clean boundary. Ingestion runs on a schedule (manual for now); the app never fetches CBS/FantasyPros at request time | D-01 |
+| Database | **(planned)** — **SQLite** via **`better-sqlite3`**, one file (normalized + derived layers) | Relational data (player → contract → team, transactions across seasons) plus the point-in-time history the price curve and backtest need; one file, zero setup, real SQL | [D-10](decision_log.md) |
+| Raw data archive | **(planned)** — timestamped, dated files under `data/raw/` (CBS HTML, FP JSON), append-only, git-ignored | Every fetched response saved verbatim, so a wrong parser is fixed by re-parsing the archive (never re-fetching), and un-snapshotted weeks aren't lost history | [D-10](decision_log.md) |
 | Auth | **(none — single-user, local)** | One owner, one machine; no accounts by design (vision non-goal) | — |
 | Hosting / deploy | **(planned)** — Vercel | Local-first proves the tool; deployment waits (roadmap "Later") | D-01 |
 
@@ -39,6 +40,7 @@ Everything the product will become — CBS + FantasyPros ingestion, the valuatio
 - **The mock-data boundary — `lib/mockData.ts` is the only place invented data enters.** Every component reads the typed `Player` / `PlayerRow` shapes from `lib/types.ts`; none of them know the numbers are fake. When real CBS/FantasyPros data arrives, this one module is replaced (with a server route that returns the same shapes) and the UI does not change. **Do not scatter mock values through components**, and **do not grow a database around the `Player` type** — it is a fixture shape, not a schema. If a real schema becomes necessary, stop and flag the owner.
 - **One table, many filters.** There is exactly one table component. Flows differ only by how it is filtered (roster, position). Never add a dedicated per-flow screen (a "waiver screen", a "trade screen") that duplicates the table — that is the drift [`user_flows.md`](user_flows.md) exists to prevent.
 - **The prototype does no network I/O, and the only storage is localStorage.** No server calls, no login. In-session state (filters, sort, edited ceilings) lives in React memory and resets on reload; the sole persisted thing is **custom views** in `localStorage` (`lib/views.ts`, key `gartdash.customViews.v1`) — read on mount in a `useEffect` to stay SSR-safe. Keep it that way: localStorage holds UI config only, never domain data or anything sensitive.
+- **(planned) The data-access boundary — one module, the same `Player` shape (D-10).** When real data lands, every read and write goes through a **single data-access module** that replaces `lib/mockData.ts` and returns the same typed `Player`/`PlayerRow` shapes, backed by the store: **raw file archive → SQLite (normalized + derived)**. Two rules ride on this boundary: (1) **the app never fetches CBS or FantasyPros at request/page-load time** — ingestion runs on a schedule (manual for now), writes to the store, and the UI reads only from the store; (2) **the raw archive is append-only and never edited** — a wrong parse is fixed by re-parsing the archive, not re-fetching. This is also what keeps the deploy path open (below): the store swap is contained to this one module.
 
 ## Styling & design tokens
 
@@ -99,7 +101,7 @@ to this behavior goes in that one module — never spread the rules into compone
 - **Mock data stays in `lib/mockData.ts`.** Nowhere else invents numbers. Everything else consumes the `Player` / `PlayerRow` types.
 - **No schema, no persistence, no auth, no network** in this prototype. Adding any of these is a structural change — update this doc and flag the owner first (per CLAUDE.md, these are sensitive areas).
 - **One table.** Filtered views, not new screens.
-- **Keep it deployable.** Nothing may assume a local-only environment in a way that would block a later Vercel deploy (e.g. reading the filesystem at request time).
+- **Keep it deployable.** Nothing may assume a local-only environment in a way that would block a later Vercel deploy (e.g. reading the filesystem at request time). The (planned) **file-based SQLite store (D-10)** is the one deliberate exception, contained by design: a writable file doesn't survive serverless, so all access goes through the single data-access module and a later swap to **Turso/Postgres** touches only that module — no other code may assume file-SQLite.
 - Secrets, when they eventually exist, live in environment variables only — never in code or the repo.
 
 ## Known architectural limits

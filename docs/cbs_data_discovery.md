@@ -78,4 +78,16 @@ The cookie (`.env`), the pulled HTML (`output/`), and any HAR are **git-ignored*
 
 ---
 
+## 7. Update — 2026-08-24 (planning, ahead of Issues A/B/C)
+
+This spike proved **reachability**, not a field-level inventory. Recorded here so the ingestion work doesn't over-trust it:
+
+- **Discovery depth so far is page-level only.** The signals in `pull.mjs` are word-count heuristics (does the page contain "salary", "contract", player links), not a column-by-column inventory. **Field-level profiling** — every column, its inferred type, one sanitized example, null/blank rate, with **no real league values committed** — is planned as **Issue B** (source profiling spike), which reads from the raw archive built in **Issue A**.
+- **`/rules` scoring values were never extracted.** The spike confirmed 14 settings tables exist and that scoring is PPFD, but the actual KERFUFFLE scoring **values** were never parsed into structured form. Issue B extracts them. They must be **parsed from the page, never hardcoded** — the league changed scoring as recently as 2024 (Turnover on Downs).
+- **Only 2 of 12 rosters were pulled** (teams 1–2). Issue A archives **all 12** roster reports; Issue B profiles all 12.
+- **Expect non-player rows in roster tables.** Per the [constitution](kerfuffle-fantasy-constitution.md): **dead cap** shows up as **inactive pseudo-players the commissioner manually adds to rosters**, and one 3rd-round rookie may sit on a **Practice Squad** (counts against the $500 cap, not active-roster limits). Roster parsing must **classify** these rows, not assume every row is a real player — locate columns by **header text, never by position**. How pseudo-rows and Practice-Squad players are modelled in the schema is an **open decision** ([`pm/roadmap.md`](pm/roadmap.md)) that Issue B's evidence resolves.
+- **Scoring authority: CBS actuals are authoritative and are never recomputed.** CBS already applied KERFUFFLE settings (including first downs) to every real game; the engine must **never re-score actuals** — recomputing risks disagreeing with the official record. The parsed scoring config's only job downstream is translating FantasyPros **projections** into KERFUFFLE points. (Whether CBS's own **displayed projections** are themselves KERFUFFLE-scored — which would give the backtest a second baseline to beat — is a question Issue B confirms.)
+
+---
+
 **Related docs:** [`pm/roadmap.md`](pm/roadmap.md) (open decision #1 now resolved), [`decision_log.md`](decision_log.md) (D-08: access method + contract-length source), [`data_model.md`](data_model.md) (planned entities informed by these findings), [`pm/current_state.md`](pm/current_state.md) (status), [`user_flows.md`](user_flows.md) (the refresh/re-extract step this validates).
