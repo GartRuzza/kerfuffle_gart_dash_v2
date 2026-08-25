@@ -41,6 +41,19 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-25 — Source profiler (a readable map of what's in the data)
+
+**New**
+- A new command, **`npm run profile`**, reads your latest saved snapshot and writes a plain-English **field guide** to `docs/profiles/` — for every page and ranking, what columns exist, what type each is, and how often they're blank. It also pulls your **league's scoring rules out of CBS into a clean, structured file** you can read. This is what lets the real database (coming next) be built around what the data *actually* looks like, instead of guesses.
+- It's safe to keep in the project: it writes **shapes, not your real data**. Player names, salaries, and rankings are masked (e.g. a name becomes `Aa'Aaaa Aaaaa`); only harmless list-values like positions and roster statuses are shown as-is; your scoring *rules* are shown in full because they're rules, not private data. A built-in safety check refuses to write anything if a real value would slip through.
+- The summary answers six questions we needed settled — and turned up useful surprises: your CBS scoring shows **defensive interceptions at 2 points, not the 3 written in the constitution** (CBS is what actually counts); FantasyPros' paid tier is fully working; and a few CBS pages (free agents, transactions, draft results) load their data with JavaScript, so those need extra handling later.
+
+**Requires action from you**
+- Nothing new — it reads the snapshots you already captured with `npm run archive`. Just run `npm run profile` after a fresh snapshot to refresh the guide.
+
+**Known issues / not yet done**
+- This only **describes** the data — it doesn't load it into the app. The player table is still 100% mock data. And because you have no cut players sitting as "dead cap" right now, the guide couldn't show a real example of those (it confirmed how we'll spot them when they appear).
+
 ## 2026-08-25 — Raw snapshot archiver (save the league's history)
 
 **New**

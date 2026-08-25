@@ -8,7 +8,7 @@
 >
 > **Describe what is real.** If a component is planned but not built, mark it **(planned)** explicitly.
 
-**Last updated:** 2026-08-25 · **Reflects commit:** feat/issue-10-raw-archival. *The **raw archive layer** (issue #10) now exists as an operator tool — `tools/archive/` writing to `data/raw/`; the rest of the D-10 storage architecture (SQLite normalized + derived, the data-access module) is still **(planned)**.*
+**Last updated:** 2026-08-25 · **Reflects commit:** feat/issue-10-raw-archival. *The **raw archive layer** (issue #10, `tools/archive/` → `data/raw/`) and the **source profiler** (issue #11, `tools/profile/` → `docs/profiles/`) now exist as offline operator tools; the rest of the D-10 storage architecture (SQLite normalized + derived, the data-access module) is still **(planned)**.*
 
 ---
 
@@ -32,6 +32,7 @@ Everything the product will become — CBS + FantasyPros ingestion, the valuatio
 | Backend / API | **(planned)** — Next.js server routes | Real data ingestion + engine live here later, behind a clean boundary. Ingestion runs on a schedule (manual for now); the app never fetches CBS/FantasyPros at request time | D-01 |
 | Database | **(planned)** — **SQLite** via **`better-sqlite3`**, one file (normalized + derived layers) | Relational data (player → contract → team, transactions across seasons) plus the point-in-time history the price curve and backtest need; one file, zero setup, real SQL | [D-10](decision_log.md) |
 | Raw data archive | **Built (issue #10)** — `tools/archive/` (`npm run archive`) writes timestamped, dated folders under `data/raw/{timestamp}/{cbs,fantasypros}/` (CBS HTML, FP JSON) + a per-run `manifest.json`, append-only, git-ignored | Every fetched response saved verbatim, so a wrong parser is fixed by re-parsing the archive (never re-fetching), and un-snapshotted weeks aren't lost history. Capture only — no read path, no parsing, no DB yet | [D-10](decision_log.md) |
+| Source profiler | **Built (issue #11)** — `tools/profile/` (`npm run profile`) reads the latest `data/raw/` run and writes a committed, **shape-only** field profile to `docs/profiles/` (JSON + `PROFILE.md`) + the `/rules` scoring config in full. Uses **`node-html-parser`** (dev-only) for header-name column mapping | Turns source drift into a git diff; produces the field-shape evidence the schema (#12) is built on. Discovery/docs tooling — reads the local archive only, writes no DB, is not part of the app | [D-10](decision_log.md) |
 | Auth | **(none — single-user, local)** | One owner, one machine; no accounts by design (vision non-goal) | — |
 | Hosting / deploy | **(planned)** — Vercel | Local-first proves the tool; deployment waits (roadmap "Later") | D-01 |
 

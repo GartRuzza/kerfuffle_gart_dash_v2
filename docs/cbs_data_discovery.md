@@ -90,4 +90,36 @@ This spike proved **reachability**, not a field-level inventory. Recorded here s
 
 ---
 
-**Related docs:** [`pm/roadmap.md`](pm/roadmap.md) (open decision #1 now resolved), [`decision_log.md`](decision_log.md) (D-08: access method + contract-length source), [`data_model.md`](data_model.md) (planned entities informed by these findings), [`pm/current_state.md`](pm/current_state.md) (status), [`user_flows.md`](user_flows.md) (the refresh/re-extract step this validates).
+## 8. Update — 2026-08-25 (issue #11: field-level profiling — corrections to §3)
+
+Section 3 proved *reachability* with page-level word-count signals. Issue #11 profiled the raw archive **field by field** and the picture is more nuanced than "the site renders data into page tables." The committed, shape-only profile lives in [`profiles/`](profiles/) (`PROFILE.md` + JSON); the scoring config is in [`profiles/cbs_scoring_rules.json`](profiles/cbs_scoring_rules.json). Regenerate with `npm run profile`.
+
+**What parses cleanly from static HTML (safe for ingestion):**
+
+- **All 12 rosters** (`roster-report/{1..12}`) — one table, **header identical across all teams**, 16 columns: `Edit, Pos, Players, Opp, Game Time, Bye, O/U, PosRnk, Ovp, Rost, Start, Salary, Contract, 2025, 3yr Avg, Proj`. Rows are classified by section (**Active / Reserves / Injured / Practice**) and by whether they link a real player id.
+  - ⚠ **`Pos` on the roster is the lineup _slot_, not the player's NFL position** — its values include `FLEX` and `RB-WR-TE`, not just QB/RB/WR/TE/DST. The player's true position lives in the `Players` cell. Ingestion must not treat roster `Pos` as the position.
+  - **Contract** values observed were **{1, 2, 3}** (no 4-yr contracts in this snapshot) — the {1–4} domain still holds per the rules.
+- **`/rules`** — 10 tables; scoring, roster limits, and general settings all parse. **`/standings/overall`** and **`/history`** parse to clean tables.
+
+**Corrections — pages whose data is NOT in the static snapshot (JS-rendered / collapsed / paginated):**
+
+| Page | §3 said | Reality (issue #11) |
+| --- | --- | --- |
+| `/players` (free agents) | "renders a table" | **No `<table>`.** Div-based markup, ~50 player links only, **paginated** — a partial preview, not the full pool. Needs the paged/JS route for ingestion. |
+| `/transactions` | "columns Date·Team·Players·action" | Columns are **Date · Team · Players · Effective(week)** — **no type column, no bid-amount column**, and the log is **paginated (only page 1 archived)**. |
+| `/draft/results` | "carries salary/auction values" | The static table is only the collapsed **future-draft-picks** grid (`Pos·Player`). The **auction values with salaries are not in a parseable static table** here. |
+| `/scoring/live` | "per-player scoring" | **No static table** (JS-rendered). |
+| `/players/rankings` | — | A **302 stub** (~223 bytes), as already noted. |
+
+**Scoring extracted (Q2) — parsed, not hardcoded:** all **24** rules in [`profiles/cbs_scoring_rules.json`](profiles/cbs_scoring_rules.json), in three formats (flat, per-unit, tiered Points-Against bands), plus roster limits (Starters 10, Bench 0–9, Injured 0–2, Practice 0–5, Total 10–26; superflex lineup) and league settings.
+- ⚠ **The live page diverges from the written constitution:** the constitution lists defensive **Int = 3 pts**, but CBS `/rules` renders **Int = 2 points**. **CBS is authoritative** — this is exactly why the values are parsed from the page every pull, never hardcoded.
+
+**Dead-cap pseudo-rows & Practice Squad (Q3):** **170** real players across the league, **10** on Practice Squads, and **0 commissioner-added dead-cap pseudo-rows** in this pre-auction snapshot. Practice-Squad players are ordinary player rows (real id) sitting in a `Practice` section. A dead-cap pseudo-row, when present, is detectable as a roster row **with a salary but no `playerpage` link** (no CBS id). The schema modelling stays the owner's call (roadmap open decision #7).
+
+**Transactions & FAB (Q4):** no type/amount columns in the default view; **FAB winning-bid amounts remain unresolved here**, but a winning bid *becomes the player's salary*, which **is** visible on rosters — so bid outcomes are recoverable via salary even without the itemized bid event. Historical-season retrieval is still unsolved (unchanged from §4).
+
+**Are CBS projections KERFUFFLE-scored? (Q6):** strong evidence **yes** — the league's own CBS site applies KERFUFFLE scoring to every fantasy-point field it shows (the `2025` actual column is the authoritative KERFUFFLE season total, and `Proj` sits in the same league-scored context). Definitive confirmation (run FP raw-stat projections through the parsed scoring and compare to CBS `Proj`) is engine work (#7), deferred.
+
+---
+
+**Related docs:** [`pm/roadmap.md`](pm/roadmap.md) (open decision #1 now resolved), [`decision_log.md`](decision_log.md) (D-08: access method + contract-length source), [`data_model.md`](data_model.md) (planned entities informed by these findings), [`profiles/PROFILE.md`](profiles/PROFILE.md) (the committed field profile), [`pm/current_state.md`](pm/current_state.md) (status), [`user_flows.md`](user_flows.md) (the refresh/re-extract step this validates).
