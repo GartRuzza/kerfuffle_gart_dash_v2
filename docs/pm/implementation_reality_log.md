@@ -53,6 +53,41 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-25 — Source-profiling spike (CBS field inventory + FantasyPros HOF re-verification)
+
+**Ticket / Issue:** [#11](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/11) · **Branch:** feat/issue-10-raw-archival · **Deviated from plan:** Yes (one owner decision changed the deliverable's contents; findings corrected several plan assumptions)
+
+**Original intent**
+Close the discovery gap: profile the raw archive field-by-field, extract the `/rules` scoring values, profile all 12 rosters (characterizing dead-cap pseudo-rows and Practice Squad), enumerate transaction types, re-verify the FantasyPros HOF unlock, and confirm whether CBS projections are KERFUFFLE-scored. Deliver a committed profile — shape only, no real league values.
+
+**What was actually built**
+A generator at `tools/profile/` (`npm run profile`) that walks the latest raw run and writes four committed files to `docs/profiles/`: `cbs_field_profile.json`, `fantasypros_field_profile.json`, `cbs_scoring_rules.json` (real values, in full), and a human-readable `PROFILE.md` answering the six questions. Pure logic (type inference, blank-rate, scoring parser, sanitizer) is unit-tested (23 new tests); a leak self-check fails the run if any private field would publish a real value.
+
+**Deviations**
+1. **Sanitization scope became an explicit owner decision.** The owner pushed back on *why* we sanitize at all. Surfacing that the repo is **public** reframed it: the answer is "A" — mask player/roster/market values, list only non-private structural enums, commit league *rules* in full.
+2. **Several plan/discovery assumptions were wrong** and are now corrected in the discovery docs (see below).
+3. Added a dev-only dependency (`node-html-parser`) rather than hand-rolling a fragile HTML parser.
+
+**Why we deviated**
+(1) The owner is right that most of this data isn't secret — the real reasons are public-repo exposure of the league's private roster/salary state, keeping the drift-diff meaningful, and FantasyPros ToS; none is "critical," so the honest framing mattered. (2) The earlier spikes profiled only to page level (word-count signals); field-level profiling exposed the reality. (3) CBS HTML carries heavy inline JS; a real DOM parser is more reliable and de-risks the #12 parser too.
+
+**Product implications**
+- The **schema (#12) can now be designed against proven shapes.** Rosters, `/rules`, `/standings`, `/history` parse cleanly; **`/players`, `/transactions`, `/draft/results`, `/scoring/live` are JS-rendered/paginated** and their data is *not* in the first static snapshot — ingestion must page/JS-render those. This is the biggest correction.
+- **KERFUFFLE scoring is captured** and **CBS disagrees with the written constitution** (defensive Int = 2 on CBS, not 3). CBS is authoritative; the engine must use the parsed value. Good thing it was never hardcoded.
+- **FantasyPros HOF is fully confirmed** (full board, projections/metadata/news unlocked) — but the issue's success signal `public_api_limited: false` was **wrong**: the flag stays `true` even on HOF. Use row count + `tier` instead. ADP still `403` (nice-to-have).
+- **Dead-cap pseudo-rows: none exist right now** (pre-auction), so the open modelling decision (#7) still can't be settled from live examples — but the detection rule is confirmed (a roster row with a salary and no player id).
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| `node-html-parser` dev dependency | Reliable header-name column mapping vs. fragile regex | None (dev-only, not shipped in the app) | Removable; the #12 parser will likely reuse it |
+| Profile can't characterize dead-cap pseudo-rows (none in snapshot) | They don't exist pre-auction | #12 schema for pseudo-rows rests on the constitution + a detection rule, not a live example | Re-run `npm run profile` after a cut/auction creates one |
+| ADP endpoint unresolved (`403`) | Out of scope; nice-to-have | No ADP "market" signal yet | Find the correct path/params on a later pass |
+
+**Follow-up decisions needed from the product owner**
+- [ ] **Dead-cap pseudo-row / Practice-Squad schema modelling** (roadmap open decision #7) — still the owner's call before #12. #11 delivered the evidence (detection rule + current counts: 0 pseudo-rows, 10 PS players) but no live pseudo-row to model against.
+
 ### 2026-08-25 — Raw snapshot archival tool (issue #10, roadmap #4)
 
 **Ticket / Issue:** [#10](../../../../issues/10) · **Branch:** feat/issue-10-raw-archival · **Deviated from plan:** No — built to the issue as written; the only choices were the builder's-call items the issue flagged.

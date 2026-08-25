@@ -1,0 +1,4343 @@
+{
+  "_meta": {
+    "source_run": "2026-08-25T21-54-26Z",
+    "source": "data/raw (git-ignored, issue #10)",
+    "generator": "tools/profile/generate.mjs"
+  },
+  "present": true,
+  "endpoints": [
+    {
+      "endpoint": "adp",
+      "http_status": 403,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/adp?position=ALL",
+      "parseable": true,
+      "row_array_key": null,
+      "row_count": 0,
+      "field_count": 0,
+      "envelope": {},
+      "columns": []
+    },
+    {
+      "endpoint": "ecr-draft-half-all",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings?type=draft&scoring=HALF&position=ALL",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 883,
+      "field_count": 25,
+      "envelope": {
+        "sport": "NFL",
+        "type": "Draft Half PPR",
+        "ranking_type_name": "draft",
+        "year": "2026",
+        "week": "0",
+        "position_id": "ALL",
+        "scoring": "HALF",
+        "count": 883,
+        "total_experts": 110,
+        "last_updated": "8/25",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 883,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "99999"
+        },
+        {
+          "field": "player_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 882,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "Aaaaaa Aaaaa"
+        },
+        {
+          "field": "sportsdata_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 882,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "aaa9999a-9999-99aa-9aa9-aa9a99999999"
+        },
+        {
+          "field": "player_team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 852,
+            "boolean": 31
+          },
+          "category": "identifier",
+          "cardinality": 33,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "AAA"
+        },
+        {
+          "field": "player_position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_short_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 855,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "A. Aaaaa"
+        },
+        {
+          "field": "player_eligibility",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 12,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "AA",
+          "distinct_values": [
+            "DB,WR",
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "RB,TE",
+            "RB,WR",
+            "TE",
+            "TE,WR",
+            "WR",
+            "WR,CB",
+            "WR,TE"
+          ]
+        },
+        {
+          "field": "player_yahoo_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 10,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "RB,TE",
+            "TE",
+            "WR",
+            "WR,CB",
+            "WR,RB",
+            "WR,TE"
+          ]
+        },
+        {
+          "field": "player_page_url",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 883,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaaaaa/aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 883,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_yahoo_id",
+          "type": "integer",
+          "mixed_types": {
+            "integer": 849,
+            "id": 32
+          },
+          "category": "identifier",
+          "cardinality": 881,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "99999"
+        },
+        {
+          "field": "cbs_player_id",
+          "type": "id",
+          "mixed_types": {
+            "id": 838,
+            "integer": 32
+          },
+          "category": "identifier",
+          "cardinality": 870,
+          "null_blank_rate_pct": 1,
+          "sample_size": 883,
+          "example": "9999999"
+        },
+        {
+          "field": "player_bye_week",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 6,
+          "sample_size": 883,
+          "example": "9",
+          "distinct_values": [
+            "10",
+            "11",
+            "13",
+            "14",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "field": "player_owned_avg",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 578,
+            "integer": 305
+          },
+          "category": "private",
+          "cardinality": 279,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_espn",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 516,
+            "integer": 367
+          },
+          "category": "private",
+          "cardinality": 228,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_yahoo",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 84,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "999"
+        },
+        {
+          "field": "player_ecr_delta",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 95,
+          "null_blank_rate_pct": 81,
+          "sample_size": 883,
+          "example": "-9"
+        },
+        {
+          "field": "rank_ecr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 883,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "9"
+        },
+        {
+          "field": "rank_min",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 561,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "9"
+        },
+        {
+          "field": "rank_max",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 682,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "9"
+        },
+        {
+          "field": "rank_ave",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 817,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "9.99"
+        },
+        {
+          "field": "rank_std",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 717,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "9.99"
+        },
+        {
+          "field": "pos_rank",
+          "type": "string",
+          "category": "private",
+          "cardinality": 883,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "AA9"
+        },
+        {
+          "field": "tier",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 16,
+          "null_blank_rate_pct": 0,
+          "sample_size": 883,
+          "example": "9"
+        }
+      ]
+    },
+    {
+      "endpoint": "ecr-draft-ppr-all",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings?type=draft&scoring=PPR&position=ALL",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 521,
+      "field_count": 25,
+      "envelope": {
+        "sport": "NFL",
+        "type": "Draft PPR",
+        "ranking_type_name": "draft",
+        "year": "2026",
+        "week": "0",
+        "position_id": "ALL",
+        "scoring": "PPR",
+        "count": 521,
+        "total_experts": 108,
+        "last_updated": "8/25",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 521,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "99999"
+        },
+        {
+          "field": "player_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 520,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "Aa'Aaaa Aaaaa"
+        },
+        {
+          "field": "sportsdata_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 520,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "aa99a999-a99a-9aa9-a999-999a99a9aaaa"
+        },
+        {
+          "field": "player_team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 503,
+            "boolean": 18
+          },
+          "category": "identifier",
+          "cardinality": 33,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AAA"
+        },
+        {
+          "field": "player_position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_short_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 509,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "A. Aaaaa"
+        },
+        {
+          "field": "player_eligibility",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 8,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "RB,TE",
+            "TE",
+            "WR",
+            "WR,CB"
+          ]
+        },
+        {
+          "field": "player_yahoo_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 7,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR",
+            "WR,CB"
+          ]
+        },
+        {
+          "field": "player_page_url",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 521,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaaaaa/aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 521,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_yahoo_id",
+          "type": "integer",
+          "mixed_types": {
+            "integer": 488,
+            "id": 32
+          },
+          "category": "identifier",
+          "cardinality": 520,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "99999"
+        },
+        {
+          "field": "cbs_player_id",
+          "type": "id",
+          "mixed_types": {
+            "id": 485,
+            "integer": 32
+          },
+          "category": "identifier",
+          "cardinality": 517,
+          "null_blank_rate_pct": 1,
+          "sample_size": 521,
+          "example": "9999999"
+        },
+        {
+          "field": "player_bye_week",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 3,
+          "sample_size": 521,
+          "example": "9",
+          "distinct_values": [
+            "10",
+            "11",
+            "13",
+            "14",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "field": "player_owned_avg",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 474,
+            "integer": 47
+          },
+          "category": "private",
+          "cardinality": 279,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_espn",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 460,
+            "integer": 61
+          },
+          "category": "private",
+          "cardinality": 228,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_yahoo",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 84,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "999"
+        },
+        {
+          "field": "player_ecr_delta",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 19,
+          "null_blank_rate_pct": 96,
+          "sample_size": 521,
+          "example": "-9"
+        },
+        {
+          "field": "rank_ecr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 521,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9"
+        },
+        {
+          "field": "rank_min",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 286,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9"
+        },
+        {
+          "field": "rank_max",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 289,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9"
+        },
+        {
+          "field": "rank_ave",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 510,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9.99"
+        },
+        {
+          "field": "rank_std",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 485,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9.99"
+        },
+        {
+          "field": "pos_rank",
+          "type": "string",
+          "category": "private",
+          "cardinality": 521,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AA9"
+        },
+        {
+          "field": "tier",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 16,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9"
+        }
+      ]
+    },
+    {
+      "endpoint": "ecr-draft-ppr-op",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings?type=draft&scoring=PPR&position=OP",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 531,
+      "field_count": 25,
+      "envelope": {
+        "sport": "NFL",
+        "type": "Draft PPR",
+        "ranking_type_name": "draft",
+        "year": "2026",
+        "week": "0",
+        "position_id": "OP",
+        "scoring": "PPR",
+        "count": 531,
+        "total_experts": 106,
+        "last_updated": "8/25",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 531,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "99999"
+        },
+        {
+          "field": "player_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 530,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "Aaaa Aaaaa"
+        },
+        {
+          "field": "sportsdata_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 530,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "9999aa99-aa99-9999-aa99-9aa9a9999999"
+        },
+        {
+          "field": "player_team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 511,
+            "boolean": 20
+          },
+          "category": "identifier",
+          "cardinality": 33,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "AAA"
+        },
+        {
+          "field": "player_position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 4,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "AA",
+          "distinct_values": [
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 4,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "AA",
+          "distinct_values": [
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_short_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 517,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "A. Aaaaa"
+        },
+        {
+          "field": "player_eligibility",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 7,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "AA",
+          "distinct_values": [
+            "QB",
+            "RB",
+            "RB,TE",
+            "RB,WR",
+            "TE",
+            "WR",
+            "WR,CB"
+          ]
+        },
+        {
+          "field": "player_yahoo_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "AA",
+          "distinct_values": [
+            "QB",
+            "RB",
+            "TE",
+            "WR",
+            "WR,CB",
+            "WR,RB"
+          ]
+        },
+        {
+          "field": "player_page_url",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 531,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaaaaa/aaaa-aaaaa-aa.aaa"
+        },
+        {
+          "field": "player_filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 531,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "aaaa-aaaaa-aa.aaa"
+        },
+        {
+          "field": "player_yahoo_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 530,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "99999"
+        },
+        {
+          "field": "cbs_player_id",
+          "type": "id",
+          "category": "identifier",
+          "cardinality": 528,
+          "null_blank_rate_pct": 1,
+          "sample_size": 531,
+          "example": "9999999"
+        },
+        {
+          "field": "player_bye_week",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 5,
+          "sample_size": 531,
+          "example": "9",
+          "distinct_values": [
+            "10",
+            "11",
+            "13",
+            "14",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "field": "player_owned_avg",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 438,
+            "integer": 93
+          },
+          "category": "private",
+          "cardinality": 247,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_espn",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 415,
+            "integer": 116
+          },
+          "category": "private",
+          "cardinality": 187,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_yahoo",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 75,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "999"
+        },
+        {
+          "field": "player_ecr_delta",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 39,
+          "null_blank_rate_pct": 91,
+          "sample_size": 531,
+          "example": "-9"
+        },
+        {
+          "field": "rank_ecr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 531,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "9"
+        },
+        {
+          "field": "rank_min",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 277,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "9"
+        },
+        {
+          "field": "rank_max",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 251,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "9"
+        },
+        {
+          "field": "rank_ave",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 478,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "9.99"
+        },
+        {
+          "field": "rank_std",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 408,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "9.99"
+        },
+        {
+          "field": "pos_rank",
+          "type": "string",
+          "category": "private",
+          "cardinality": 531,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "AA9"
+        },
+        {
+          "field": "tier",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 16,
+          "null_blank_rate_pct": 0,
+          "sample_size": 531,
+          "example": "9"
+        }
+      ]
+    },
+    {
+      "endpoint": "ecr-draft-ppr-qb",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings?type=draft&scoring=PPR&position=QB",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 98,
+      "field_count": 25,
+      "envelope": {
+        "sport": "NFL",
+        "type": "Draft",
+        "ranking_type_name": "draft",
+        "year": "2026",
+        "week": "0",
+        "position_id": "QB",
+        "scoring": "PPR",
+        "count": 98,
+        "total_experts": 89,
+        "last_updated": "8/25",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 98,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "99999"
+        },
+        {
+          "field": "player_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 98,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "Aaaa Aaaaa"
+        },
+        {
+          "field": "sportsdata_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 98,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "9999aa99-aa99-9999-aa99-9aa9a9999999"
+        },
+        {
+          "field": "player_team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 95,
+            "boolean": 3
+          },
+          "category": "identifier",
+          "cardinality": 32,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "AAA"
+        },
+        {
+          "field": "player_position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "AA",
+          "distinct_values": [
+            "QB"
+          ]
+        },
+        {
+          "field": "player_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "AA",
+          "distinct_values": [
+            "QB"
+          ]
+        },
+        {
+          "field": "player_short_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 98,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "A. Aaaaa"
+        },
+        {
+          "field": "player_eligibility",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "AA",
+          "distinct_values": [
+            "QB"
+          ]
+        },
+        {
+          "field": "player_yahoo_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "AA",
+          "distinct_values": [
+            "QB"
+          ]
+        },
+        {
+          "field": "player_page_url",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 98,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaaaaa/aaaa-aaaaa-aa.aaa"
+        },
+        {
+          "field": "player_filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 98,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "aaaa-aaaaa-aa.aaa"
+        },
+        {
+          "field": "player_yahoo_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 98,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "99999"
+        },
+        {
+          "field": "cbs_player_id",
+          "type": "id",
+          "category": "identifier",
+          "cardinality": 98,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "9999999"
+        },
+        {
+          "field": "player_bye_week",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "9",
+          "distinct_values": [
+            "10",
+            "11",
+            "13",
+            "14",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "field": "player_owned_avg",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 76,
+            "integer": 22
+          },
+          "category": "private",
+          "cardinality": 54,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_espn",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 74,
+            "integer": 24
+          },
+          "category": "private",
+          "cardinality": 42,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_yahoo",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 30,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "999"
+        },
+        {
+          "field": "player_ecr_delta",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 11,
+          "null_blank_rate_pct": 89,
+          "sample_size": 98,
+          "example": "9"
+        },
+        {
+          "field": "rank_ecr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 98,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "9"
+        },
+        {
+          "field": "rank_min",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 59,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "9"
+        },
+        {
+          "field": "rank_max",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 70,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "9"
+        },
+        {
+          "field": "rank_ave",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 91,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "9.99"
+        },
+        {
+          "field": "rank_std",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 85,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "9.99"
+        },
+        {
+          "field": "pos_rank",
+          "type": "string",
+          "category": "private",
+          "cardinality": 98,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "AA9"
+        },
+        {
+          "field": "tier",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 9,
+          "null_blank_rate_pct": 0,
+          "sample_size": 98,
+          "example": "9"
+        }
+      ]
+    },
+    {
+      "endpoint": "ecr-draft-ppr-rb",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings?type=draft&scoring=PPR&position=RB",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 183,
+      "field_count": 25,
+      "envelope": {
+        "sport": "NFL",
+        "type": "Draft PPR",
+        "ranking_type_name": "draft",
+        "year": "2026",
+        "week": "0",
+        "position_id": "RB",
+        "scoring": "PPR",
+        "count": 183,
+        "total_experts": 101,
+        "last_updated": "8/25",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 183,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "99999"
+        },
+        {
+          "field": "player_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 183,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "Aaaaaa Aaaaa"
+        },
+        {
+          "field": "sportsdata_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 183,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "aaa9999a-9999-99aa-9aa9-aa9a99999999"
+        },
+        {
+          "field": "player_team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 176,
+            "boolean": 7
+          },
+          "category": "identifier",
+          "cardinality": 33,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "AAA"
+        },
+        {
+          "field": "player_position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "AA",
+          "distinct_values": [
+            "RB"
+          ]
+        },
+        {
+          "field": "player_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "AA",
+          "distinct_values": [
+            "RB"
+          ]
+        },
+        {
+          "field": "player_short_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 180,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "A. Aaaaa"
+        },
+        {
+          "field": "player_eligibility",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 2,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "AA",
+          "distinct_values": [
+            "RB",
+            "RB,TE"
+          ]
+        },
+        {
+          "field": "player_yahoo_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 1,
+          "sample_size": 183,
+          "example": "AA",
+          "distinct_values": [
+            "RB"
+          ]
+        },
+        {
+          "field": "player_page_url",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 183,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaaaaa/aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 183,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_yahoo_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 182,
+          "null_blank_rate_pct": 1,
+          "sample_size": 183,
+          "example": "99999"
+        },
+        {
+          "field": "cbs_player_id",
+          "type": "id",
+          "category": "identifier",
+          "cardinality": 181,
+          "null_blank_rate_pct": 1,
+          "sample_size": 183,
+          "example": "9999999"
+        },
+        {
+          "field": "player_bye_week",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 7,
+          "sample_size": 183,
+          "example": "9",
+          "distinct_values": [
+            "10",
+            "11",
+            "13",
+            "14",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "field": "player_owned_avg",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 141,
+            "integer": 42
+          },
+          "category": "private",
+          "cardinality": 93,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_espn",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 131,
+            "integer": 52
+          },
+          "category": "private",
+          "cardinality": 74,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_yahoo",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 43,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "999"
+        },
+        {
+          "field": "player_ecr_delta",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 13,
+          "null_blank_rate_pct": 90,
+          "sample_size": 183,
+          "example": "-9"
+        },
+        {
+          "field": "rank_ecr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 183,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "9"
+        },
+        {
+          "field": "rank_min",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 112,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "9"
+        },
+        {
+          "field": "rank_max",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 119,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "9"
+        },
+        {
+          "field": "rank_ave",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 179,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "9.99"
+        },
+        {
+          "field": "rank_std",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 167,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "9.99"
+        },
+        {
+          "field": "pos_rank",
+          "type": "string",
+          "category": "private",
+          "cardinality": 183,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "AA9"
+        },
+        {
+          "field": "tier",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 12,
+          "null_blank_rate_pct": 0,
+          "sample_size": 183,
+          "example": "9"
+        }
+      ]
+    },
+    {
+      "endpoint": "ecr-draft-std-all",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings?type=draft&scoring=STD&position=ALL",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 513,
+      "field_count": 25,
+      "envelope": {
+        "sport": "NFL",
+        "type": "Draft",
+        "ranking_type_name": "draft",
+        "year": "2026",
+        "week": "0",
+        "position_id": "ALL",
+        "scoring": "STD",
+        "count": 513,
+        "total_experts": 107,
+        "last_updated": "8/25",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 513,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "99999"
+        },
+        {
+          "field": "player_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 512,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "Aaaaaa Aaaaa"
+        },
+        {
+          "field": "sportsdata_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 512,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "aaa9999a-9999-99aa-9aa9-aa9a99999999"
+        },
+        {
+          "field": "player_team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 495,
+            "boolean": 18
+          },
+          "category": "identifier",
+          "cardinality": 33,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "AAA"
+        },
+        {
+          "field": "player_position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_short_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 500,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "A. Aaaaa"
+        },
+        {
+          "field": "player_eligibility",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 8,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "RB,TE",
+            "TE",
+            "WR",
+            "WR,CB"
+          ]
+        },
+        {
+          "field": "player_yahoo_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 7,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR",
+            "WR,CB"
+          ]
+        },
+        {
+          "field": "player_page_url",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 513,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaaaaa/aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 513,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_yahoo_id",
+          "type": "integer",
+          "mixed_types": {
+            "integer": 481,
+            "id": 31
+          },
+          "category": "identifier",
+          "cardinality": 512,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "99999"
+        },
+        {
+          "field": "cbs_player_id",
+          "type": "id",
+          "mixed_types": {
+            "id": 479,
+            "integer": 31
+          },
+          "category": "identifier",
+          "cardinality": 510,
+          "null_blank_rate_pct": 1,
+          "sample_size": 513,
+          "example": "9999999"
+        },
+        {
+          "field": "player_bye_week",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 3,
+          "sample_size": 513,
+          "example": "9",
+          "distinct_values": [
+            "10",
+            "11",
+            "13",
+            "14",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "field": "player_owned_avg",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 464,
+            "integer": 49
+          },
+          "category": "private",
+          "cardinality": 278,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_espn",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 451,
+            "integer": 62
+          },
+          "category": "private",
+          "cardinality": 227,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_yahoo",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 84,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "999"
+        },
+        {
+          "field": "player_ecr_delta",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 23,
+          "null_blank_rate_pct": 93,
+          "sample_size": 513,
+          "example": "-9"
+        },
+        {
+          "field": "rank_ecr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 513,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "9"
+        },
+        {
+          "field": "rank_min",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 272,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "9"
+        },
+        {
+          "field": "rank_max",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 224,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "9"
+        },
+        {
+          "field": "rank_ave",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 490,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "9.99"
+        },
+        {
+          "field": "rank_std",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 481,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "9.99"
+        },
+        {
+          "field": "pos_rank",
+          "type": "string",
+          "category": "private",
+          "cardinality": 513,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "AA9"
+        },
+        {
+          "field": "tier",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 16,
+          "null_blank_rate_pct": 0,
+          "sample_size": 513,
+          "example": "9"
+        }
+      ]
+    },
+    {
+      "endpoint": "ecr-dynasty-ppr-all",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings?type=dynasty&scoring=PPR&position=ALL",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 494,
+      "field_count": 26,
+      "envelope": {
+        "sport": "NFL",
+        "type": "Dynasty",
+        "ranking_type_name": "dynasty",
+        "year": "2026",
+        "week": "0",
+        "position_id": "ALL",
+        "scoring": "PPR",
+        "count": 494,
+        "total_experts": 20,
+        "last_updated": "8/25",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 494,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "99999"
+        },
+        {
+          "field": "player_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 494,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "Aa'Aaaa Aaaaa"
+        },
+        {
+          "field": "sportsdata_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 493,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "aa99a999-a99a-9aa9-a999-999a99a9aaaa"
+        },
+        {
+          "field": "player_team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 476,
+            "boolean": 18
+          },
+          "category": "identifier",
+          "cardinality": 33,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "AAA"
+        },
+        {
+          "field": "player_position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_short_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 484,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "A. Aaaaa"
+        },
+        {
+          "field": "player_eligibility",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "AA",
+          "distinct_values": [
+            "DB,WR",
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "RB,TE",
+            "TE",
+            "WR",
+            "WR,CB"
+          ]
+        },
+        {
+          "field": "player_yahoo_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 8,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "RB,TE",
+            "TE",
+            "WR",
+            "WR,CB"
+          ]
+        },
+        {
+          "field": "player_page_url",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 494,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaaaaa/aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 494,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_yahoo_id",
+          "type": "integer",
+          "mixed_types": {
+            "integer": 472,
+            "id": 22
+          },
+          "category": "identifier",
+          "cardinality": 494,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "99999"
+        },
+        {
+          "field": "cbs_player_id",
+          "type": "id",
+          "mixed_types": {
+            "id": 468,
+            "integer": 22
+          },
+          "category": "identifier",
+          "cardinality": 490,
+          "null_blank_rate_pct": 1,
+          "sample_size": 494,
+          "example": "9999999"
+        },
+        {
+          "field": "player_bye_week",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 3,
+          "sample_size": 494,
+          "example": "9",
+          "distinct_values": [
+            "10",
+            "11",
+            "13",
+            "14",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "field": "player_owned_avg",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 445,
+            "integer": 49
+          },
+          "category": "private",
+          "cardinality": 273,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_espn",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 431,
+            "integer": 63
+          },
+          "category": "private",
+          "cardinality": 223,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_yahoo",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 84,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "999"
+        },
+        {
+          "field": "player_age",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 20,
+          "null_blank_rate_pct": 4,
+          "sample_size": 494,
+          "example": "99"
+        },
+        {
+          "field": "player_ecr_delta",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 10,
+          "null_blank_rate_pct": 96,
+          "sample_size": 494,
+          "example": "9"
+        },
+        {
+          "field": "rank_ecr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 494,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "9"
+        },
+        {
+          "field": "rank_min",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 286,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "9"
+        },
+        {
+          "field": "rank_max",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 349,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "9"
+        },
+        {
+          "field": "rank_ave",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 484,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "9.99"
+        },
+        {
+          "field": "rank_std",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 472,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "9.99"
+        },
+        {
+          "field": "pos_rank",
+          "type": "string",
+          "category": "private",
+          "cardinality": 494,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "AA9"
+        },
+        {
+          "field": "tier",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 16,
+          "null_blank_rate_pct": 0,
+          "sample_size": 494,
+          "example": "9"
+        }
+      ]
+    },
+    {
+      "endpoint": "ecr-dynasty-ppr-qb",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings?type=dynasty&scoring=PPR&position=QB",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 96,
+      "field_count": 26,
+      "envelope": {
+        "sport": "NFL",
+        "type": "Dynasty",
+        "ranking_type_name": "dynasty",
+        "year": "2026",
+        "week": "0",
+        "position_id": "QB",
+        "scoring": "PPR",
+        "count": 96,
+        "total_experts": 20,
+        "last_updated": "8/25",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 96,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "99999"
+        },
+        {
+          "field": "player_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 96,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "Aaaa Aaaaa"
+        },
+        {
+          "field": "sportsdata_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 96,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "9999aa99-aa99-9999-aa99-9aa9a9999999"
+        },
+        {
+          "field": "player_team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 93,
+            "boolean": 3
+          },
+          "category": "identifier",
+          "cardinality": 32,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "AAA"
+        },
+        {
+          "field": "player_position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "AA",
+          "distinct_values": [
+            "QB"
+          ]
+        },
+        {
+          "field": "player_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "AA",
+          "distinct_values": [
+            "QB"
+          ]
+        },
+        {
+          "field": "player_short_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 95,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "A. Aaaaa"
+        },
+        {
+          "field": "player_eligibility",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "AA",
+          "distinct_values": [
+            "QB"
+          ]
+        },
+        {
+          "field": "player_yahoo_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "AA",
+          "distinct_values": [
+            "QB"
+          ]
+        },
+        {
+          "field": "player_page_url",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 96,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaaaaa/aaaa-aaaaa-aa.aaa"
+        },
+        {
+          "field": "player_filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 96,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "aaaa-aaaaa-aa.aaa"
+        },
+        {
+          "field": "player_yahoo_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 96,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "99999"
+        },
+        {
+          "field": "cbs_player_id",
+          "type": "id",
+          "category": "identifier",
+          "cardinality": 96,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "9999999"
+        },
+        {
+          "field": "player_bye_week",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "9",
+          "distinct_values": [
+            "10",
+            "11",
+            "13",
+            "14",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "field": "player_owned_avg",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 76,
+            "integer": 20
+          },
+          "category": "private",
+          "cardinality": 54,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_espn",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 74,
+            "integer": 22
+          },
+          "category": "private",
+          "cardinality": 42,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_yahoo",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 30,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "999"
+        },
+        {
+          "field": "player_age",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 19,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "99"
+        },
+        {
+          "field": "player_ecr_delta",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 2,
+          "null_blank_rate_pct": 98,
+          "sample_size": 96,
+          "example": "9"
+        },
+        {
+          "field": "rank_ecr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 96,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "9"
+        },
+        {
+          "field": "rank_min",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 57,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "9"
+        },
+        {
+          "field": "rank_max",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 65,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "9"
+        },
+        {
+          "field": "rank_ave",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 95,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "9.99"
+        },
+        {
+          "field": "rank_std",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 89,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "9.99"
+        },
+        {
+          "field": "pos_rank",
+          "type": "string",
+          "category": "private",
+          "cardinality": 96,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "AA9"
+        },
+        {
+          "field": "tier",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 9,
+          "null_blank_rate_pct": 0,
+          "sample_size": 96,
+          "example": "9"
+        }
+      ]
+    },
+    {
+      "endpoint": "ecr-ros-ppr-all",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings?type=ros&scoring=PPR&position=ALL",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 521,
+      "field_count": 25,
+      "envelope": {
+        "sport": "NFL",
+        "type": "Draft PPR",
+        "ranking_type_name": "draft",
+        "year": "2026",
+        "week": "0",
+        "position_id": "ALL",
+        "scoring": "PPR",
+        "count": 521,
+        "total_experts": 108,
+        "last_updated": "8/25",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 521,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "99999"
+        },
+        {
+          "field": "player_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 520,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "Aa'Aaaa Aaaaa"
+        },
+        {
+          "field": "sportsdata_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 520,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "aa99a999-a99a-9aa9-a999-999a99a9aaaa"
+        },
+        {
+          "field": "player_team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 503,
+            "boolean": 18
+          },
+          "category": "identifier",
+          "cardinality": 33,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AAA"
+        },
+        {
+          "field": "player_position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_short_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 509,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "A. Aaaaa"
+        },
+        {
+          "field": "player_eligibility",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 8,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "RB,TE",
+            "TE",
+            "WR",
+            "WR,CB"
+          ]
+        },
+        {
+          "field": "player_yahoo_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 7,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR",
+            "WR,CB"
+          ]
+        },
+        {
+          "field": "player_page_url",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 521,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaaaaa/aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 521,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_yahoo_id",
+          "type": "integer",
+          "mixed_types": {
+            "integer": 488,
+            "id": 32
+          },
+          "category": "identifier",
+          "cardinality": 520,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "99999"
+        },
+        {
+          "field": "cbs_player_id",
+          "type": "id",
+          "mixed_types": {
+            "id": 485,
+            "integer": 32
+          },
+          "category": "identifier",
+          "cardinality": 517,
+          "null_blank_rate_pct": 1,
+          "sample_size": 521,
+          "example": "9999999"
+        },
+        {
+          "field": "player_bye_week",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 3,
+          "sample_size": 521,
+          "example": "9",
+          "distinct_values": [
+            "10",
+            "11",
+            "13",
+            "14",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "field": "player_owned_avg",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 474,
+            "integer": 47
+          },
+          "category": "private",
+          "cardinality": 279,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_espn",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 460,
+            "integer": 61
+          },
+          "category": "private",
+          "cardinality": 228,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_yahoo",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 84,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "999"
+        },
+        {
+          "field": "player_ecr_delta",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 19,
+          "null_blank_rate_pct": 96,
+          "sample_size": 521,
+          "example": "-9"
+        },
+        {
+          "field": "rank_ecr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 521,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9"
+        },
+        {
+          "field": "rank_min",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 286,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9"
+        },
+        {
+          "field": "rank_max",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 289,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9"
+        },
+        {
+          "field": "rank_ave",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 510,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9.99"
+        },
+        {
+          "field": "rank_std",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 485,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9.99"
+        },
+        {
+          "field": "pos_rank",
+          "type": "string",
+          "category": "private",
+          "cardinality": 521,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "AA9"
+        },
+        {
+          "field": "tier",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 16,
+          "null_blank_rate_pct": 0,
+          "sample_size": 521,
+          "example": "9"
+        }
+      ]
+    },
+    {
+      "endpoint": "ecr-weekly-ppr-all",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings?type=weekly&scoring=PPR&position=ALL&week=1",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 507,
+      "field_count": 29,
+      "envelope": {
+        "sport": "NFL",
+        "type": "Weekly PPR",
+        "ranking_type_name": "weekly",
+        "year": "2026",
+        "week": "1",
+        "position_id": "FLX",
+        "scoring": "PPR",
+        "count": 507,
+        "total_experts": 12,
+        "last_updated": "8/25",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 507,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "99999"
+        },
+        {
+          "field": "player_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 507,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "Aaaaaa Aaaaa"
+        },
+        {
+          "field": "sportsdata_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 506,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "aaa9999a-9999-99aa-9aa9-aa9a99999999"
+        },
+        {
+          "field": "player_team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 492,
+            "boolean": 15
+          },
+          "category": "identifier",
+          "cardinality": 33,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "AAA"
+        },
+        {
+          "field": "player_position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 3,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "AA",
+          "distinct_values": [
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 3,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "AA",
+          "distinct_values": [
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "player_short_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 495,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "A. Aaaaa"
+        },
+        {
+          "field": "player_eligibility",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 7,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "AA",
+          "distinct_values": [
+            "DB,WR",
+            "RB",
+            "RB,TE",
+            "RB,WR",
+            "TE",
+            "WR",
+            "WR,CB"
+          ]
+        },
+        {
+          "field": "player_yahoo_positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "AA",
+          "distinct_values": [
+            "RB",
+            "RB,TE",
+            "TE",
+            "WR",
+            "WR,CB",
+            "WR,RB"
+          ]
+        },
+        {
+          "field": "player_page_url",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 507,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaaaaa/aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 507,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "aaaaaa-aaaaa.aaa"
+        },
+        {
+          "field": "player_yahoo_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 507,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "99999"
+        },
+        {
+          "field": "cbs_player_id",
+          "type": "id",
+          "category": "identifier",
+          "cardinality": 503,
+          "null_blank_rate_pct": 1,
+          "sample_size": 507,
+          "example": "9999999"
+        },
+        {
+          "field": "player_bye_week",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 1,
+          "sample_size": 507,
+          "example": "9",
+          "distinct_values": [
+            "10",
+            "11",
+            "13",
+            "14",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "field": "player_owned_avg",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 384,
+            "integer": 123
+          },
+          "category": "private",
+          "cardinality": 212,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_espn",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 367,
+            "integer": 140
+          },
+          "category": "private",
+          "cardinality": 165,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "99.9"
+        },
+        {
+          "field": "player_owned_yahoo",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 69,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "999"
+        },
+        {
+          "field": "player_opponent",
+          "type": "string",
+          "category": "private",
+          "cardinality": 32,
+          "null_blank_rate_pct": 1,
+          "sample_size": 507,
+          "example": "aa. AA"
+        },
+        {
+          "field": "player_opponent_id",
+          "type": "string",
+          "mixed_types": {
+            "boolean": 14,
+            "string": 490
+          },
+          "category": "identifier",
+          "cardinality": 32,
+          "null_blank_rate_pct": 1,
+          "sample_size": 507,
+          "example": "AA"
+        },
+        {
+          "field": "player_ecr_delta",
+          "type": "empty",
+          "category": "private",
+          "cardinality": 0,
+          "null_blank_rate_pct": 100,
+          "sample_size": 507,
+          "example": ""
+        },
+        {
+          "field": "rank_ecr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 507,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "9"
+        },
+        {
+          "field": "rank_min",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 344,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "9"
+        },
+        {
+          "field": "rank_max",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 356,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "9"
+        },
+        {
+          "field": "rank_ave",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 468,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "9.99"
+        },
+        {
+          "field": "rank_std",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 437,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "9.99"
+        },
+        {
+          "field": "note",
+          "type": "empty",
+          "category": "freeform",
+          "cardinality": 0,
+          "null_blank_rate_pct": 100,
+          "sample_size": 507,
+          "example": ""
+        },
+        {
+          "field": "tag",
+          "type": "empty",
+          "category": "freeform",
+          "cardinality": 0,
+          "null_blank_rate_pct": 100,
+          "sample_size": 507,
+          "example": ""
+        },
+        {
+          "field": "recommendation",
+          "type": "empty",
+          "category": "freeform",
+          "cardinality": 0,
+          "null_blank_rate_pct": 100,
+          "sample_size": 507,
+          "example": ""
+        },
+        {
+          "field": "pos_rank",
+          "type": "string",
+          "category": "private",
+          "cardinality": 507,
+          "null_blank_rate_pct": 0,
+          "sample_size": 507,
+          "example": "AA9"
+        }
+      ]
+    },
+    {
+      "endpoint": "news",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/news",
+      "parseable": true,
+      "row_array_key": "items",
+      "row_count": 24,
+      "field_count": 12,
+      "envelope": {
+        "sport": "NFL",
+        "count": 24,
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "id",
+          "type": "id",
+          "category": "identifier",
+          "cardinality": 24,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "999999"
+        },
+        {
+          "field": "created",
+          "type": "string",
+          "category": "freeform",
+          "cardinality": 24,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "9999-99-99 99:99:99"
+        },
+        {
+          "field": "created_formated",
+          "type": "string",
+          "category": "freeform",
+          "cardinality": 24,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "Aaa, Aaa 99aa 9:99aa AAA"
+        },
+        {
+          "field": "author",
+          "type": "string",
+          "category": "private",
+          "cardinality": 4,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "Aaa Aaaaaa"
+        },
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 24,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "99999"
+        },
+        {
+          "field": "team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 23,
+            "boolean": 1
+          },
+          "category": "identifier",
+          "cardinality": 17,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "AAA"
+        },
+        {
+          "field": "title",
+          "type": "string",
+          "category": "freeform",
+          "cardinality": 24,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "Aaaaaaaa Aaaaaaa aaaaaaa aa aaaa aaaaaa"
+        },
+        {
+          "field": "sport_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "AAA"
+        },
+        {
+          "field": "categories",
+          "type": "string",
+          "category": "freeform",
+          "cardinality": 2,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "[9 aaaaa]"
+        },
+        {
+          "field": "link",
+          "type": "string",
+          "category": "freeform",
+          "cardinality": 24,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaa/999999/aaaaaaaa-aaaaaaa-aaaaaaa-aa-aaaa-aaaaaa.aaa"
+        },
+        {
+          "field": "desc",
+          "type": "string",
+          "category": "freeform",
+          "cardinality": 24,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "Aaaaaaaa Aaaaaaa aaaaaaaa aa aaaa aaaaaa aaaaaa aaaaaaaa aa Aaaaaaa."
+        },
+        {
+          "field": "impact",
+          "type": "string",
+          "category": "freeform",
+          "cardinality": 24,
+          "null_blank_rate_pct": 0,
+          "sample_size": 24,
+          "example": "Aaaaaaa aaaaaa aaa aaaaaaaaa aaaa aaaa aaa aaa aaaaaaa aa aaaaaaaaaa aaaa aa Aaaaaa. Aa aaa aaaa aaaa-aa aa Aaaaaaa."
+        }
+      ]
+    },
+    {
+      "endpoint": "players",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/players",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 8530,
+      "field_count": 21,
+      "envelope": {
+        "sport": "NFL",
+        "season": "2026",
+        "week": "0",
+        "count": 8530,
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "player_id",
+          "type": "integer",
+          "category": "identifier",
+          "cardinality": 8530,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "9999"
+        },
+        {
+          "field": "player_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 8425,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "Aaaaaaa Aaaaaaaaa"
+        },
+        {
+          "field": "short_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 6950,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "Aaaaaaa"
+        },
+        {
+          "field": "first_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 3414,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "Aaaaaaa"
+        },
+        {
+          "field": "last_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 4101,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "Aaaaaaaaa"
+        },
+        {
+          "field": "reverse_name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 8398,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "Aaaaaaaaa, Aaaaaaa"
+        },
+        {
+          "field": "position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 13,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "AAA",
+          "distinct_values": [
+            "CB",
+            "DB",
+            "DE",
+            "DST",
+            "DT",
+            "EDGE",
+            "K",
+            "LB",
+            "QB",
+            "RB",
+            "S",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "positions",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 2,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "[9 aaaaa]",
+          "distinct_values": [
+            "[1 items]",
+            "[2 items]"
+          ]
+        },
+        {
+          "field": "team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 8447,
+            "boolean": 81
+          },
+          "category": "identifier",
+          "cardinality": 33,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "AAA"
+        },
+        {
+          "field": "filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 8530,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "aaaaa://aaa.aaaaaaaaaaa.aaa/aaa/aaaaa/aaaaaaa-aaaaaaa.aaa"
+        },
+        {
+          "field": "sportsdata_player_id",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 7617,
+          "null_blank_rate_pct": 11,
+          "sample_size": 8530,
+          "example": "aa999999-9aa9-999a-a999-a999a99999aa"
+        },
+        {
+          "field": "rank_ecr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 514,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "9"
+        },
+        {
+          "field": "rank_adp",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 359,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "999"
+        },
+        {
+          "field": "rank_ecr_ppr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 522,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "999"
+        },
+        {
+          "field": "rank_adp_ppr",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 680,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "999"
+        },
+        {
+          "field": "rank_ecr_half",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 884,
+          "null_blank_rate_pct": 0,
+          "sample_size": 8530,
+          "example": "999"
+        },
+        {
+          "field": "birthdate",
+          "type": "string",
+          "category": "freeform",
+          "cardinality": 4658,
+          "null_blank_rate_pct": 18,
+          "sample_size": 8530,
+          "example": "9999-99-99"
+        },
+        {
+          "field": "birthdatetime",
+          "type": "id",
+          "mixed_types": {
+            "id": 6926,
+            "integer": 69
+          },
+          "category": "freeform",
+          "cardinality": 4658,
+          "null_blank_rate_pct": 18,
+          "sample_size": 8530,
+          "example": "999999999"
+        },
+        {
+          "field": "age",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 50,
+          "null_blank_rate_pct": 18,
+          "sample_size": 8530,
+          "example": "99"
+        },
+        {
+          "field": "draft_class",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 31,
+          "null_blank_rate_pct": 27,
+          "sample_size": 8530,
+          "example": "9999"
+        },
+        {
+          "field": "rookie",
+          "type": "string",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 95,
+          "sample_size": 8530,
+          "example": "A"
+        }
+      ]
+    },
+    {
+      "endpoint": "projections-all",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/projections?position=ALL&week=draft",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 604,
+      "field_count": 48,
+      "envelope": {
+        "season": "2026",
+        "week": "0",
+        "positions": "QB,RB,WR,TE,K,DST",
+        "scoring": "STD",
+        "count": "604",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "fpid",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 604,
+          "null_blank_rate_pct": 0,
+          "sample_size": 604,
+          "example": "99999"
+        },
+        {
+          "field": "mflid",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 604,
+          "null_blank_rate_pct": 0,
+          "sample_size": 604,
+          "example": "99999"
+        },
+        {
+          "field": "name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 604,
+          "null_blank_rate_pct": 0,
+          "sample_size": 604,
+          "example": "Aaaa Aaaaa"
+        },
+        {
+          "field": "position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 604,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "K",
+            "QB",
+            "RB",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 583,
+            "boolean": 21
+          },
+          "category": "identifier",
+          "cardinality": 33,
+          "null_blank_rate_pct": 0,
+          "sample_size": 604,
+          "example": "AAA"
+        },
+        {
+          "field": "filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 604,
+          "null_blank_rate_pct": 0,
+          "sample_size": 604,
+          "example": "aaaa-aaaaa-aa.aaa"
+        },
+        {
+          "field": "stats.points",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 537,
+            "integer": 67
+          },
+          "category": "private",
+          "cardinality": 542,
+          "null_blank_rate_pct": 0,
+          "sample_size": 604,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.points_ppr",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 543,
+            "integer": 61
+          },
+          "category": "private",
+          "cardinality": 539,
+          "null_blank_rate_pct": 0,
+          "sample_size": 604,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.points_half",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 539,
+            "integer": 65
+          },
+          "category": "private",
+          "cardinality": 541,
+          "null_blank_rate_pct": 0,
+          "sample_size": 604,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.pass_att",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 68,
+            "integer": 15
+          },
+          "category": "freeform",
+          "cardinality": 78,
+          "null_blank_rate_pct": 86,
+          "sample_size": 604,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.pass_cmp",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 69,
+            "integer": 14
+          },
+          "category": "freeform",
+          "cardinality": 75,
+          "null_blank_rate_pct": 86,
+          "sample_size": 604,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.pass_yds",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 69,
+            "integer": 14
+          },
+          "category": "private",
+          "cardinality": 81,
+          "null_blank_rate_pct": 86,
+          "sample_size": 604,
+          "example": "9999.99"
+        },
+        {
+          "field": "stats.pass_tds",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 69,
+            "integer": 14
+          },
+          "category": "freeform",
+          "cardinality": 60,
+          "null_blank_rate_pct": 86,
+          "sample_size": 604,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.pass_ints",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 67,
+            "integer": 16
+          },
+          "category": "freeform",
+          "cardinality": 62,
+          "null_blank_rate_pct": 86,
+          "sample_size": 604,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.pass_yds_300",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 86,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.pass_yds_400",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 86,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.rush_att",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 256,
+            "integer": 148
+          },
+          "category": "freeform",
+          "cardinality": 245,
+          "null_blank_rate_pct": 33,
+          "sample_size": 604,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.rush_yds",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 250,
+            "integer": 154
+          },
+          "category": "private",
+          "cardinality": 273,
+          "null_blank_rate_pct": 33,
+          "sample_size": 604,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.rush_tds",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 236,
+            "integer": 168
+          },
+          "category": "freeform",
+          "cardinality": 149,
+          "null_blank_rate_pct": 33,
+          "sample_size": 604,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.rush_yds_100",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 33,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.rush_yds_200",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 33,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.scrimage_yards_100",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 13,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.scrimage_yards_200",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 13,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.fumbles",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 428,
+            "integer": 100
+          },
+          "category": "freeform",
+          "cardinality": 153,
+          "null_blank_rate_pct": 13,
+          "sample_size": 604,
+          "example": "9.9"
+        },
+        {
+          "field": "stats.ret_tds",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 13,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.2pt_tds",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 13,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.rec_rec",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 357,
+            "integer": 88
+          },
+          "category": "freeform",
+          "cardinality": 367,
+          "null_blank_rate_pct": 26,
+          "sample_size": 604,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.rec_yds",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 358,
+            "integer": 87
+          },
+          "category": "private",
+          "cardinality": 395,
+          "null_blank_rate_pct": 26,
+          "sample_size": 604,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.rec_tds",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 358,
+            "integer": 87
+          },
+          "category": "freeform",
+          "cardinality": 270,
+          "null_blank_rate_pct": 26,
+          "sample_size": 604,
+          "example": "9.99"
+        },
+        {
+          "field": "stats.rec_yds_100",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 26,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.rec_yds_200",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 26,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.fga",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 33,
+            "integer": 11
+          },
+          "category": "freeform",
+          "cardinality": 34,
+          "null_blank_rate_pct": 93,
+          "sample_size": 604,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.fg",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 33,
+            "integer": 11
+          },
+          "category": "freeform",
+          "cardinality": 35,
+          "null_blank_rate_pct": 93,
+          "sample_size": 604,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.xpt",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 32,
+            "integer": 12
+          },
+          "category": "freeform",
+          "cardinality": 34,
+          "null_blank_rate_pct": 93,
+          "sample_size": 604,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.def_sack",
+          "type": "decimal",
+          "category": "freeform",
+          "cardinality": 31,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.def_int",
+          "type": "decimal",
+          "category": "freeform",
+          "cardinality": 32,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.def_td",
+          "type": "decimal",
+          "category": "freeform",
+          "cardinality": 29,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "9.99"
+        },
+        {
+          "field": "stats.def_pa_a",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.def_pa_b",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.def_pa_c",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.def_pa_d",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.def_pa_e",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.def_pa_f",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.def_pa_g",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.def_safety",
+          "type": "integer",
+          "mixed_types": {
+            "integer": 19,
+            "decimal": 13
+          },
+          "category": "freeform",
+          "cardinality": 3,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "9"
+        },
+        {
+          "field": "stats.def_ff",
+          "type": "decimal",
+          "category": "freeform",
+          "cardinality": 29,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.def_fr",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 30,
+            "integer": 2
+          },
+          "category": "freeform",
+          "cardinality": 30,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.def_retd",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 3,
+          "null_blank_rate_pct": 95,
+          "sample_size": 604,
+          "example": "9"
+        }
+      ]
+    },
+    {
+      "endpoint": "projections-qb",
+      "http_status": 200,
+      "url_shape": "https://api.fantasypros.com/public/v2/json/nfl/2026/projections?position=QB&week=draft",
+      "parseable": true,
+      "row_array_key": "players",
+      "row_count": 83,
+      "field_count": 26,
+      "envelope": {
+        "season": "2026",
+        "week": "0",
+        "positions": "QB",
+        "scoring": "STD",
+        "count": "83",
+        "public_api_limited": true,
+        "tier": "premium"
+      },
+      "columns": [
+        {
+          "field": "fpid",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 83,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "99999"
+        },
+        {
+          "field": "mflid",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 83,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "99999"
+        },
+        {
+          "field": "name",
+          "type": "string",
+          "category": "private",
+          "cardinality": 83,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "Aaaa Aaaaa"
+        },
+        {
+          "field": "position_id",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "AA",
+          "distinct_values": [
+            "QB"
+          ]
+        },
+        {
+          "field": "team_id",
+          "type": "string",
+          "mixed_types": {
+            "string": 81,
+            "boolean": 2
+          },
+          "category": "identifier",
+          "cardinality": 33,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "AAA"
+        },
+        {
+          "field": "filename",
+          "type": "string",
+          "category": "identifier",
+          "cardinality": 83,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "aaaa-aaaaa-aa.aaa"
+        },
+        {
+          "field": "stats.points",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 80,
+            "integer": 3
+          },
+          "category": "private",
+          "cardinality": 81,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.points_ppr",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 80,
+            "integer": 3
+          },
+          "category": "private",
+          "cardinality": 81,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.points_half",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 80,
+            "integer": 3
+          },
+          "category": "private",
+          "cardinality": 81,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.pass_att",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 68,
+            "integer": 15
+          },
+          "category": "freeform",
+          "cardinality": 78,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.pass_cmp",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 69,
+            "integer": 14
+          },
+          "category": "freeform",
+          "cardinality": 75,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.pass_yds",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 69,
+            "integer": 14
+          },
+          "category": "private",
+          "cardinality": 81,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "9999.99"
+        },
+        {
+          "field": "stats.pass_tds",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 69,
+            "integer": 14
+          },
+          "category": "freeform",
+          "cardinality": 60,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.pass_ints",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 67,
+            "integer": 16
+          },
+          "category": "freeform",
+          "cardinality": 62,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.pass_yds_300",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "9"
+        },
+        {
+          "field": "stats.pass_yds_400",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "9"
+        },
+        {
+          "field": "stats.rush_att",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 66,
+            "integer": 17
+          },
+          "category": "freeform",
+          "cardinality": 71,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.rush_yds",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 69,
+            "integer": 14
+          },
+          "category": "private",
+          "cardinality": 78,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "999.99"
+        },
+        {
+          "field": "stats.rush_tds",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 64,
+            "integer": 19
+          },
+          "category": "freeform",
+          "cardinality": 43,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "99.99"
+        },
+        {
+          "field": "stats.rush_yds_100",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "9"
+        },
+        {
+          "field": "stats.rush_yds_200",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "9"
+        },
+        {
+          "field": "stats.scrimage_yards_100",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "9"
+        },
+        {
+          "field": "stats.scrimage_yards_200",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "9"
+        },
+        {
+          "field": "stats.fumbles",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 65,
+            "integer": 18
+          },
+          "category": "freeform",
+          "cardinality": 47,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "9.9"
+        },
+        {
+          "field": "stats.ret_tds",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "9"
+        },
+        {
+          "field": "stats.2pt_tds",
+          "type": "integer",
+          "category": "freeform",
+          "cardinality": 1,
+          "null_blank_rate_pct": 0,
+          "sample_size": 83,
+          "example": "9"
+        }
+      ]
+    }
+  ]
+}

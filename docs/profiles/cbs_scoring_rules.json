@@ -1,0 +1,514 @@
+{
+  "_meta": {
+    "source_run": "2026-08-25T21-54-26Z",
+    "source": "data/raw (git-ignored, issue #10)",
+    "generator": "tools/profile/generate.mjs"
+  },
+  "present": true,
+  "source": "cbs/rules.html",
+  "note": "League RULES, committed in full. Parsed from the page, never hardcoded (scoring changed as recently as 2024).",
+  "scoring_rules": [
+    {
+      "section": "Offensive",
+      "code": "FL",
+      "name": "Fumble Lost, Including ST plays",
+      "raw_setting": "-2 points",
+      "parsed": {
+        "kind": "flat",
+        "points": -2
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "Fum2PT",
+      "name": "Fumble Recovery Two-point Conversion, Two-point formation",
+      "raw_setting": "2 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 2
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "OFRTD",
+      "name": "Offensive Fumble Recovery TD",
+      "raw_setting": "6 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 6
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "Pa2P",
+      "name": "Passing Two-point Conversion",
+      "raw_setting": "2 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 2
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "PaInt",
+      "name": "Passing Interception",
+      "raw_setting": "-2 points",
+      "parsed": {
+        "kind": "flat",
+        "points": -2
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "PaTD",
+      "name": "Passing TD",
+      "raw_setting": "4 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 4
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "PaYd",
+      "name": "Passing Yards",
+      "raw_setting": "0+ PaYds = .04 points for every 1 PaYd",
+      "parsed": {
+        "kind": "per_unit",
+        "points_per_unit": 0.04,
+        "per_units": 1,
+        "unit": "PaYd"
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "Re2P",
+      "name": "Receiving Two-point Conversion",
+      "raw_setting": "2 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 2
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "ReFD",
+      "name": "Receiving First Down",
+      "raw_setting": "1 point",
+      "parsed": {
+        "kind": "flat",
+        "points": 1
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "ReTD",
+      "name": "Receiving TD",
+      "raw_setting": "6 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 6
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "ReYd",
+      "name": "Receiving Yards",
+      "raw_setting": "0+ ReYds = .1 points for every 1 ReYd",
+      "parsed": {
+        "kind": "per_unit",
+        "points_per_unit": 0.1,
+        "per_units": 1,
+        "unit": "ReYd"
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "Ru2P",
+      "name": "Rushing Two-point Conversion",
+      "raw_setting": "2 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 2
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "RuFD",
+      "name": "Rushing First Down",
+      "raw_setting": "1 point",
+      "parsed": {
+        "kind": "flat",
+        "points": 1
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "RuTD",
+      "name": "Rushing TD",
+      "raw_setting": "6 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 6
+      }
+    },
+    {
+      "section": "Offensive",
+      "code": "RuYd",
+      "name": "Rushing Yards",
+      "raw_setting": "0+ RuYds = .1 points for every 1 RuYd",
+      "parsed": {
+        "kind": "per_unit",
+        "points_per_unit": 0.1,
+        "per_units": 1,
+        "unit": "RuYd"
+      }
+    },
+    {
+      "section": "Defensive",
+      "code": "DFR",
+      "name": "Defensive/ST Fumble Recovered (ID/DT/DST)",
+      "raw_setting": "2 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 2
+      }
+    },
+    {
+      "section": "Defensive",
+      "code": "DSTPA",
+      "name": "Points Against Defense/ST",
+      "raw_setting": "0 - 0 DSTPAs = 10 points 1 - 6 DSTPAs = 7 points 7 - 13 DSTPAs = 4 points 14 - 20 DSTPAs = 1 point 21 - 27 DSTPAs = 0 points 28 - 35 DSTPAs = -1 point 36+ DSTPAs = -4 points",
+      "parsed": {
+        "kind": "tiered",
+        "bands": [
+          {
+            "min": 0,
+            "max": 0,
+            "points": 10
+          },
+          {
+            "min": 1,
+            "max": 6,
+            "points": 7
+          },
+          {
+            "min": 7,
+            "max": 13,
+            "points": 4
+          },
+          {
+            "min": 14,
+            "max": 20,
+            "points": 1
+          },
+          {
+            "min": 21,
+            "max": 27,
+            "points": 0
+          },
+          {
+            "min": 28,
+            "max": 35,
+            "points": -1
+          },
+          {
+            "min": 36,
+            "max": null,
+            "points": -4
+          }
+        ]
+      }
+    },
+    {
+      "section": "Defensive",
+      "code": "DTD",
+      "name": "Total Defensive and Special Teams TD",
+      "raw_setting": "6 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 6
+      }
+    },
+    {
+      "section": "Defensive",
+      "code": "Int",
+      "name": "Interceptions",
+      "raw_setting": "2 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 2
+      }
+    },
+    {
+      "section": "Defensive",
+      "code": "SACK",
+      "name": "Sack",
+      "raw_setting": "1 point",
+      "parsed": {
+        "kind": "flat",
+        "points": 1
+      }
+    },
+    {
+      "section": "Defensive",
+      "code": "ST2PT",
+      "name": "Special Teams Conversion Return for Two-points (ID/ST/DST)",
+      "raw_setting": "2 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 2
+      }
+    },
+    {
+      "section": "Defensive",
+      "code": "STY",
+      "name": "Safety",
+      "raw_setting": "2 points",
+      "parsed": {
+        "kind": "flat",
+        "points": 2
+      }
+    },
+    {
+      "section": "Defensive",
+      "code": "STY1PT",
+      "name": "Special Teams One-point Safety (ID/ST/DST)",
+      "raw_setting": "1 point",
+      "parsed": {
+        "kind": "flat",
+        "points": 1
+      }
+    },
+    {
+      "section": "Defensive",
+      "code": "TOD",
+      "name": "Turnover on Downs",
+      "raw_setting": "1 point",
+      "parsed": {
+        "kind": "flat",
+        "points": 1
+      }
+    }
+  ],
+  "roster_limits": [
+    {
+      "status": "Starters",
+      "min": 10,
+      "max": 10
+    },
+    {
+      "status": "Bench",
+      "min": 0,
+      "max": 9
+    },
+    {
+      "status": "Injured Players",
+      "min": 0,
+      "max": 2
+    },
+    {
+      "status": "Practice Players",
+      "min": 0,
+      "max": 5
+    },
+    {
+      "status": "Total Players",
+      "min": 10,
+      "max": 26
+    },
+    {
+      "status": "QB",
+      "min": 1,
+      "max": 1
+    },
+    {
+      "status": "RB",
+      "min": 2,
+      "max": 2
+    },
+    {
+      "status": "WR",
+      "min": 2,
+      "max": 2
+    },
+    {
+      "status": "TE",
+      "min": 1,
+      "max": 1
+    },
+    {
+      "status": "RB-WR-TE",
+      "min": 2,
+      "max": 2
+    },
+    {
+      "status": "FLEX",
+      "min": 1,
+      "max": 1
+    },
+    {
+      "status": "DST",
+      "min": 1,
+      "max": 1
+    }
+  ],
+  "league_settings": [
+    {
+      "description": "League Name",
+      "setting": "KERFUFFLE"
+    },
+    {
+      "description": "League URL",
+      "setting": "https://kerfuffle.football.cbssports.com"
+    },
+    {
+      "description": "League E-mail Address",
+      "setting": "kerfuffle@football.cbssports.com"
+    },
+    {
+      "description": "Teams",
+      "setting": "12"
+    },
+    {
+      "description": "Divisions",
+      "setting": "4"
+    },
+    {
+      "description": "League Entry Fee",
+      "setting": "$15"
+    },
+    {
+      "description": "Lineup Policy",
+      "setting": "Managers may set lineups and change players' positions from a list of their eligible positions."
+    },
+    {
+      "description": "Lineup Deadline",
+      "setting": "Lineup deadline is five minutes before gametime for each player."
+    },
+    {
+      "description": "IR Options",
+      "setting": "Only players who have one of the following statuses may be placed into Injured status: IR, PUP."
+    },
+    {
+      "description": "Enforce Lineup Policy",
+      "setting": "Enforce Lineup Policy when players come off the IR/PUP etc."
+    },
+    {
+      "description": "Add/Drop Policy",
+      "setting": "Add/drops must be approved by the commissioner."
+    },
+    {
+      "description": "Add/Drop Deadline",
+      "setting": "Transactions will lock five minutes before gametime for each player."
+    },
+    {
+      "description": "Trade Policy",
+      "setting": "Trades must be approved by the commissioner."
+    },
+    {
+      "description": "Trade Deadline",
+      "setting": "No trades can be made after the trade deadline of 11:59 pm et 11/28/26."
+    },
+    {
+      "description": "Offseason Trades",
+      "setting": "Managers may make trades during the offseason."
+    },
+    {
+      "description": "Player Pool",
+      "setting": "AFC and NFC Players."
+    },
+    {
+      "description": "League Entry Fee",
+      "setting": "15"
+    },
+    {
+      "description": "Draft Format",
+      "setting": "Live Salary Cap Draft"
+    },
+    {
+      "description": "Draft Order Type",
+      "setting": "Snake"
+    },
+    {
+      "description": "Draft Date/Time",
+      "setting": "8/26/26 05:00 pm ET"
+    },
+    {
+      "description": "Salary cap",
+      "setting": "500 per team."
+    },
+    {
+      "description": "Nomination time limit",
+      "setting": "30 seconds, limit of 30 seconds between offers."
+    },
+    {
+      "description": "Scoring System",
+      "setting": "Head-to-Head, Points"
+    },
+    {
+      "description": "Scoring per Period",
+      "setting": "Scoring based on total stats each period."
+    },
+    {
+      "description": "Matchup Tiebreaker",
+      "setting": "Ties go to the team with more points from Reserves."
+    },
+    {
+      "description": "Matchups Per Period",
+      "setting": "1"
+    },
+    {
+      "description": "Playoffs Start",
+      "setting": "Week 15"
+    },
+    {
+      "description": "Playoffs Last",
+      "setting": "3 Weeks"
+    },
+    {
+      "description": "Restrict Add/Drops During Playoffs",
+      "setting": "No"
+    },
+    {
+      "description": "Automatic Playoffs",
+      "setting": "Yes"
+    },
+    {
+      "description": "Number of Playoff Teams",
+      "setting": "6"
+    },
+    {
+      "description": "Reseed Teams after each round",
+      "setting": "No"
+    },
+    {
+      "description": "Hold a third place game",
+      "setting": "Yes"
+    },
+    {
+      "description": "Run Consolation Playoffs",
+      "setting": "Yes"
+    },
+    {
+      "description": "Number of Consolation Teams",
+      "setting": "6"
+    },
+    {
+      "description": "Archive Standings",
+      "setting": "No"
+    },
+    {
+      "description": "Standings Tiebreaker",
+      "setting": "Ties in the standings are resolved in this order: Winning Percentage, Head to Head Record, Division Record, Total Points."
+    },
+    {
+      "description": "Division Winner Tiebreaker",
+      "setting": "Ties for division winner are resolved using standings tiebreakers"
+    },
+    {
+      "description": "Playoffs Matchup Tiebreaker",
+      "setting": "Playoff ties go to the team with more points from Reserves."
+    }
+  ]
+}

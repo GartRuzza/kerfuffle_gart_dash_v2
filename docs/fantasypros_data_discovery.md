@@ -88,3 +88,26 @@ The API key (`.env`) and all pulled data (`output/`) are **git-ignored** — the
 ---
 
 **Related docs:** [`pm/roadmap.md`](pm/roadmap.md) (open decision #2 now resolved), [`decision_log.md`](decision_log.md) (D-09: access method + the `cbs_player_id` join), [`data_model.md`](data_model.md) (the ECR/tier entities and the join key these findings inform), [`pm/current_state.md`](pm/current_state.md) (status), [`cbs_data_discovery.md`](cbs_data_discovery.md) (the CBS side of the join — the `cbs_player_id` this matches).
+
+---
+
+## 8. Update — 2026-08-25 (issue #11: HOF re-verification — §4 resolved)
+
+The re-pull promised in §4/§7 is done, profiled from the raw archive (committed, shape-only: [`profiles/fantasypros_field_profile.json`](profiles/fantasypros_field_profile.json), summary in [`profiles/PROFILE.md`](profiles/PROFILE.md)). The free-tier risk table in §4 is now **resolved**, but with one correction to the expected result:
+
+**Resolved — the HOF key unlocks the full product:**
+
+- **Full board, not the 10-of-520 preview.** Ranking endpoints return the whole universe: draft PPR **521**, HALF **883**, STD **513**, superflex (OP) **531**, dynasty **494**, ROS **521**, weekly **507**; player metadata **8,530**; projections **604**. `tier` reports **`premium`**; consensus draws on **up to 110 experts** (was 99 on the free key).
+- **The previously-`403` endpoints now return `200` with data:** **projections**, **player metadata** (`/nfl/players`), and **news**. This unblocks the projection pipeline the engine needs.
+
+**Correction — `public_api_limited` is not the signal the issue expected:**
+
+- The issue's "Done means" expected **`public_api_limited: false`**. In reality the flag **still reports `true` on every endpoint even on the HOF key**, while the full board comes through anyway. ⚠ **Do not gate ingestion on `public_api_limited`.** The reliable "am I on the full tier?" signals are **row count** (hundreds, not 10) and **`tier: "premium"`**.
+
+**Still unresolved (nice-to-have, non-blocking):**
+
+- **ADP** (`/nfl/{season}/adp`) still returns **`403`**. Given projections/metadata/news all opened on HOF, this looks like a **wrong path/params**, not a tier gate — the endpoint or its query shape needs correcting. ADP is a market nice-to-have, not required for the engine.
+
+**Unchanged and still true:** the join to CBS is a direct `cbs_player_id` match (present on every ranking row); weekly rankings carry no `tier`; the key is a credential (local env only, never committed); the license is personal, non-commercial.
+
+Net: the §4 table's cap / `403` / rate-limit constraints were **free-tier only and are lifted** — with the single caveat that `public_api_limited` stays `true` and must be ignored.

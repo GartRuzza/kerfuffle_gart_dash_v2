@@ -1,0 +1,1354 @@
+{
+  "_meta": {
+    "source_run": "2026-08-25T21-54-26Z",
+    "source": "data/raw (git-ignored, issue #10)",
+    "generator": "tools/profile/generate.mjs"
+  },
+  "rosters": {
+    "source": "cbs/roster-report-t{1..12}.html",
+    "teams_profiled": 12,
+    "header_consistent_across_teams": true,
+    "distinct_headers": 1,
+    "per_team": [
+      {
+        "team": 1,
+        "players": 18,
+        "active": 10,
+        "reserve": 7,
+        "injured": 0,
+        "practice_squad": 1,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      },
+      {
+        "team": 2,
+        "players": 16,
+        "active": 10,
+        "reserve": 4,
+        "injured": 0,
+        "practice_squad": 2,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      },
+      {
+        "team": 3,
+        "players": 15,
+        "active": 10,
+        "reserve": 4,
+        "injured": 0,
+        "practice_squad": 1,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      },
+      {
+        "team": 4,
+        "players": 11,
+        "active": 6,
+        "reserve": 4,
+        "injured": 1,
+        "practice_squad": 0,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      },
+      {
+        "team": 5,
+        "players": 14,
+        "active": 10,
+        "reserve": 3,
+        "injured": 0,
+        "practice_squad": 1,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      },
+      {
+        "team": 6,
+        "players": 18,
+        "active": 10,
+        "reserve": 6,
+        "injured": 1,
+        "practice_squad": 1,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      },
+      {
+        "team": 7,
+        "players": 15,
+        "active": 7,
+        "reserve": 7,
+        "injured": 0,
+        "practice_squad": 1,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      },
+      {
+        "team": 8,
+        "players": 10,
+        "active": 7,
+        "reserve": 3,
+        "injured": 0,
+        "practice_squad": 0,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      },
+      {
+        "team": 9,
+        "players": 15,
+        "active": 10,
+        "reserve": 5,
+        "injured": 0,
+        "practice_squad": 0,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      },
+      {
+        "team": 10,
+        "players": 10,
+        "active": 8,
+        "reserve": 2,
+        "injured": 0,
+        "practice_squad": 0,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      },
+      {
+        "team": 11,
+        "players": 15,
+        "active": 8,
+        "reserve": 3,
+        "injured": 1,
+        "practice_squad": 3,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      },
+      {
+        "team": 12,
+        "players": 13,
+        "active": 9,
+        "reserve": 4,
+        "injured": 0,
+        "practice_squad": 0,
+        "pseudo_rows": 0,
+        "sections": [
+          "Reserves",
+          "Injured",
+          "Practice"
+        ]
+      }
+    ],
+    "totals": {
+      "players": 170,
+      "practice_squad": 10,
+      "pseudo_rows": 0
+    },
+    "pseudo_row_samples": [],
+    "column_profile": {
+      "table": "roster lineup (12 teams pooled)",
+      "row_count": 170,
+      "column_count": 16,
+      "columns": [
+        {
+          "field": "Edit",
+          "type": "empty",
+          "category": "freeform",
+          "cardinality": 0,
+          "null_blank_rate_pct": 100,
+          "sample_size": 170,
+          "example": ""
+        },
+        {
+          "field": "Pos",
+          "type": "string",
+          "category": "structural",
+          "cardinality": 7,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "AA",
+          "distinct_values": [
+            "DST",
+            "FLEX",
+            "QB",
+            "RB",
+            "RB-WR-TE",
+            "TE",
+            "WR"
+          ]
+        },
+        {
+          "field": "Players",
+          "type": "string",
+          "category": "private",
+          "cardinality": 170,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "Aaaaa Aaaaaaaa AA • AAA"
+        },
+        {
+          "field": "Opp",
+          "type": "string",
+          "mixed_types": {
+            "string": 166,
+            "boolean": 4
+          },
+          "category": "private",
+          "cardinality": 32,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "@AAA"
+        },
+        {
+          "field": "Game Time",
+          "type": "string",
+          "category": "private",
+          "cardinality": 6,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "Aaa 9:99aa AA"
+        },
+        {
+          "field": "Bye",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 9,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "99",
+          "distinct_values": [
+            "10",
+            "11",
+            "13",
+            "14",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "field": "O/U",
+          "type": "decimal",
+          "mixed_types": {
+            "decimal": 162,
+            "integer": 8
+          },
+          "category": "freeform",
+          "cardinality": 11,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "99.9"
+        },
+        {
+          "field": "PosRnk",
+          "type": "integer",
+          "mixed_types": {
+            "integer": 124,
+            "string": 46
+          },
+          "category": "private",
+          "cardinality": 57,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "99"
+        },
+        {
+          "field": "Ovp",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 32,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "9"
+        },
+        {
+          "field": "Rost",
+          "type": "percent",
+          "category": "freeform",
+          "cardinality": 68,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "99%"
+        },
+        {
+          "field": "Start",
+          "type": "percent",
+          "category": "freeform",
+          "cardinality": 72,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "99%"
+        },
+        {
+          "field": "Salary",
+          "type": "integer",
+          "category": "private",
+          "cardinality": 46,
+          "null_blank_rate_pct": 2,
+          "sample_size": 170,
+          "example": "99"
+        },
+        {
+          "field": "Contract",
+          "type": "integer",
+          "category": "structural",
+          "cardinality": 3,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "9",
+          "distinct_values": [
+            "1",
+            "2",
+            "3"
+          ]
+        },
+        {
+          "field": "2025",
+          "type": "decimal",
+          "category": "freeform",
+          "cardinality": 125,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "999.99"
+        },
+        {
+          "field": "3yr Avg",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 126,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "999.99"
+        },
+        {
+          "field": "Proj",
+          "type": "decimal",
+          "category": "private",
+          "cardinality": 160,
+          "null_blank_rate_pct": 0,
+          "sample_size": 170,
+          "example": "999.99"
+        }
+      ]
+    }
+  },
+  "scoring_source": "cbs/rules.html",
+  "pages": {
+    "teams-myteam": {
+      "present": true,
+      "bytes": 339731,
+      "static_table": true,
+      "paginated": false,
+      "player_links_in_html": 30,
+      "dollar_amounts_in_cells": false,
+      "all_tables": [
+        {
+          "header": [
+            "Edit",
+            "Pos",
+            "Players",
+            "Opp",
+            "Game Time",
+            "Bye",
+            "O/U",
+            "PosRnk",
+            "Ovp",
+            "Rost",
+            "Start",
+            "Salary",
+            "Contract",
+            "2025",
+            "3yr Avg",
+            "Proj"
+          ],
+          "rows": 15
+        }
+      ],
+      "profile": {
+        "table": "teams-myteam",
+        "row_count": 15,
+        "column_count": 16,
+        "columns": [
+          {
+            "field": "Edit",
+            "type": "empty",
+            "category": "freeform",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "Pos",
+            "type": "string",
+            "category": "structural",
+            "cardinality": 7,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "AA",
+            "distinct_values": [
+              "DST",
+              "FLEX",
+              "QB",
+              "RB",
+              "RB-WR-TE",
+              "TE",
+              "WR"
+            ]
+          },
+          {
+            "field": "Players",
+            "type": "string",
+            "category": "private",
+            "cardinality": 15,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "Aaaaa Aaaaaaaa AA • AA"
+          },
+          {
+            "field": "Opp",
+            "type": "string",
+            "category": "private",
+            "cardinality": 11,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "@AAA"
+          },
+          {
+            "field": "Game Time",
+            "type": "string",
+            "category": "private",
+            "cardinality": 5,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "Aaa 9:99aa AA"
+          },
+          {
+            "field": "Bye",
+            "type": "integer",
+            "category": "structural",
+            "cardinality": 5,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "99",
+            "distinct_values": [
+              "10",
+              "11",
+              "13",
+              "14",
+              "8"
+            ]
+          },
+          {
+            "field": "O/U",
+            "type": "decimal",
+            "category": "freeform",
+            "cardinality": 7,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "99.9"
+          },
+          {
+            "field": "PosRnk",
+            "type": "integer",
+            "mixed_types": {
+              "integer": 11,
+              "string": 4
+            },
+            "category": "private",
+            "cardinality": 11,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "99"
+          },
+          {
+            "field": "Ovp",
+            "type": "integer",
+            "category": "private",
+            "cardinality": 14,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "99"
+          },
+          {
+            "field": "Rost",
+            "type": "percent",
+            "category": "freeform",
+            "cardinality": 15,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "99%"
+          },
+          {
+            "field": "Start",
+            "type": "percent",
+            "category": "freeform",
+            "cardinality": 11,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "99%"
+          },
+          {
+            "field": "Salary",
+            "type": "integer",
+            "category": "private",
+            "cardinality": 9,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "9"
+          },
+          {
+            "field": "Contract",
+            "type": "integer",
+            "category": "structural",
+            "cardinality": 3,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "9",
+            "distinct_values": [
+              "1",
+              "2",
+              "3"
+            ]
+          },
+          {
+            "field": "2025",
+            "type": "decimal",
+            "category": "freeform",
+            "cardinality": 14,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "999.99"
+          },
+          {
+            "field": "3yr Avg",
+            "type": "decimal",
+            "category": "private",
+            "cardinality": 14,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "999.99"
+          },
+          {
+            "field": "Proj",
+            "type": "decimal",
+            "category": "private",
+            "cardinality": 15,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "999.99"
+          }
+        ]
+      }
+    },
+    "teams-roster-grid": {
+      "present": true,
+      "bytes": 211819,
+      "static_table": true,
+      "paginated": false,
+      "player_links_in_html": 178,
+      "dollar_amounts_in_cells": false,
+      "all_tables": [
+        {
+          "header": [
+            "Team",
+            "QB",
+            "RB",
+            "WR",
+            "TE",
+            "RB-WR-TE",
+            "FLEX",
+            "DST"
+          ],
+          "rows": 11
+        }
+      ],
+      "profile": {
+        "table": "teams-roster-grid",
+        "row_count": 11,
+        "column_count": 8,
+        "columns": [
+          {
+            "field": "Team",
+            "type": "string",
+            "category": "private",
+            "cardinality": 11,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "Aaaaa Aaaa Aaaa Aaaaaaaa"
+          },
+          {
+            "field": "QB",
+            "type": "string",
+            "category": "freeform",
+            "cardinality": 10,
+            "null_blank_rate_pct": 9,
+            "sample_size": 11,
+            "example": "A Aaaaaaaa"
+          },
+          {
+            "field": "RB",
+            "type": "string",
+            "category": "freeform",
+            "cardinality": 11,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "A AaaaaaaA AaaaaA Aaaaaaa(A)"
+          },
+          {
+            "field": "WR",
+            "type": "string",
+            "category": "freeform",
+            "cardinality": 11,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "A AaaaaA AaaaaA Aaaaaa(A)A Aaaaaaaaaa(A)A Aaaaaaa(A)"
+          },
+          {
+            "field": "TE",
+            "type": "string",
+            "category": "freeform",
+            "cardinality": 10,
+            "null_blank_rate_pct": 9,
+            "sample_size": 11,
+            "example": "A AaaaaaaaA Aaaaaaa(A)"
+          },
+          {
+            "field": "RB-WR-TE",
+            "type": "string",
+            "category": "freeform",
+            "cardinality": 11,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "A AaaaaA AaaaaaaaaaA Aaaaa(A)A Aaaaaaaa(A)"
+          },
+          {
+            "field": "FLEX",
+            "type": "string",
+            "category": "freeform",
+            "cardinality": 9,
+            "null_blank_rate_pct": 18,
+            "sample_size": 11,
+            "example": "A AaaaaaA Aaaaaaaa(A)"
+          },
+          {
+            "field": "DST",
+            "type": "string",
+            "category": "freeform",
+            "cardinality": 7,
+            "null_blank_rate_pct": 36,
+            "sample_size": 11,
+            "example": "Aaaa"
+          }
+        ]
+      }
+    },
+    "players-available": {
+      "present": true,
+      "bytes": 208619,
+      "static_table": false,
+      "note": "No parseable static <table> with data rows — content is JS-rendered/collapsed or empty in the snapshot.",
+      "player_links_in_html": 50,
+      "paginated": true
+    },
+    "transactions": {
+      "present": true,
+      "bytes": 205011,
+      "static_table": true,
+      "paginated": true,
+      "player_links_in_html": 51,
+      "dollar_amounts_in_cells": false,
+      "all_tables": [
+        {
+          "header": [
+            "Date",
+            "Team",
+            "Players",
+            "Effective"
+          ],
+          "rows": 27
+        }
+      ],
+      "profile": {
+        "table": "transactions",
+        "row_count": 27,
+        "column_count": 4,
+        "columns": [
+          {
+            "field": "Date",
+            "type": "datetime",
+            "category": "freeform",
+            "cardinality": 15,
+            "null_blank_rate_pct": 0,
+            "sample_size": 27,
+            "example": "9/99/99 9:99 AA AA"
+          },
+          {
+            "field": "Team",
+            "type": "string",
+            "category": "private",
+            "cardinality": 11,
+            "null_blank_rate_pct": 0,
+            "sample_size": 27,
+            "example": "Aaaaaaaaa Aaaa Aaaaaaaa"
+          },
+          {
+            "field": "Players",
+            "type": "string",
+            "category": "private",
+            "cardinality": 27,
+            "null_blank_rate_pct": 0,
+            "sample_size": 27,
+            "example": "AA Aaaaaaa AA • AAA - Aaaaaaa"
+          },
+          {
+            "field": "Effective",
+            "type": "integer",
+            "category": "structural",
+            "cardinality": 1,
+            "null_blank_rate_pct": 0,
+            "sample_size": 27,
+            "example": "9",
+            "distinct_values": [
+              "1"
+            ]
+          }
+        ]
+      }
+    },
+    "transactions-trade": {
+      "present": true,
+      "bytes": 220035,
+      "static_table": true,
+      "paginated": false,
+      "player_links_in_html": 30,
+      "dollar_amounts_in_cells": false,
+      "all_tables": [
+        {
+          "header": [
+            "",
+            "PLAYER",
+            "Opp",
+            "Game Time",
+            "Bye",
+            "PosRnk",
+            "Ovp",
+            "2025",
+            "3yr Avg",
+            "Proj",
+            "",
+            "",
+            "",
+            "PLAYER",
+            "Opp",
+            "Game Time",
+            "Bye",
+            "PosRnk",
+            "Ovp",
+            "2025",
+            "3yr Avg",
+            "Proj"
+          ],
+          "rows": 15
+        }
+      ],
+      "profile": {
+        "table": "transactions-trade",
+        "row_count": 15,
+        "column_count": 22,
+        "columns": [
+          {
+            "field": "(unnamed)",
+            "type": "empty",
+            "category": "freeform",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "PLAYER",
+            "type": "string",
+            "category": "private",
+            "cardinality": 15,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "Aaaaa Aaaaaaaa AA • AA"
+          },
+          {
+            "field": "Opp",
+            "type": "string",
+            "category": "private",
+            "cardinality": 11,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "@AAA"
+          },
+          {
+            "field": "Game Time",
+            "type": "string",
+            "category": "private",
+            "cardinality": 5,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "Aaa 9:99aa AA"
+          },
+          {
+            "field": "Bye",
+            "type": "integer",
+            "category": "structural",
+            "cardinality": 5,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "99",
+            "distinct_values": [
+              "10",
+              "11",
+              "13",
+              "14",
+              "8"
+            ]
+          },
+          {
+            "field": "PosRnk",
+            "type": "integer",
+            "mixed_types": {
+              "integer": 11,
+              "string": 4
+            },
+            "category": "private",
+            "cardinality": 11,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "99"
+          },
+          {
+            "field": "Ovp",
+            "type": "integer",
+            "category": "private",
+            "cardinality": 14,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "99"
+          },
+          {
+            "field": "2025",
+            "type": "decimal",
+            "category": "freeform",
+            "cardinality": 14,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "999.99"
+          },
+          {
+            "field": "3yr Avg",
+            "type": "decimal",
+            "category": "private",
+            "cardinality": 14,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "999.99"
+          },
+          {
+            "field": "Proj",
+            "type": "decimal",
+            "category": "private",
+            "cardinality": 15,
+            "null_blank_rate_pct": 0,
+            "sample_size": 15,
+            "example": "999.99"
+          },
+          {
+            "field": "(unnamed)",
+            "type": "empty",
+            "category": "freeform",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "(unnamed)",
+            "type": "empty",
+            "category": "freeform",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "(unnamed)",
+            "type": "empty",
+            "category": "freeform",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "PLAYER",
+            "type": "empty",
+            "category": "private",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "Opp",
+            "type": "empty",
+            "category": "private",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "Game Time",
+            "type": "empty",
+            "category": "private",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "Bye",
+            "type": "empty",
+            "category": "structural",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": "",
+            "distinct_values": []
+          },
+          {
+            "field": "PosRnk",
+            "type": "empty",
+            "category": "private",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "Ovp",
+            "type": "empty",
+            "category": "private",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "2025",
+            "type": "empty",
+            "category": "freeform",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "3yr Avg",
+            "type": "empty",
+            "category": "private",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          },
+          {
+            "field": "Proj",
+            "type": "empty",
+            "category": "private",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 15,
+            "example": ""
+          }
+        ]
+      }
+    },
+    "standings-overall": {
+      "present": true,
+      "bytes": 182194,
+      "static_table": true,
+      "paginated": false,
+      "player_links_in_html": 8,
+      "dollar_amounts_in_cells": false,
+      "all_tables": [
+        {
+          "header": [
+            "Team",
+            "W",
+            "L",
+            "T",
+            "PCT",
+            "GB",
+            "Streak",
+            "Div",
+            "Wks",
+            "PF",
+            "Back",
+            "PA"
+          ],
+          "rows": 11
+        }
+      ],
+      "profile": {
+        "table": "standings-overall",
+        "row_count": 11,
+        "column_count": 12,
+        "columns": [
+          {
+            "field": "Team",
+            "type": "string",
+            "category": "private",
+            "cardinality": 11,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "Aaaaaa Aaaaa Aaaaaaa"
+          },
+          {
+            "field": "W",
+            "type": "integer",
+            "category": "freeform",
+            "cardinality": 1,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "9"
+          },
+          {
+            "field": "L",
+            "type": "integer",
+            "category": "freeform",
+            "cardinality": 1,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "9"
+          },
+          {
+            "field": "T",
+            "type": "integer",
+            "category": "freeform",
+            "cardinality": 1,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "9"
+          },
+          {
+            "field": "PCT",
+            "type": "decimal",
+            "category": "freeform",
+            "cardinality": 1,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "9.999"
+          },
+          {
+            "field": "GB",
+            "type": "empty",
+            "category": "freeform",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 11,
+            "example": ""
+          },
+          {
+            "field": "Streak",
+            "type": "empty",
+            "category": "freeform",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 11,
+            "example": ""
+          },
+          {
+            "field": "Div",
+            "type": "string",
+            "category": "freeform",
+            "cardinality": 1,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "9-9-9"
+          },
+          {
+            "field": "Wks",
+            "type": "integer",
+            "category": "freeform",
+            "cardinality": 1,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "9"
+          },
+          {
+            "field": "PF",
+            "type": "decimal",
+            "category": "freeform",
+            "cardinality": 1,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "9.9"
+          },
+          {
+            "field": "Back",
+            "type": "empty",
+            "category": "freeform",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 11,
+            "example": ""
+          },
+          {
+            "field": "PA",
+            "type": "decimal",
+            "category": "freeform",
+            "cardinality": 1,
+            "null_blank_rate_pct": 0,
+            "sample_size": 11,
+            "example": "9.9"
+          }
+        ]
+      }
+    },
+    "draft-results": {
+      "present": true,
+      "bytes": 182690,
+      "static_table": true,
+      "paginated": false,
+      "player_links_in_html": 8,
+      "dollar_amounts_in_cells": false,
+      "all_tables": [
+        {
+          "header": [
+            "Pos",
+            "Player"
+          ],
+          "rows": 11
+        },
+        {
+          "header": [
+            "Date/Time",
+            "Author",
+            "Post"
+          ],
+          "rows": 2
+        }
+      ],
+      "profile": {
+        "table": "draft-results",
+        "row_count": 11,
+        "column_count": 2,
+        "columns": [
+          {
+            "field": "Pos",
+            "type": "empty",
+            "category": "structural",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 11,
+            "example": "",
+            "distinct_values": []
+          },
+          {
+            "field": "Player",
+            "type": "empty",
+            "category": "private",
+            "cardinality": 0,
+            "null_blank_rate_pct": 100,
+            "sample_size": 11,
+            "example": ""
+          }
+        ]
+      }
+    },
+    "history": {
+      "present": true,
+      "bytes": 182062,
+      "static_table": true,
+      "paginated": false,
+      "player_links_in_html": 8,
+      "dollar_amounts_in_cells": false,
+      "all_tables": [
+        {
+          "header": [
+            "Team",
+            "Titles",
+            "Years"
+          ],
+          "rows": 1
+        },
+        {
+          "header": [
+            "Team",
+            "W",
+            "L",
+            "T",
+            "Pct",
+            "Pf",
+            "Pa",
+            "Managers"
+          ],
+          "rows": 12
+        },
+        {
+          "header": [
+            "Year",
+            "Team"
+          ],
+          "rows": 2
+        },
+        {
+          "header": [
+            "Team",
+            "AVG FINISH",
+            "AVG PTS/YEAR"
+          ],
+          "rows": 12
+        }
+      ],
+      "profile": {
+        "table": "history",
+        "row_count": 12,
+        "column_count": 8,
+        "columns": [
+          {
+            "field": "Team",
+            "type": "string",
+            "category": "private",
+            "cardinality": 12,
+            "null_blank_rate_pct": 0,
+            "sample_size": 12,
+            "example": "Aaaaaa Aaaa Aaaaaaaaaa"
+          },
+          {
+            "field": "W",
+            "type": "integer",
+            "category": "freeform",
+            "cardinality": 10,
+            "null_blank_rate_pct": 0,
+            "sample_size": 12,
+            "example": "99"
+          },
+          {
+            "field": "L",
+            "type": "integer",
+            "category": "freeform",
+            "cardinality": 10,
+            "null_blank_rate_pct": 0,
+            "sample_size": 12,
+            "example": "9"
+          },
+          {
+            "field": "T",
+            "type": "integer",
+            "category": "freeform",
+            "cardinality": 1,
+            "null_blank_rate_pct": 0,
+            "sample_size": 12,
+            "example": "9"
+          },
+          {
+            "field": "Pct",
+            "type": "decimal",
+            "category": "freeform",
+            "cardinality": 10,
+            "null_blank_rate_pct": 0,
+            "sample_size": 12,
+            "example": "9.999"
+          },
+          {
+            "field": "Pf",
+            "type": "decimal",
+            "mixed_types": {
+              "decimal": 11,
+              "integer": 1
+            },
+            "category": "freeform",
+            "cardinality": 12,
+            "null_blank_rate_pct": 0,
+            "sample_size": 12,
+            "example": "9999.9"
+          },
+          {
+            "field": "Pa",
+            "type": "decimal",
+            "category": "freeform",
+            "cardinality": 12,
+            "null_blank_rate_pct": 0,
+            "sample_size": 12,
+            "example": "9999.9"
+          },
+          {
+            "field": "Managers",
+            "type": "string",
+            "category": "private",
+            "cardinality": 12,
+            "null_blank_rate_pct": 0,
+            "sample_size": 12,
+            "example": "Aaaaa Aaaaaaaaa (9999-99)"
+          }
+        ]
+      }
+    },
+    "scoring-live": {
+      "present": true,
+      "bytes": 647176,
+      "static_table": false,
+      "note": "No parseable static <table> with data rows — content is JS-rendered/collapsed or empty in the snapshot.",
+      "player_links_in_html": 150,
+      "paginated": false
+    },
+    "players-rankings": {
+      "present": true,
+      "bytes": 223,
+      "static_table": false,
+      "note": "No parseable static <table> with data rows — content is JS-rendered/collapsed or empty in the snapshot.",
+      "player_links_in_html": 0,
+      "paginated": false
+    }
+  }
+}

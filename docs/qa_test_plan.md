@@ -8,7 +8,7 @@
 >
 > **The rule that makes this doc real:** a feature is not "Built" in [`pm/current_state.md`](pm/current_state.md) until the checks below pass. When a check fails, that feature's status changes — to Partial, or to a known bug. Test results are the evidence behind every status in that doc, which is why this one keeps it honest.
 
-**Last updated:** 2026-08-25 · **Last full pass:** 2026-08-25 — the **raw snapshot archiver (issue #10)** was verified by two live end-to-end runs (see its checks below, all passed); the app's 21 unit tests + build were last verified 2026-08-20 (rendered-DOM checked; manual interaction checks still ready for the owner to run). · **Result:** Automated checks pass (21 unit tests + clean build); the archiver's live checks pass; the app's manual interaction checks are pending owner sign-off.
+**Last updated:** 2026-08-25 · **Last full pass:** 2026-08-25 — the **source profiler (issue #11)** was verified end-to-end against the real archive (leak check passed, 0 leaks over 451 fields) and by 23 new unit tests; the **raw snapshot archiver (issue #10)** was verified by two live runs; the app's unit tests + build pass (manual interaction checks still ready for the owner to run). · **Result:** Automated checks pass (**44 unit tests** + clean build); the archiver's and profiler's checks pass; the app's manual interaction checks are pending owner sign-off.
 
 ---
 
@@ -17,9 +17,9 @@
 | | |
 | --- | --- |
 | **How to run them** | `npm test` (Vitest unit tests) and `npm run build` (compile + type-check + lint). |
-| **What they cover** | **Unit (21 tests):** mock-data derivation, incl. the **unique-rank invariant** (overall ECR/Dynasty ranks are 1..N and their tiers stay contiguous — the guard for the tier-band bug); the tier/sort/position **state machine**; the **saved-views model**; and **data-dictionary coverage** (every column documented, definitions under 15 words). **Build:** the app compiles clean and server-renders every column, tier bands, badges, the view selector, the column picker, the dictionary button, and drag-free headers (no hydration mismatch). |
-| **What they do not cover** | Click/drag interactions in a real browser (drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. |
-| **Currently passing?** | Yes — `npm test` (21/21) and `npm run build` pass clean as of 2026-08-20. |
+| **What they cover** | **Unit (44 tests): app (21)** — mock-data derivation incl. the **unique-rank invariant** (overall ECR/Dynasty ranks are 1..N and tiers stay contiguous — the guard for the tier-band bug), the tier/sort/position **state machine**, the **saved-views model**, and **data-dictionary coverage**. **Profiler (23, issue #11)** — type inference, blank-rate, the `/rules` scoring parser (flat/per-unit/tiered), and the **sanitizer safety invariant** (masking leaves no real value — the guard that keeps league data out of the public repo). **Build:** the app compiles clean and server-renders every column, tier bands, badges, the view selector, the column picker, the dictionary button, and drag-free headers. |
+| **What they do not cover** | Click/drag interactions in a real browser (drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. The profiler's end-to-end output is verified by running `npm run profile` (see its checks below). |
+| **Currently passing?** | Yes — `npm test` (**44/44**) and `npm run build` pass clean as of 2026-08-25. |
 
 ## Manual checks — the critical flows
 
@@ -71,10 +71,24 @@
 | 3 | Look in `data/raw/` | A **new time-stamped folder** (e.g. `2026-08-25T21-52-46Z`) holding `cbs/` (all 12 `roster-report-t*.html` + the league pages), `fantasypros/` (the `*.json` probe set), and **`manifest.json`**. | ☐ |
 | 4 | Open that `manifest.json` | It lists **every response** with `source`, `url`, `fetched_at`, and `status`; the `cbs` / `fantasypros` summaries show ok/failed counts. | ☐ |
 | 5 | Run `npm run archive` a **second** time | A **second** dated folder appears and the **first folder is unchanged** — append-only, nothing overwritten. | ☐ |
-| 6 | Open `fantasypros/ecr-draft-ppr-all.json` | ~520 players and `"public_api_limited": false` — confirms the **HOF key** returns the full board, not the 10-player free preview. | ☐ |
+| 6 | Open `fantasypros/ecr-draft-ppr-all.json` | **~520 players** and `"tier": "premium"` — confirms the **HOF key** returns the full board, not the 10-player free preview. ⚠ Note `"public_api_limited"` still reads **`true`** even on HOF (issue #11) — judge by row count + `tier`, not that flag. | ☐ |
 | 7 | Run `git status` | **Nothing under `data/`** appears (it's git-ignored) — only code/doc files. Your cookie and key are never committed. | ☐ |
 
 **Known, not failures:** if the CBS cookie is expired the pages show **LOGIN REDIRECT** and the run warns you (by design — a loud warning beats a silent stale snapshot); the FantasyPros `adp` endpoint returns `403` and CBS `players-rankings` returns `302`, both archived as-is.
+
+### The source profiler (issue #11)
+
+*An operator command — no UI. It reads the latest raw snapshot and writes a committed, **shape-only** field profile to `docs/profiles/`. Reads local files only; never fetches anything. Requires at least one `npm run archive` run to exist.*
+
+| # | Do this | You should see | Pass? |
+| --- | --- | --- | --- |
+| 1 | Run `npm run profile` | It prints the run it read, **`✓ leak check passed`**, then "Wrote 4 files to docs/profiles/" (cbs field profile, cbs scoring rules, fantasypros field profile, PROFILE.md). | ☐ |
+| 2 | Open `docs/profiles/PROFILE.md` | A readable summary answering the six questions — the 12-team roster table, the FantasyPros endpoint table, and the corrections callouts. | ☐ |
+| 3 | Open `docs/profiles/cbs_scoring_rules.json` | **24 scoring rules** with parsed values (flat / per-unit / tiered), roster limits, and league settings — **real values** (these are league rules). | ☐ |
+| 4 | Skim `docs/profiles/cbs_field_profile.json` | Player/roster fields show **masked examples** (e.g. `"Aaaaa Aaaaaaaa AA • AAA"`, `"999.99"`) — **no real names, salaries, or ranks**. Only structural enums (Pos, Contract, Bye, Status) list real values. | ☐ |
+| 5 | Run `git status` | The new/changed files are under **`docs/profiles/`** (committed); **nothing under `data/`** appears. | ☐ |
+
+**Known, not failures:** the `adp` endpoint shows `403` and dead-cap pseudo-rows show `0` (there are none pre-auction) — both are correct findings, not errors. The **leak check failing** *is* a real failure and blocks all writes — investigate before committing.
 
 ## Edge cases and things that should fail gracefully
 
