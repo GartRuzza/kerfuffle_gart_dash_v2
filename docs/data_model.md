@@ -38,21 +38,21 @@ The only persisted data. Custom **views** (UI config: which columns show, their 
 
 ### Planned entities from the storage decision (D-10)
 
-**(planned — none built.)** The storage architecture ([D-10](decision_log.md)) is a three-layer store: a raw file archive → a **normalized** SQLite layer → a **derived** SQLite layer, all read/written through a single data-access module returning the flat `Player` shape. The entities below are the intended shape; **none is built until its migration lands**, and the dead-cap/Practice-Squad modelling is explicitly **not final** (see the open decision in [`pm/roadmap.md`](pm/roadmap.md), resolved by Issue B's evidence). **Normalize the store; denormalize the read.**
+**(planned — none built.)** The storage architecture ([D-10](decision_log.md)) is a three-layer store: a raw file archive → a **normalized** SQLite layer → a **derived** SQLite layer, all read/written through a single data-access module returning the flat `Player` shape. The entities below are the intended shape; **none is built until its migration lands**, and the dead-cap/Practice-Squad modelling is explicitly **not final** (see the open decision in [`pm/roadmap.md`](pm/roadmap.md), resolved by issue #11's evidence). **Normalize the store; denormalize the read.**
 
-**Normalized layer** *(planned — lands with Issue C, the storage/ingestion issue):*
+**Normalized layer** *(planned — lands with issue #12, the storage/ingestion issue):*
 
 | Entity | Grain / key | What it holds |
 | --- | --- | --- |
 | `player` *(planned)* | PK **`cbs_player_id`** | Identity: name, NFL team, position. The shared join key CBS and FantasyPros both publish. |
 | `fantasy_team` *(planned)* | 12 rows | The league's teams (managers). |
 | `contract` *(planned)* | **Snapshot table with `observed_at`** — never overwritten state | Salary + contract years (1–4) a team holds a player at, as observed on a given pull. CBS hands you *current* state; history exists only if each observation is captured. |
-| `transaction` *(planned)* | per transaction | The transaction log (adds/drops, trades, lineup, FAB). Transaction types to be enumerated by Issue B; FAB bid amounts still unconfirmed. |
+| `transaction` *(planned)* | per transaction | The transaction log (adds/drops, trades, lineup, FAB). Transaction types to be enumerated by issue #11; FAB bid amounts still unconfirmed. |
 | `market_ranking` *(planned)* | **player × ranking type × scoring format × position scope × pull date** — never flattened onto `player` | FantasyPros ECR, positional rank, tier, and the expert spread. One player has many ranking rows. |
 | `scoring_rule` *(planned)* | per rule | The KERFUFFLE scoring config **parsed from CBS `/rules`** (not hardcoded — the league changed scoring as recently as 2024). Its one job downstream: translating FantasyPros raw stat-line projections into KERFUFFLE points. |
 | `pull` *(planned)* | one row per ingestion run | Lineage: source, URL, timestamp, raw snapshot path, status. Every normalized row carries a `pull_id` pointing back at the raw snapshot it came from. |
 
-**Derived layer** *(planned — lands with the engine issue, **not** Issue C):*
+**Derived layer** *(planned — lands with the engine issue, **not** issue #12):*
 
 | Entity | Grain / key | What it holds |
 | --- | --- | --- |
