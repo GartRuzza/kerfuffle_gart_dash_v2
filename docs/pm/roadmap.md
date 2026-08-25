@@ -73,6 +73,7 @@ The auction date is fixed and weeks away. It is the hard constraint on everythin
 | Contract-duration support | Requires real-life NFL contract/depth-chart data (vision non-goal until then) | That data enters scope deliberately |
 | Live auction tracking | Deliberately excluded from auction day | Only by explicit owner decision after a real auction with the static tool |
 | Automated snapshot scheduling | Snapshotting (#10) runs manually for now — a scheduled task with an expired CBS cookie silently collects nothing, so scheduling waits until cookie-lifetime is solved | After the auction prep lens item (Now #10) — promoted from the backlog 2026-08-24 |
+| Retire the superseded spike `pull.mjs` scripts (cleanup) | The archival tool (#10) replaced `spikes/cbs-api/pull.mjs` + `spikes/fantasypros-api/pull.mjs`, but they're left committed until the new tool has proven itself over real use (owner's call, 2026-08-25) | The tool has cleared a working threshold — then delete the two `pull.mjs` scripts, but **keep the spike `.env` files**, which the archival tool reads its credentials from |
 
 ## Sequencing constraints
 

@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "archive": "node tools/archive/capture.mjs",
+    "archive:check-cookie": "node tools/archive/check-cookie.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

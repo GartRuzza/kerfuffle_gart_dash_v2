@@ -53,6 +53,36 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-25 — Raw snapshot archival tool (issue #10, roadmap #4)
+
+**Ticket / Issue:** [#10](../../../../issues/10) · **Branch:** feat/issue-10-raw-archival · **Deviated from plan:** No — built to the issue as written; the only choices were the builder's-call items the issue flagged.
+
+**Original intent**
+Promote the throwaway spike pull scripts into a minimal, repeatable archival tool that saves every fetched CBS page and FantasyPros response **verbatim** into dated, append-only folders under `data/raw/`, each with a small manifest — so no week's data is lost while historical-CBS retrieval and FAB amounts remain unsolved. Explicitly no parsing, no database, no scheduling.
+
+**What was actually built**
+A durable tool at `tools/archive/`: `capture.mjs` (archiver), `check-cookie.mjs` (promoted cookie checker), `shared.mjs` (env-loading + paths + run-id helpers), and a how-to-run `README.md`, wired to `npm run archive` and `npm run archive:check-cookie`. Each run creates `data/raw/{timestamp}/` with `cbs/*.html` (all 12 rosters + the league page set), `fantasypros/*.json` (the probe set), and a per-run `manifest.json` listing every response (source, URL, fetched_at, HTTP status, plus bytes and a login/expired flag). Append-only via a fresh timestamped folder per run, with a collision guard so an existing folder is never overwritten. Credentials are read from the existing spike `.env` files; `data/` is git-ignored.
+
+**Deviations**
+None from the issue's scope. The owner's builder's-call decisions: (1) credentials **reused from the spike `.env` files** rather than a new consolidated file (zero re-paste); (2) the spike `pull.mjs` scripts **left in place** for now, with a follow-up to delete them once the tool is trusted; (3) the **cookie checker carried into the tool**. Two small realities the plan didn't name, both handled and archived-as-is: the CBS `players-rankings` page returns a `302` redirect (not content), and the FantasyPros `adp` endpoint still returns `403`.
+
+**Product implications**
+The owner now has one command that captures a complete, dated, verbatim snapshot of the league and expert rankings — the history layer that can no longer be lost to un-snapshotted weeks. It is **not** ingestion: nothing is parsed, and no number reaches the app (still 100% mock). A useful side-observation for planning: the archival runs pulled **~520-row** FantasyPros payloads with **projections and player-metadata unlocked** on the HOF key — strong evidence the HOF cap-lift is real, which de-risks the engine build. That does **not** close issue #11 — the formal, committed field profiling and rate-limit re-check still belong there; #10 only proves the pipes carry data.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| The durable tool reads credentials from the **throwaway spike `.env` files** | Owner chose zero re-paste over a clean consolidated env file | The "durable" tool is coupled to folders we intend to retire; a careless spike cleanup could delete the `.env` and break archiving | Move two `.env` files into the tool's home and repoint `shared.mjs` — a few minutes, do it when the spikes are cleaned up |
+| Superseded spike `pull.mjs` scripts left committed | Removing committed files is separate scope; owner wants a working-threshold first | Two copies of the pull logic can drift/confuse | Delete `spikes/*/pull.mjs` once the tool is trusted — **keep the `.env` files** (see above). Tracked in `roadmap.md`. |
+| The tool has **no unit tests** (validated by live runs only) | It is thin credential-and-network I/O; the meaningful proof is an end-to-end run against the real sources | A future refactor isn't regression-guarded | Add a fake-fetch unit test around the folder/append + manifest logic if the tool grows |
+| CBS `players-rankings` `302` and FantasyPros `adp` `403` archived without resolution | Archival preserves whatever the source returns; resolving them is a parser/#11 concern | A parser that assumes those are content will misread them | Note is in `current_state.md`; resolve during #11/ingestion |
+
+**Follow-up decisions needed from the product owner**
+- [ ] **Delete the superseded spike `pull.mjs` scripts** once the archival tool has cleared a working threshold — **without** removing the spike `.env` files the tool now reads from. Promoted to `roadmap.md` (Later). Not blocking.
+
+---
+
 ### 2026-08-20 — FantasyPros data discovery spike (issue #7, roadmap #3)
 
 **Ticket / Issue:** [#7](../../../../issues/7) · **Branch:** spike/issue-7-fantasypros-discovery · **Deviated from plan:** Yes — reality was *easier* than the plan feared, on the two hardest points.
