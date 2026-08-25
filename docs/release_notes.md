@@ -41,7 +41,20 @@
 
 <!-- Newest entry goes directly below this line. -->
 
-## 2026-08-20 — Table redesign, part 3 (Data Dictionary)
+## 2026-08-25 — Raw snapshot archiver (save the league's history)
+
+**New**
+- A new command, **`npm run archive`**, saves a complete, dated snapshot of your league to your computer: **every CBS page** (all 12 team rosters plus free agents, transactions, rules, draft results, and more) and **every FantasyPros ranking** — stored exactly as received. Each run drops a new time-stamped folder under `data/raw/`, so **nothing is ever overwritten** and you build up a history week by week. This matters because some data (past seasons, winning FAB bids) can't be recovered later — so any week you don't snapshot is gone.
+- A helper command, **`npm run archive:check-cookie`**, tells you whether your CBS login is still good **before** you capture — so you don't run a snapshot with an expired cookie and collect nothing.
+
+**Requires action from you**
+- This reads **real** league data, so it needs your credentials in place (the same ones the discovery spikes used): your **CBS cookie** in `spikes/cbs-api/.env` and your **FantasyPros key** in `spikes/fantasypros-api/.env`. Your CBS cookie expires about weekly — when a capture shows "LOGIN REDIRECT," paste a fresh one and run again.
+- Run it yourself whenever you want a snapshot (there's no automatic schedule yet — on purpose, because an automatic run with an expired cookie would silently save nothing).
+
+**Known issues / not yet done**
+- This tool only **saves** the raw data — it does **not** yet read it into the app. The player table is still 100% mock data. Turning these snapshots into the real table comes later (the parsing/ingestion and engine work).
+- **Past seasons aren't captured yet** — only the current one — and one ranking page and the FantasyPros "ADP" feed don't come back cleanly; those are known gaps for later.
+- Everything it saves stays **only on your machine** (it's git-ignored and never uploaded).
 
 **New**
 - A **📖 Data Dictionary** button at the bottom opens a pop-up that explains **every column** — a one-line definition, plus a **"Details"** you can expand for more on how it's built and where it comes from.

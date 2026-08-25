@@ -37,3 +37,7 @@ next-env.d.ts
 # FantasyPros API spike (issue #7) — never commit the API key or pulled data
 /spikes/fantasypros-api/.env
 /spikes/fantasypros-api/output/
+
+# Raw snapshot archive (issue #10) — real league + third-party data and operational
+# logs, never committed. tools/archive/capture.mjs re-creates this folder each run.
+/data/

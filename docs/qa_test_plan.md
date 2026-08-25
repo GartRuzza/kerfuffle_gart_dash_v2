@@ -8,7 +8,7 @@
 >
 > **The rule that makes this doc real:** a feature is not "Built" in [`pm/current_state.md`](pm/current_state.md) until the checks below pass. When a check fails, that feature's status changes — to Partial, or to a known bug. Test results are the evidence behind every status in that doc, which is why this one keeps it honest.
 
-**Last updated:** 2026-08-20 · **Last full pass:** 2026-08-20 (unit tests + build + rendered-DOM verified by Claude Code; the manual interaction checks below are ready for the owner to run) · **Result:** Automated checks pass (14 unit tests + clean build); manual interaction checks pending owner sign-off.
+**Last updated:** 2026-08-25 · **Last full pass:** 2026-08-25 — the **raw snapshot archiver (issue #10)** was verified by two live end-to-end runs (see its checks below, all passed); the app's 21 unit tests + build were last verified 2026-08-20 (rendered-DOM checked; manual interaction checks still ready for the owner to run). · **Result:** Automated checks pass (21 unit tests + clean build); the archiver's live checks pass; the app's manual interaction checks are pending owner sign-off.
 
 ---
 
@@ -58,6 +58,24 @@
 | 8 | Select your custom view → **Delete** | It's removed; the table returns to Full. (Default views can't be deleted or overwritten — only "Save as new".) | ☐ |
 | 9 | Click **📖 Data Dictionary** (bottom), expand a field's **Details**, close with ✕ / Esc / clicking outside | A pop-up lists every column with a one-line definition; engine/market fields show a **Placeholder** chip; Details expands bullets. | ☐ |
 
+### The raw snapshot archiver (issue #10)
+
+*An operator command — no UI. It saves dated, verbatim snapshots of CBS + FantasyPros under `data/raw/`, append-only. Run from a terminal in the project folder.*
+
+**Setup:** your **CBS cookie** must be in `spikes/cbs-api/.env` and your **FantasyPros key** in `spikes/fantasypros-api/.env`.
+
+| # | Do this | You should see | Pass? |
+| --- | --- | --- | --- |
+| 1 | Run `npm run archive:check-cookie` | A line ending **`cookie valid = YES (status 200)`**. If it says `no` / login redirect, refresh the CBS cookie in `spikes/cbs-api/.env` and retry. | ☐ |
+| 2 | Run `npm run archive` | It prints the CBS pages (including **`roster-report-t1` … `roster-report-t12`**, all `200`), then the FantasyPros probes, then **"Done — N responses archived… Nothing was overwritten."** | ☐ |
+| 3 | Look in `data/raw/` | A **new time-stamped folder** (e.g. `2026-08-25T21-52-46Z`) holding `cbs/` (all 12 `roster-report-t*.html` + the league pages), `fantasypros/` (the `*.json` probe set), and **`manifest.json`**. | ☐ |
+| 4 | Open that `manifest.json` | It lists **every response** with `source`, `url`, `fetched_at`, and `status`; the `cbs` / `fantasypros` summaries show ok/failed counts. | ☐ |
+| 5 | Run `npm run archive` a **second** time | A **second** dated folder appears and the **first folder is unchanged** — append-only, nothing overwritten. | ☐ |
+| 6 | Open `fantasypros/ecr-draft-ppr-all.json` | ~520 players and `"public_api_limited": false` — confirms the **HOF key** returns the full board, not the 10-player free preview. | ☐ |
+| 7 | Run `git status` | **Nothing under `data/`** appears (it's git-ignored) — only code/doc files. Your cookie and key are never committed. | ☐ |
+
+**Known, not failures:** if the CBS cookie is expired the pages show **LOGIN REDIRECT** and the run warns you (by design — a loud warning beats a silent stale snapshot); the FantasyPros `adp` endpoint returns `403` and CBS `players-rankings` returns `302`, both archived as-is.
+
 ## Edge cases and things that should fail gracefully
 
 | # | Try this | It should | Pass? |
@@ -70,7 +88,16 @@
 
 ## Security and permissions checks
 
-Not applicable to this prototype. It has no login, no accounts, no permissions, no database, no network calls, and no user input beyond the in-memory Ceiling boxes. This is deliberate — Issue #1 is UI-only precisely so no sensitive surfaces exist yet. Add this section when real data ingestion or deployment lands.
+**The app** (player table prototype) has no login, no accounts, no permissions, no database, no network calls, and no user input beyond the in-memory Ceiling boxes — deliberately, since Issue #1 is UI-only.
+
+**The raw snapshot archiver (issue #10)** is the first thing that handles credentials and talks to the network, so it gets its own checks:
+
+| # | Check | Expectation | Pass? |
+| --- | --- | --- | --- |
+| 1 | Credentials never leave the machine | The CBS cookie and FantasyPros key live only in the git-ignored spike `.env` files; `git status` and `git check-ignore data/` confirm neither the keys nor `data/` are tracked. | ☐ |
+| 2 | Read-only only | Every request is an HTTP **GET**. The tool has no code path that bids, drops, sets a lineup, or writes anything to CBS or FantasyPros. | ☐ |
+| 3 | Pulled league/third-party data stays local | Everything the tool writes goes under `data/` (git-ignored) — real rosters/salaries and FantasyPros payloads are never committed or uploaded. | ☐ |
+| 4 | Expired-cookie safety | A run with a stale cookie shows **LOGIN REDIRECT** warnings and records them in the manifest, rather than silently saving login pages as if they were data. | ☐ |
 
 ## Known-failing / untested
 
