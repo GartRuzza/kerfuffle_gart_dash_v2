@@ -1,4 +1,4 @@
-# Current State — Raccoon Command (working name)
+# Current State — Gart Dash
 
 > **How to use this doc**
 > **Owner:** Claude Code (the implementing agent), verified by the product owner.

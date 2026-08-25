@@ -1,4 +1,4 @@
-# Decision Log — [PRODUCT NAME]
+# Decision Log — Gart Dash
 
 > **How to use this doc**
 > **Owner:** Claude Code records the decision; the product owner makes any decision that is a product decision.

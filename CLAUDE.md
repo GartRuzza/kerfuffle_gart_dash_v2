@@ -1,4 +1,4 @@
-# CLAUDE.md — [PROJECT NAME]
+# CLAUDE.md — Gart Dash
 
 Instructions for Claude Code and any agent working in this repository.
 
