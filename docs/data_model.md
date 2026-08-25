@@ -6,7 +6,7 @@
 > **This doc contains:** The entities, how they relate, and the rules that protect the data.
 > **This doc never contains:** Speculative tables. If it is not in a migration, it is not in this doc — mark planned entities **(planned)** explicitly.
 
-**Last updated:** 2026-08-20 · **Latest migration:** none (no database exists yet)
+**Last updated:** 2026-08-24 · **Latest migration:** none (no database exists yet — planned storage entities added from decision [D-10](decision_log.md))
 
 ---
 
@@ -36,11 +36,56 @@ The only persisted data. Custom **views** (UI config: which columns show, their 
 
 **Informed by the FantasyPros discovery spike (issue #7 — [`fantasypros_data_discovery.md`](fantasypros_data_discovery.md)):** FantasyPros' official API returns, per player, **ECR (`rank_ecr`)**, **positional rank (`pos_rank`)**, **tier**, the **expert spread (`rank_min/max/ave/std`)**, name, NFL team, position — across redraft + dynasty + ROS + weekly and all scoring formats. Crucially it also returns a **`cbs_player_id`** on every player that **equals CBS's own id**, so the two sources join on a **single shared key** (`cbs_player_id` ↔ CBS numeric id) — not on fuzzy name/team/position matching. This is the intended relationship between the (planned) **market-rankings** entity (FantasyPros) and the (planned) **player/roster** entities (CBS): a direct id foreign-key. Still **proven source shape, not a schema** — real tables wait for the ingestion issue. Open/assumed: the full 520-player board and the projections/ADP endpoints require the **HOF tier** and a confirming re-run.
 
+### Planned entities from the storage decision (D-10)
+
+**(planned — none built.)** The storage architecture ([D-10](decision_log.md)) is a three-layer store: a raw file archive → a **normalized** SQLite layer → a **derived** SQLite layer, all read/written through a single data-access module returning the flat `Player` shape. The entities below are the intended shape; **none is built until its migration lands**, and the dead-cap/Practice-Squad modelling is explicitly **not final** (see the open decision in [`pm/roadmap.md`](pm/roadmap.md), resolved by Issue B's evidence). **Normalize the store; denormalize the read.**
+
+**Normalized layer** *(planned — lands with Issue C, the storage/ingestion issue):*
+
+| Entity | Grain / key | What it holds |
+| --- | --- | --- |
+| `player` *(planned)* | PK **`cbs_player_id`** | Identity: name, NFL team, position. The shared join key CBS and FantasyPros both publish. |
+| `fantasy_team` *(planned)* | 12 rows | The league's teams (managers). |
+| `contract` *(planned)* | **Snapshot table with `observed_at`** — never overwritten state | Salary + contract years (1–4) a team holds a player at, as observed on a given pull. CBS hands you *current* state; history exists only if each observation is captured. |
+| `transaction` *(planned)* | per transaction | The transaction log (adds/drops, trades, lineup, FAB). Transaction types to be enumerated by Issue B; FAB bid amounts still unconfirmed. |
+| `market_ranking` *(planned)* | **player × ranking type × scoring format × position scope × pull date** — never flattened onto `player` | FantasyPros ECR, positional rank, tier, and the expert spread. One player has many ranking rows. |
+| `scoring_rule` *(planned)* | per rule | The KERFUFFLE scoring config **parsed from CBS `/rules`** (not hardcoded — the league changed scoring as recently as 2024). Its one job downstream: translating FantasyPros raw stat-line projections into KERFUFFLE points. |
+| `pull` *(planned)* | one row per ingestion run | Lineage: source, URL, timestamp, raw snapshot path, status. Every normalized row carries a `pull_id` pointing back at the raw snapshot it came from. |
+
+**Derived layer** *(planned — lands with the engine issue, **not** Issue C):*
+
+| Entity | Grain / key | What it holds |
+| --- | --- | --- |
+| `engine_run` *(planned)* | one row per run | Model version, params, timestamp. Everything derived points at one run. |
+| `projection` *(planned)* | per player per run | The projected total **with the stat components that produced it** (drillable inputs made structural). FantasyPros carries **no first-down data**, and PPFD first downs are a large share of KERFUFFLE scoring — so first downs are a **distinct named component**, modelled separately on historical CBS actuals. |
+| `replacement_level` *(planned)* | per position per season | Stored, not inline. |
+| `valuation` *(planned)* | per player per run | VORP, market price, `ceiling_generic`, `ceiling_roster_aware`, edge. |
+| `price_curve` *(planned)* | per run | The league price curve (roster salaries + historical FAB wins). |
+| `owner_ceiling_override` *(planned)* | per player, owner-edited | **Owner-edited, never written by engine runs.** |
+
+**Read model** *(planned):* one flat **"board"** view/table that joins the normalized (and, later, derived) entities into the `Player` shape the UI consumes — the single boundary `lib/mockData.ts` occupies today.
+
 ## Rules that protect the data
 
-- **No schema is introduced without owner approval.** Introducing a real database/schema is a sensitive change (CLAUDE.md) — stop and flag first.
+- **No schema is introduced without owner approval.** Introducing a real database/schema is a sensitive change (CLAUDE.md) — stop and flag first. *(The storage shape is pre-approved via D-10; the dead-cap/Practice-Squad modelling is not — see the open decision in [`pm/roadmap.md`](pm/roadmap.md).)*
 - **localStorage holds UI config only** — never player, league, or personal data, and nothing sensitive.
 - The mock fixture is the **single** place invented data enters (`lib/mockData.ts`); components consume typed shapes and never hard-code data.
+
+**Grain and lineage rules (planned, for the storage layer — D-10):**
+
+- **`contract` is a snapshot, not state.** It carries `observed_at` and is **never overwritten in place**. CBS exposes only *current* salary/contract; historical contract state exists only if each pull records a new observation row.
+- **`market_ranking` is never flattened onto the player.** Its grain is player × ranking type (draft/dynasty/ROS/weekly) × scoring format (STD/HALF/PPR) × position scope × pull date. One player owns many ranking rows; collapsing them onto the player row destroys the format/type distinctions the engine and tiers depend on.
+- **Every normalized row carries lineage:** `fetched_at` and a `pull_id` → the raw snapshot it came from. Re-running a pull **upserts on natural keys** (`cbs_player_id` + season, + week where applicable) — it updates, never duplicates. Writes go **temp → validate → swap**, so a failed fetch never corrupts good data.
+
+**Ingest invariants (planned — validate at ingest, per the [constitution](kerfuffle-fantasy-constitution.md)):** a failed check is a **loud failure**, never a silent pass.
+
+- **12 teams** present.
+- **Every active-roster row resolves to a numeric `cbs_player_id`** *or* is classified as a **dead-cap pseudo-row** (an inactive pseudo-player the commissioner manually adds to a roster) — the exact modelling is the open decision above.
+- **Team salary sums, including IR, ≤ $500.**
+- **Contract years ∈ {1, 2, 3, 4}.**
+- **Column mapping is by header text, never by position:** read the header row, build a name→index map, pull cells by name. A missing expected header is a loud failure; positional parsing fails silently with wrong values.
+
+**Scoring-authority rule:** **CBS actuals are authoritative — never recompute scored points for real games.** CBS applied KERFUFFLE settings (including first downs) to every game; recomputing risks disagreeing with the official record. The parsed `scoring_rule` config exists only to translate FantasyPros raw stat-line projections into KERFUFFLE points, not to re-score actuals.
 
 ## Access and permissions
 

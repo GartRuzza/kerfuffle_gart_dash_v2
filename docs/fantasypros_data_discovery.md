@@ -45,6 +45,8 @@
 
 ## 4. Barriers, risks, and what's still unsolved
 
+> **⚠ Superseded pending re-verification (2026-08-24).** The **HOF subscription is now active** (owner confirmed). The constraints in this table — the **10-of-520 preview** (`public_api_limited: true`), the **`403`** on projections/metadata/ADP/news, and the **aggressive rate limits** — were all measured on the **free** key and are **likely lifted**. They are kept here (not deleted) as the record of the free tier until the **Issue B** HOF re-pull confirms the new reality: expect ~520 rows, `public_api_limited: false`, and the four gated endpoints returning data. Until that re-pull lands, treat the free-tier rows below as **historical, not current**.
+
 | Risk / gap | Impact | Mitigation / follow-up |
 | --- | --- | --- |
 | **Free tier is a 10-of-520 preview** (`public_api_limited: true`). | Unusable for production — we need the whole board. | Upgrade to **HOF (~$9/mo)**. Owner upgraded 2026-08-20. |
@@ -73,6 +75,15 @@ Throwaway, read-only tooling lives in [`spikes/fantasypros-api/`](../spikes/fant
 - `README.md` — how to get a key and run it.
 
 The API key (`.env`) and all pulled data (`output/`) are **git-ignored** — the credential and third-party data never enter the repo.
+
+---
+
+## 7. Update — 2026-08-24 (HOF active; re-verification folded into Issue B)
+
+- **The HOF paid subscription is now active** (owner confirmed 2026-08-24). The "paid tier?" question is resolved — HOF is purchased, not pending.
+- **The free-tier risk table (§4) is superseded pending re-verification** (see the callout there). The cap, the gated `403` endpoints, and the rate limits were all free-key observations and are likely lifted; they stay recorded until confirmed.
+- **The re-verification is now Issue B** (source profiling spike), not a loose "re-run before the engine." Issue B must, with the HOF key: pull the **full (non-preview) payloads** for draft / dynasty / ROS / weekly ECR + projections; regenerate the FantasyPros field profile (shape only, no league values committed); and confirm whether the rate limits changed. Expected result: ~520 rows, `public_api_limited: false`, and projections/metadata/ADP/news returning data.
+- **Unchanged and still true:** the join to CBS is a direct `cbs_player_id` match; the license is personal, non-commercial (fits this single-user local tool); the key is a credential (local env only, never committed).
 
 ---
 

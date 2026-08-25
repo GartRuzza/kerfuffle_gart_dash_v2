@@ -47,6 +47,26 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-10 · 2026-08-24 · Three-layer storage: raw file archive → SQLite (normalized + derived)
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Both |
+| **Decided by** | Product owner, in PM conversation 2026-08-24 |
+
+**The question:** Where does API/scraped data live locally — flat CSV/JSON files, or a real database — and how do we keep history without blocking the eventual web deploy?
+
+**What we decided:** Three layers. (1) **Raw:** every fetched response saved verbatim (CBS HTML as HTML, FP JSON as JSON) in timestamped, dated folders — append-only, never edited, gitignored. (2) **Normalized** and (3) **derived** layers in **SQLite via `better-sqlite3`**, one DB file. All reads/writes go through a **single data-access module** that returns the flat `Player` shape the UI already consumes (the existing `lib/mockData.ts` boundary).
+
+**Why:** The data is relational (player → contract → team, transactions across seasons) and the price curve + backtest need point-in-time history — CSV forces hand-joins in TypeScript and versioned-file sprawl. SQLite is one file, zero setup, real SQL. The raw layer exists because (a) a wrong parser is fixed by re-parsing the archive, never by re-fetching, and (b) two unsolved problems — historical CBS season retrieval and FAB bid amounts — mean today's data is tomorrow's only history. The single-module boundary preserves the `architecture.md` "keep it deployable" constraint: a writable SQLite file doesn't survive serverless, so a later swap to Turso/Postgres touches one module.
+
+**What we gave up:** CSV's eyeball-it-in-Excel convenience (recoverable via an export command) and the absolute simplicity of flat JSON snapshots, which would genuinely suffice for a UI-only tool but can't serve historical queries.
+
+**What would make us reconsider:** Deploying to Vercel (forces the store swap the module boundary anticipates), or the backtest/price-curve needs growing past single-file comfort.
+
+---
+
 ### D-09 · 2026-08-20 · FantasyPros data via the official API (HOF tier); join to CBS on `cbs_player_id`
 
 | | |
