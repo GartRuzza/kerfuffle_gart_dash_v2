@@ -53,14 +53,30 @@ const DOCS: Record<
     deepDive: ["Source: CBS for rostered players, FantasyPros for free agents."],
     placeholder: false,
   },
-  kerfOvrRank: { definition: "Our overall player rank by KERFUFFLE value.", placeholder: true },
-  kerfPosRank: { definition: "Our within-position rank by KERFUFFLE value.", placeholder: true },
-  projPts: {
-    definition: "CBS's own projected KERFUFFLE points for the season.",
+  kerfOvrRank: {
+    definition: "Our overall rank by projected KERFUFFLE points — one pool, all offense.",
     deepDive: [
-      "Source: the Proj column on your CBS roster pages — already scored with KERFUFFLE settings.",
-      'Blank ("—") for free agents: their CBS projections live on a page we don\'t capture yet.',
-      "This is CBS's number, not ours. Our own projection arrives with the engine.",
+      "Source: our projection engine. It takes FantasyPros' projected stat lines, estimates each player's rushing and receiving first downs (which FantasyPros doesn't project) from THAT PLAYER's own 2024+2025 first-down rate — blended toward his position's average when his sample is small (so a proven possession back is credited, while rookies lean on the position rate) — then scores the whole line with KERFUFFLE's settings.",
+      "Everyone is ranked in ONE pool, so superflex naturally lifts QBs to the top — unlike a standard 1-QB board.",
+      'Team defenses show "—": their scoring can\'t be projected from the offensive feed (owner decision).',
+      "Tiers (the shaded bands on this sort) are grouped by natural gaps in projected points, calibrated to match FantasyPros' tier counts.",
+    ],
+    placeholder: false,
+  },
+  kerfPosRank: {
+    definition: "Our rank within the player's position by projected KERFUFFLE points.",
+    deepDive: [
+      "Source: the same projection engine as Kerf Ovr Rank, ranked within each position.",
+      'Free agents and rostered players both get a rank wherever FantasyPros projects them; defenses show "—".',
+    ],
+    placeholder: false,
+  },
+  projPts: {
+    definition: "Projected KERFUFFLE points for the season — our engine's number.",
+    deepDive: [
+      "Source: our projection engine — FantasyPros' projected stat line, plus estimated rushing/receiving first downs (from each player's own history, blended toward his position when the sample is thin), scored with KERFUFFLE settings. This is the number the Kerf ranks and tiers are built from.",
+      "Now filled for every projected offensive player, including free agents (it used to show CBS's own number for rostered players and blank for free agents).",
+      'Team defenses aren\'t projected by our engine: a rostered defense still shows CBS\'s own projected points here, and a free-agent defense shows "—".',
     ],
     placeholder: false,
   },

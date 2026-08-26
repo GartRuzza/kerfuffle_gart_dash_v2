@@ -31,6 +31,7 @@ import {
   normalizeTxDate,
 } from "./parse-cbs-ingest.mjs";
 import { mapFpBoard } from "./parse-fp-ingest.mjs";
+import { mapProjections } from "./parse-projections.mjs";
 import { parseScoring } from "../profile/parse-scoring.mjs";
 
 // Overridable so tests can point ingestion at a synthetic fixture archive.
@@ -111,7 +112,7 @@ function ingestRunInner(db, runId, { warn, note }, rawRoot) {
   const pullId = pull.pull_id;
 
   // Replace this pull's snapshot rows (idempotent re-ingest)
-  for (const table of ["contract", "market_ranking", "scoring_rule"]) {
+  for (const table of ["contract", "market_ranking", "scoring_rule", "projection_source"]) {
     db.prepare(`DELETE FROM ${table} WHERE pull_id = ?`).run(pullId);
   }
 
@@ -367,6 +368,53 @@ function ingestRunInner(db, runId, { warn, note }, rawRoot) {
   );
   if (noCbsId > 0) note(`fp: ${noCbsId} ranking row(s) have no cbs_player_id (unjoinable; kept in market_ranking, excluded from the board view)`);
 
+  // ---- FantasyPros PROJECTIONS -> projection_source (the engine's input, #18) ----
+  // The projections feed carries fpid, not cbs_player_id, so the join to CBS is
+  // bridged through player.fp_player_id (populated from the ECR boards just above).
+  // Not required: an older archive run without projections warns rather than fails.
+  const projResp = pages.get("projections-all");
+  if (!projResp) {
+    warn(`${runId}: no projections-all page — projection_source not updated for this pull (engine has no input)`);
+  } else {
+    const proj = mapProjections(JSON.parse(readPage(runDir, projResp)), `${runId}/projections-all`);
+    const cbsIdByFp = new Map(
+      db.prepare(`SELECT fp_player_id, cbs_player_id FROM player WHERE fp_player_id IS NOT NULL`)
+        .all().map((r) => [r.fp_player_id, r.cbs_player_id])
+    );
+    const insertProjection = db.prepare(
+      `INSERT INTO projection_source
+         (pull_id, cbs_player_id, fp_player_id, player_name, pos, nfl_team, season, week,
+          pass_att, pass_cmp, pass_yds, pass_td, pass_int, rush_att, rush_yds, rush_td,
+          rec_rec, rec_yds, rec_td, fumbles, two_pt, fp_points, source_endpoint, fetched_at)
+       VALUES
+         (@pull_id, @cbs_player_id, @fp_player_id, @player_name, @pos, @nfl_team, @season, @week,
+          @pass_att, @pass_cmp, @pass_yds, @pass_td, @pass_int, @rush_att, @rush_yds, @rush_td,
+          @rec_rec, @rec_yds, @rec_td, @fumbles, @two_pt, @fp_points, @source_endpoint, @fetched_at)`
+    );
+    let projUnmatched = 0;
+    for (const r of proj.rows) {
+      const cbsId = cbsIdByFp.get(r.fpPlayerId) ?? null;
+      if (cbsId === null) projUnmatched++;
+      insertProjection.run({
+        pull_id: pullId, cbs_player_id: cbsId, fp_player_id: r.fpPlayerId,
+        player_name: r.playerName, pos: r.pos, nfl_team: r.nflTeam,
+        season: r.season, week: r.week,
+        pass_att: r.pass_att, pass_cmp: r.pass_cmp, pass_yds: r.pass_yds,
+        pass_td: r.pass_td, pass_int: r.pass_int, rush_att: r.rush_att,
+        rush_yds: r.rush_yds, rush_td: r.rush_td, rec_rec: r.rec_rec,
+        rec_yds: r.rec_yds, rec_td: r.rec_td, fumbles: r.fumbles, two_pt: r.two_pt,
+        fp_points: r.fpPoints, source_endpoint: "projections-all", fetched_at: projResp.fetched_at,
+      });
+    }
+    stats.projections = proj.rows.length;
+    if (projUnmatched > 0) {
+      note(
+        `projections: ${projUnmatched}/${proj.rows.length} projected players have no cbs_player_id ` +
+          `(FantasyPros projects them but they aren't in our league universe; stored with null id, no Kerf projection)`
+      );
+    }
+  }
+
   return stats;
 }
 
@@ -401,7 +449,8 @@ function main() {
       const stats = ingestRun(db, runId, { warn, note });
       console.log(
         `  ✔ ${runId}  teams:${stats.teams} players:${stats.rosterPlayers} dead-cap:${stats.deadCapRows} ` +
-          `tx:${stats.transactions} rules:${stats.scoringRules} boards:${stats.boards} rankings:${stats.rankingRows}`
+          `tx:${stats.transactions} rules:${stats.scoringRules} boards:${stats.boards} rankings:${stats.rankingRows} ` +
+          `projections:${stats.projections ?? 0}`
       );
       for (const n of notes) console.log(`      · ${n}`);
       for (const w of warnings) console.log(`      ⚠ ${w}`);

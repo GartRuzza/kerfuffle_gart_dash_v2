@@ -53,6 +53,42 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-26 — KERFUFFLE projection engine core: first-down-aware points, ranks, tiers (#18)
+
+**Ticket / Issue:** [#18](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/18) · **Branch:** main · **Deviated from plan:** No (four owner decisions taken in the pre-build Q&A)
+
+**Original intent**
+Turn FantasyPros' projected stat lines into KERFUFFLE-scored projected points — including an *estimated* first-down component derived from our own league history (#17) — then surface real Kerf overall/positional ranks and tiers in the table. No dollars (that's the valuation issue, gated behind the backtest). Stage 1 of "stage in two" (D-13).
+
+**What was actually built**
+Migration `005` adds three tables: `projection_source` (normalized input — the FantasyPros projected stat line per player per pull, written by `npm run ingest`), `engine_run` (one stamped row per engine execution), and `projection` (derived output — per-player Kerf points, the estimated first downs as named components, the full component breakdown, and Kerf ranks + tiers). A new offline step, **`npm run engine`** (`tools/engine/run.mjs` + a pure `core.mjs`), derives **per-player** first-down rates from `player_season_stats` (2024+2025 pooled), **each shrunk toward its position rate by sample size** (empirical-Bayes — see the mid-build addition below), estimates each projected player's rushing/receiving first downs, scores the full line through the parsed `scoring_rule` config (reusing #17's validated scoring logic), and derives Kerf overall/positional ranks and gap-based tiers (Jenks natural breaks, calibrated to FantasyPros' own tier counts). `lib/data/` now joins the latest engine run onto the board, filling Kerf Ovr/Pos Rank + tiers and — per the owner — the Proj Points column (KERFUFFLE-scored, for every projected offensive player including free agents). Dollar columns stay "—". 26 new tests (141 total — incl. a DB-integration test of `runEngine` added on review); build clean; live run scored 520 players with Josh Allen #1 overall (the superflex sanity check).
+
+**Deviations**
+Four product/display decisions the owner made in the pre-build Q&A (2026-08-26), none a departure from the issue's locked design:
+1. **Defenses (DST) render "—" for Kerf** — the offensive projection feed can't produce a trustworthy KERFUFFLE-scored defensive number (its biggest component, points-allowed, comes through as zeros; our stat history is offense-only). They keep their existing positional rank/tier from the market board.
+2. **Proj Points now shows OUR number for all offense** (incl. free agents), replacing CBS's displayed projection there. CBS's own projection is still stored for reference.
+3. **First-down rates pool 2024+2025** (more stable than one season).
+4. **Tiers are gap-based (Jenks), calibrated to FantasyPros' tier counts** — after the owner asked for a researched method that stays consistent with FP's banding. Chose Jenks over a Gaussian-mixture model because it is deterministic (an acceptance requirement) and reads as clean value-cliffs.
+
+**Mid-build addition (owner, 2026-08-26, after first review):** the owner asked that first downs be based on **each player's own historical production**, not just his position's average — that's the competitive edge (a back who converts more first downs than average should be worth more). The issue had scoped this as "later"; the owner pulled it forward. Implemented as **empirical-Bayes shrinkage**: each player's own 2024+2025 rate blended toward his position rate, weighted by sample size (`rushK=75`/`recK=40` — "moderate", ~half a season). A rookie or thin sample falls back to the position rate with no hard cutoff. Verified on real data: Kyren Williams (575 carries, 0.277 FD/carry) keeps ~his own rate vs the 0.229 RB average and rises; a below-average small-sample back is softened back toward average. The applied/own/position rates + sample size are stored per player for drill-down. No schema change — the data was already loaded (#17) and the breakdown rides in `components_json`.
+
+**Product implications**
+The table now shows a genuinely KERFUFFLE-aware board for the first time: QBs correctly sit at the top (Josh Allen #1 overall, best-QB overall rank = 1), because first downs and superflex are both baked into one ranking pool. Free agents finally carry a projection. What still reads "—": all dollar columns (Kerf Value, Market Value, Edge, Ceiling) — those are the valuation issue (#20), deliberately gated behind the backtest (#19) — and defenses' Kerf columns. The ranks are now something the backtest can actually test.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| Shrinkage strength (`rushK=75`/`recK=40`) is a **hand-set starting value**, not yet empirically calibrated | The backtest (#19) is the right place to tune it; "moderate" is a sensible default | A too-strong/weak dial slightly over- or under-personalizes | The backtest calibrates K against actual scoring — a one-parameter sweep, already planned |
+| First downs are **estimated**, never actual (projections have none) | FantasyPros doesn't project them; that's the whole engine | The estimate carries the rate's error; a player whose usage/role shifts is mis-projected (the 2-yr pool + shrinkage soften but can't see a changed situation) | Nothing to fix — it's inherent; the backtest (#19) measures whether it helps |
+| `engine_run` rows **accumulate** (no auto-prune) | history is useful and the app reads only the latest | The table grows slowly with each `npm run engine` | Trivial prune later if it ever matters (it won't at this scale) |
+| DST **excluded** from Kerf entirely | can't score defense from the offensive feed | Defenses have no Kerf value/rank on auction day | A defensive projection source + DST scoring — a separate, low-priority effort |
+
+**Follow-up decisions needed from the product owner**
+None. The four decisions above were made in the Q&A and are recorded in the roadmap's Open-decisions notes / here.
+
+---
+
 ### 2026-08-26 — Historical data storage: CBS 2024/25 stats, 2025 salaries, TRUFFLE reference (#17)
 
 **Ticket / Issue:** [#17](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/17) · **Branch:** docs/valuation-engine-plan · **Deviated from plan:** No (a few owner-approved refinements)

@@ -73,4 +73,30 @@ describe("deriveBoard", () => {
   it("fails LOUDLY on a position the league doesn't roster", () => {
     expect(() => deriveBoard([row({ pos: "K", name: "Some Kicker" })])).toThrowError(/Some Kicker/);
   });
+
+  it("surfaces the engine projection: Kerf ranks/tiers + Kerf-scored Proj Points (issue #18)", () => {
+    const proj = new Map([
+      [7, { kerf_points: 288.4, kerf_ovr_rank: 12, kerf_pos_rank: 4, kerf_ovr_tier: 3, kerf_pos_tier: 2 }],
+    ]);
+    const [p] = deriveBoard(
+      [row({ cbs_player_id: 7, name: "Projected Guy", owner: "FA", proj_points: null, ecr: 30 })],
+      proj
+    );
+    expect(p).toMatchObject({
+      id: "7",
+      kerfOvrRank: 12, kerfPosRank: 4, kerfOvrTier: 3, kerfPosTier: 2,
+      projPts: 288.4, // the engine's KERFUFFLE projection, even for a free agent
+      kerfValue: null, marketPrice: null, // dollars still wait for the valuation issue
+    });
+  });
+
+  it("a player with no projection keeps Kerf fields null and CBS's own Proj Points", () => {
+    const [p] = deriveBoard(
+      [row({ cbs_player_id: 9, name: "Defense", pos: "DST", proj_points: 110 })],
+      new Map() // no projection for this player (e.g. a defense)
+    );
+    expect(p.kerfOvrRank).toBeNull();
+    expect(p.kerfOvrTier).toBeNull();
+    expect(p.projPts).toBe(110); // CBS's number, unchanged
+  });
 });
