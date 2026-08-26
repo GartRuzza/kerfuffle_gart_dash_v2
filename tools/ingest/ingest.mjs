@@ -213,12 +213,10 @@ export function ingestRun(db, runId, { warn, note }, rawRoot = RAW_ROOT) {
   if (txPages.length === 0) warn(`${runId}: no transaction pages in this run — log not updated`);
   const byKey = new Map();
   let allViewCount = null;
-  let pagedCount = 0;
   for (const name of txPages) {
     const resp = pages.get(name);
     const rows = parseTransactionsPage(readPage(runDir, resp), `${runId}/${name}`);
     if (name === "transactions-all") allViewCount = rows.length;
-    else pagedCount += rows.length;
     for (const row of rows) if (!byKey.has(row.naturalKey)) byKey.set(row.naturalKey, { ...row, fetched_at: resp.fetched_at });
   }
   if (allViewCount != null && allViewCount !== byKey.size) {
