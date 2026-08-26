@@ -41,6 +41,24 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-26 — The table now has KERFUFFLE-adjusted ranks, tiers, and projections
+
+**New**
+- **Kerf Overall & Positional Ranks are real.** For the first time the board is ranked by *KERFUFFLE* value, not the standard market. It takes FantasyPros' projections, adds an estimate of each player's rushing and receiving **first downs** (the league's scoring edge, which no public projection includes) built from your own league's 2024+2025 history, and scores the whole thing with your league's settings. Because everyone lands in one pool, **quarterbacks correctly sit at the top** — Josh Allen ranks #1 overall.
+- **First downs are estimated from each player's OWN history, not just his position.** A back who genuinely converts more first downs than a typical RB is now credited for it and ranks higher — that's the competitive edge. Players with little or no history (rookies) sensibly lean on the position average until they've built a track record. (Example: Kyren Williams, whose real first-down rate is ~21% above the RB average across 575 carries, gets his deserved bump.)
+- **Kerf tiers.** Sorting by a Kerf rank now bands the board into tiers grouped at the natural drop-offs in projected points, tuned to look like the number of tiers you're used to on FantasyPros.
+- **Free agents finally have a projection.** The Proj Points column is now filled for every projected offensive player — including free agents, which used to be blank.
+
+**Improved**
+- **Proj Points is now *our* number.** That column previously showed CBS's own projection for rostered players; it now shows our KERFUFFLE-scored projection for all offensive players, so it lines up with the Kerf ranks. (CBS's figure is still kept behind the scenes.)
+
+**Known issues**
+- **Dollar columns are still blank ("—").** Kerf Value, Market Value, and Edge — and the Ceiling seed — are the *next* step (turning these ranks into auction dollars), which we've deliberately held until a backtest confirms the ranking beats the market.
+- **Team defenses show "—" for Kerf.** Their scoring can't be projected from the offensive data we have, so they keep only their market positional rank for now.
+
+**Requires action from you**
+- After refreshing data (`npm run ingest` then `npm run ingest:historical`), run **`npm run engine`** once to compute the Kerf numbers, then reload the app. The engine prints a quick sanity summary (top-10 overall + best-QB rank).
+
 ## 2026-08-26 — Rankings now reflect that KERFUFFLE is a superflex league
 
 **Fixed**

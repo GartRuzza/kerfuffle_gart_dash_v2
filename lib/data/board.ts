@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 import { MY_TEAM, type Player } from "../types";
-import { deriveBoard, type BoardViewRow } from "./derive";
+import { deriveBoard, type BoardViewRow, type ProjectionRow } from "./derive";
 
 /**
  * THE data-access boundary (decision D-10, issue #12) — the single module the
@@ -67,6 +67,21 @@ function readBoard(): BoardData {
     if (!pull) return EMPTY;
 
     const rows = db.prepare(`SELECT * FROM board`).all() as BoardViewRow[];
+
+    // The latest engine run's per-player projection (issue #18). If no engine
+    // run exists yet (engine never run), this is empty and Kerf fields stay "—" —
+    // exactly the pre-engine behavior, so the app degrades gracefully.
+    const projById = new Map<number, ProjectionRow>();
+    const projRows = db
+      .prepare(
+        `SELECT cbs_player_id, kerf_points, kerf_ovr_rank, kerf_pos_rank,
+                kerf_ovr_tier, kerf_pos_tier
+         FROM projection
+         WHERE engine_run_id = (SELECT engine_run_id FROM latest_engine_run)`
+      )
+      .all() as (ProjectionRow & { cbs_player_id: number })[];
+    for (const p of projRows) projById.set(p.cbs_player_id, p);
+
     const teamRows = db
       .prepare(`SELECT name FROM fantasy_team ORDER BY name`)
       .all() as { name: string }[];
@@ -76,7 +91,7 @@ function readBoard(): BoardData {
     ];
 
     return {
-      players: deriveBoard(rows),
+      players: deriveBoard(rows, projById),
       teams,
       meta: { runId: pull.run_id, capturedAt: pull.captured_at },
     };

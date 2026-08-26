@@ -29,7 +29,9 @@ export function buildScoringMap(db, pullId) {
 
 // The offensive scoring terms KERFUFFLE awards, mapping a stat field to its code.
 // (Passing first downs are intentionally absent — this league does not score them.)
-const TERMS = [
+// Exported so the projection engine (#18) scores PROJECTED stat lines through the
+// exact same terms this cross-check validated against CBS actuals.
+export const TERMS = [
   ["pass_yds", "PaYd"], ["pass_td", "PaTD"], ["pass_int", "PaInt"], ["pass_2pt", "Pa2P"],
   ["rush_yds", "RuYd"], ["rush_td", "RuTD"], ["rush_first_downs", "RuFD"], ["rush_2pt", "Ru2P"],
   ["rec_yds", "ReYd"], ["rec_td", "ReTD"], ["rec_first_downs", "ReFD"], ["rec_2pt", "Re2P"],

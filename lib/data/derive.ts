@@ -13,7 +13,14 @@ import { POSITIONS, type Player, type Position } from "../types";
  *  - Tiers are FantasyPros' REAL tiers (per board). The positional tier is the
  *    same board's tier: within a single position it groups exactly like the
  *    positional rank, so bands stay contiguous.
- *  - Engine fields (kerf*, marketPrice) are null — the engine doesn't exist yet.
+ *  - Engine fields (kerf ranks/tiers) come from the latest engine_run's
+ *    `projection` rows (issue #18), passed in as `projById`. A player with no
+ *    projection (defenses, unprojected players) keeps them null → renders "—".
+ *    `marketPrice`/`kerfValue` stay null — dollars are the valuation issue (#20).
+ *  - `projPts`: for offensive players the engine projects, this is now the
+ *    KERFUFFLE-scored projected points (owner, 2026-08-26 — replaces CBS's own
+ *    number, and finally gives free agents a projection). Defenses and
+ *    unprojected players keep CBS's `proj_points` (or null).
  */
 
 /** One row of the SQLite `board` view (snake_case, as SQL returns it). */
@@ -33,6 +40,18 @@ export interface BoardViewRow {
   dynasty_ecr: number | null;
   dynasty_pos_rank: string | null;
   dynasty_tier: number | null;
+}
+
+/**
+ * One player's engine projection (from the latest engine_run's `projection`
+ * rows, keyed by cbs_player_id). Only the fields the board needs.
+ */
+export interface ProjectionRow {
+  kerf_points: number;
+  kerf_ovr_rank: number | null;
+  kerf_pos_rank: number | null;
+  kerf_ovr_tier: number | null;
+  kerf_pos_tier: number | null;
 }
 
 /** "WR12" -> 12 (FantasyPros pos_rank strings). */
@@ -68,27 +87,34 @@ function uniqueRanks(
   return map;
 }
 
-export function deriveBoard(rows: BoardViewRow[]): Player[] {
+export function deriveBoard(
+  rows: BoardViewRow[],
+  projById: Map<number, ProjectionRow> = new Map()
+): Player[] {
   const ovrRank = uniqueRanks(rows, (r) => r.ecr);
   const dynRank = uniqueRanks(rows, (r) => r.dynasty_ecr);
 
-  return rows.map((r) => ({
+  return rows.map((r) => {
+    const proj = projById.get(r.cbs_player_id) ?? null;
+    return {
     id: String(r.cbs_player_id),
     name: r.name,
     pos: assertPosition(r.pos, r.name),
     nflTeam: r.nfl_team ?? "",
     owner: r.owner,
 
-    kerfValue: null,
+    kerfValue: null, // dollars — the valuation issue (#20)
     marketPrice: null,
-    kerfOvrRank: null,
-    kerfPosRank: null,
-    kerfOvrTier: null,
-    kerfPosTier: null,
+    kerfOvrRank: proj?.kerf_ovr_rank ?? null,
+    kerfPosRank: proj?.kerf_pos_rank ?? null,
+    kerfOvrTier: proj?.kerf_ovr_tier ?? null,
+    kerfPosTier: proj?.kerf_pos_tier ?? null,
 
     salary: r.salary,
     contractYears: r.contract_years,
-    projPts: r.proj_points,
+    // The engine's KERFUFFLE-scored projection for offense (incl. free agents);
+    // CBS's own number for defenses / unprojected players.
+    projPts: proj ? Math.round(proj.kerf_points * 10) / 10 : r.proj_points,
 
     ecr: r.ecr,
     dynastyEcr: r.dynasty_ecr,
@@ -100,5 +126,6 @@ export function deriveBoard(rows: BoardViewRow[]): Player[] {
     posEcrTier: r.ecr_tier,
     dynOvrTier: r.dynasty_tier,
     dynPosTier: r.dynasty_tier,
-  }));
+    };
+  });
 }
