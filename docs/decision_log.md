@@ -47,6 +47,87 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-15 · 2026-08-26 · TRUFFLE auction data retained as inert reference only (non-goal qualified)
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Product (qualifies a vision non-goal) |
+| **Decided by** | Product owner, 2026-08-26 |
+
+**The question**
+The owner obtained TRUFFLE's completed 2026 auction (69 players, with full bid-by-bid histories and CBS ids) and floated using it as a secondary signal for the price curve. But [`pm/product_vision.md`](pm/product_vision.md) has an explicit non-goal: "We will not touch TRUFFLE. KERFUFFLE data only… extra sample size is not worth the data plumbing." Do we use it?
+
+**What we decided**
+**No active use — retain it as inert reference data only.** The owner's rule: use TRUFFLE only *if* it contained **all** rostered players; it is **auction-pool only (69)**, so it is stored (ingested into `auction_result` with `league='TRUFFLE'`, `is_reference=true`) and **read by no consumer** — not the price curve, not the engine. It exists solely for possible future bidding-dynamics work (parked in [`feature_backlog.md`](feature_backlog.md)). The vision non-goal therefore still holds in practice: **KERFUFFLE data only feeds any value**.
+
+**Why**
+The bid histories are genuinely valuable and the extraction is already done, so discarding the file outright would be wasteful; but blending a *different league's, partial* auction into KERFUFFLE prices is exactly the plumbing/quality risk the non-goal guards against. Store-but-don't-use keeps the option open without contaminating any number.
+
+**What we gave up**
+A secondary price signal (the once-floated 30% TRUFFLE / 70% KERFUFFLE blend). Recoverable later if TRUFFLE full-roster data is obtained and the owner explicitly reverses this.
+
+**What would make us reconsider**
+Obtaining TRUFFLE's *complete* rosters/contracts (not just the auction pool) **and** an explicit owner decision to use them; or a dedicated "bidding-dynamics" feature that deliberately opts in.
+
+---
+
+### D-14 · 2026-08-26 · First downs (and backtest truth) come from CBS league data, not nflfastR
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Both (data sourcing + engine input) |
+| **Decided by** | Product owner + Claude Code, 2026-08-26 |
+
+**The question**
+KERFUFFLE scores 1 pt per rushing/receiving first down, but FantasyPros' projection feed has **no first-down field**. Where do the first-down estimates (and the backtest's actual-points ground truth) come from — our own league (CBS) or an external source (nflfastR/nflverse)?
+
+**What we decided**
+**From CBS — our own league's recorded stats.** CBS tracks `RuFD`/`ReFD` as scored categories, so per-player historical first downs exist. The owner exported **2024 & 2025 CBS stats** in two paired files per season — "Advanced Categories" (passing/rushing/receiving **first downs**, 2pt, FPTS total) and "Standard Categories" (att/cmp/yds/td, targets/rec/yds/td, fumbles) — which **join per player + season**. These give: (a) first-down **rates** to apply to FantasyPros projected volume, (b) a **scoring-engine cross-check** (recompute points from components, compare to CBS FPTS), and (c) the backtest's **actual KERFUFFLE points**. The prediction side of the backtest (historical FantasyPros ECR + projections for 2024/2025) was **confirmed accessible** via the API's season parameter. These historical files are ingested by issue **#17**. **nflfastR is not used** (kept only as a latent fallback).
+
+**Why**
+Least error and highest trust: the projection is measured against, and calibrated from, the exact scoring reality it's trying to predict — no external stat provider to reconcile, no join risk. It also satisfies the owner's stated preference for league data as source of truth, and it unblocked the backtest end to end.
+
+**What we gave up**
+nflfastR's per-play granularity and its ready-made league-wide first-down rates. Accepted: the CBS season totals are sufficient for position-level rates, and staying in-league avoids a second stat universe to match.
+
+**What would make us reconsider**
+CBS stat exports becoming unavailable or too coarse for stable rates (then nflfastR for the volume/first-down denominator), or a need for play-level features CBS totals can't provide.
+
+---
+
+### D-13 · 2026-08-26 · Valuation engine methodology: VORP, last-starter replacement, single-season, two ceilings
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Product (the core valuation method) |
+| **Decided by** | Product owner (strategy) + Claude Code (research), 2026-08-26 |
+
+**The question**
+How does the engine turn projections into the "worth" number — and how is positional/superflex value handled — for a 12-team, superflex, $500-cap, PPFD dynasty auction?
+
+**What we decided**
+- **Framework: VORP** — value = projected KERFUFFLE points **above positional replacement**, converted to cap dollars against the $500 budget (not naive points-per-dollar). The worsening $/point at the top is the scarcity premium, not a red flag.
+- **Replacement level: the "last-starter" method** — baseline = the number of players *actually started* league-wide at each position. For our lineup: **QB24, RB~34, WR~34, TE~17, DST12** (superflex → the SFLEX slot counts as a 2nd QB, which is what makes elite QBs correctly premium — the same error class as [D-12](#)). FLEX split proportionally (RB/WR/TE 40/40/20); baselines are documented, tunable constants.
+- **Dollars: marginal $/point** — ($500 × 12 − $1 minimums) ÷ total points-above-replacement; price = $1 + PAR × $/point; prices sum to the cap.
+- **Two ceilings, both built:** league-generic (auction default) and roster-aware/Raccoons-specific (trades + custom lens).
+- **Value horizon = single season** (win-now). Dynasty ECR + contract length stay as separate context, **never blended** into the dollar value (reaffirms [`product_vision.md`](pm/product_vision.md) principle 5 now that real dollars are at stake).
+- **Edge = market price − ceiling** (the whole game).
+- **Build is staged in two** with the **backtest as the gate between** them (issues #18 → #19 → #20): prove the re-rank beats ECR before paying for the dollar machinery.
+
+**Why**
+VORP with a last-starter baseline is the transparent, deterministic standard for auction pricing and directly encodes our lineup rules; it's the method that reproduces "replacement QB ≈ QB24" in superflex, which is the single most consequential number for this league. A comprehensive research brief (recorded in [`pm/implementation_reality_log.md`](pm/implementation_reality_log.md)) backed each choice and flagged the conventions vs. settled points. Single-season value keeps the number drillable and leaves the multi-year judgment human, per the vision.
+
+**What we gave up**
+A deeper "man-games" replacement baseline (more realistic, less transparent — deferred to a possible v2) and a contract/age-adjusted dollar value (rejected: it would blend dynasty into the primary number the vision deliberately keeps single-season). Both reconsiderable if the owner wants them.
+
+**What would make us reconsider**
+The backtest (#19) failing to show an edge (→ fix the projection core before pricing); the league changing its lineup away from superflex; or the owner deciding the auction wants a contract-aware value after using the single-season one.
+
+---
+
 ### D-12 · 2026-08-26 · The table's market board is SUPERFLEX (draft, standard scoring)
 
 | | |

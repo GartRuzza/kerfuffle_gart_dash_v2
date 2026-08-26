@@ -53,6 +53,31 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-26 — Valuation-engine planning: scoped, de-risked, and split into four issues (#17–#20)
+
+**Ticket / Issue:** planning cycle → created [#17](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/17)–[#20](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/20) · **Branch:** n/a (docs + issues only) · **Deviated from plan:** N/A (this *is* the plan)
+
+**Original intent**
+Plan the valuation engine (roadmap's next item) and create the GitHub issue(s) for it. No code.
+
+**What actually happened**
+A full read of the docs surfaced a load-bearing gap the roadmap's one-line "scoring translation + superflex adjustment" hid: **FantasyPros projections carry no first-down field**, yet 1 pt per rushing/receiving first down is the entire KERFUFFLE edge. That reframed the engine around a first-down *estimation* problem and a data-source question. Over the session:
+
+- **The strategy framework was imported from a separate owner/PM chat and adopted:** VORP (points above positional replacement → cap dollars), two ceilings (league-generic + roster-aware), a two-snapshot price curve, Edge = price − ceiling. Logged as **D-13**.
+- **Replacement level was researched** (a subagent produced a sourced brief, recorded via its findings) and the owner chose the **last-starter method** — QB24/RB~34/WR~34/TE~17/DST12, the superflex QB baseline being the pivotal number — with **single-season value** and dynasty kept as context. **D-13**.
+- **The first-down source resolved to CBS/our own league, not nflfastR:** the owner exported **2024 & 2025 CBS stat lines** (Advanced = first downs; Standard = volume; they join per player) plus **KERFUFFLE 2025 salaries** and a **TRUFFLE 2026 auction** file. Verified the CBS files really carry per-player rushing/receiving first downs (checked against real players). **D-14.**
+- **Historical FantasyPros access was tested and confirmed** (the API serves distinct 2024/2025/2026 ECR + projections by season param) — which **unblocks the backtest end to end** (truth from CBS actuals, prediction from historical FP).
+- **TRUFFLE was parked, not used** (auction-pool only, not full rosters; touches the "no TRUFFLE" non-goal) — stored as inert reference, read by nothing. **D-15.**
+- **The engine was split into four issues** with the backtest as the gate: #17 historical storage → #18 projection core (points/ranks/tiers) → #19 backtest → #20 VORP dollars/ceilings/Edge.
+
+**Product implications**
+- The engine is now fully specified and **every input is in hand** — no remaining data blockers. Build can start at #17.
+- **The 2026 FA auction (8/26 5pm ET) happens before the engine ships.** The owner is handling this auction outside the tool ("don't worry about it"); the engine targets in-season decisions and the next auction. Roadmap open decision #3 (auction-day fallback) is thus settled in practice for this cycle.
+- The pre-auction price curve, previously blocked on missing history, is now buildable from the 2025 KERFUFFLE salary file.
+
+**Follow-up decisions needed from the product owner**
+None blocking. Deferred by design (not open questions): a deeper "man-games" replacement baseline (v2), a contract/age-adjusted dollar value (rejected per the vision), and any future use of TRUFFLE data (needs full rosters + a new decision).
+
 ### 2026-08-26 — The market board was the wrong one: switched to superflex (D-12)
 
 **Ticket / Issue:** [#12](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/12) follow-up · **Branch:** feat/issue-12-storage-ingestion · **Deviated from plan:** Yes — corrects a choice made during the build.

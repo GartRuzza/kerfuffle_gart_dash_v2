@@ -53,7 +53,7 @@ He no longer adjusts rankings in his head, keeps salary math in spreadsheets, or
 - **We will not model real-life NFL contract situations or depth charts (yet).** Acknowledged as the two biggest unmodeled inputs to dynasty decisions — explicitly deferred to a later version, not forgotten.
 - **We will not build for the Bench Cup.** It doesn't factor into the owner's decisions. No bench-depth valuation, no Bench Cup views.
 - **We will not build tanking or draft-lottery optimization.** Out of scope entirely.
-- **We will not touch TRUFFLE.** KERFUFFLE data only, even though the sister league shares scoring. Extra sample size is not worth the data plumbing.
+- **We will not touch TRUFFLE.** KERFUFFLE data only, even though the sister league shares scoring. Extra sample size is not worth the data plumbing. *(Qualified 2026-08-26, [`../decision_log.md`](../decision_log.md) D-15: one TRUFFLE 2026 auction file is **stored inert as reference only** and read by no consumer — the non-goal still holds in practice, since no TRUFFLE data feeds any KERFUFFLE value.)*
 - **We will not serve other owners.** No sharing, no accounts, no "what if my leaguemates used this." The edge depends on them *not* having it.
 - **We will not replace CBS.** CBS remains the system of record for rosters, scoring, and transactions. Gart Dash reads reality; it never becomes a second place where league state must be maintained.
 

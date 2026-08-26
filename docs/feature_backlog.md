@@ -10,7 +10,7 @@
 >
 > *Examples are in italics and refer to a fictional product, "Ledgerly." Delete them as you fill each section in.*
 
-**Last updated:** 2026-08-24
+**Last updated:** 2026-08-26
 
 ---
 
@@ -26,6 +26,7 @@
 | 2026-08-19 | **Start/sit: matchup / this-week data** — opponent and weekly projection on the roster-filtered table. Needs a weekly data pipeline; not modeled yet (roadmap "Later"). | Owner review of the Issue #1 prototype |
 | 2026-08-19 | **Drill-into-inputs** ("why did RB18 become RB11") — expose the inputs behind each KERF value/rank. Named in Issue #1 as the *next* prototype iteration; needs the real engine (roadmap #6). | Owner review of the Issue #1 prototype |
 | 2026-08-24 | **Wire the generated source profile into `lib/dataDictionary.ts`** — the source-profiling spike (#11) emits a committed field profile (type / example / null-rate per column, no league values). Feed it into the data-dictionary column definitions so today's placeholder content becomes source-backed, and source drift shows up as a git diff. Follows the storage/profiling work (roadmap Now #5–6). | PM handoff 2026-08-24 (storage & source-profiling planning) |
+| 2026-08-26 | **Bidding-dynamics modelling from auction bid histories** — the TRUFFLE 2026 auction file (stored inert, [D-15](decision_log.md)) carries full bid-by-bid histories (nomination order, every bid, winner). Could model *how* prices form (escalation curves, positional runs, nomination-order effects) to sharpen "expected price" beyond the flat price curve. **Gated on:** obtaining TRUFFLE *full rosters* (not just the auction pool) and an explicit owner decision to use TRUFFLE data at all (currently a non-goal held in practice). Our own future auction exports would feed this natively without the non-goal question. | Valuation planning 2026-08-26 |
 
 > These five were surfaced when the owner reviewed the auction-focused prototype and asked where the fields for the *other* flows live. Two general shared-table fields he asked for — **Projected KERFUFFLE points** and **KERF Rank** (positional) — were added to the prototype immediately (mock); the five above are per-lens or engine-dependent and wait for their flows.
 
