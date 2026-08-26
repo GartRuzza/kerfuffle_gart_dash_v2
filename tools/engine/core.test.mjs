@@ -160,6 +160,20 @@ describe("scoreProjection", () => {
     expect(withPlayer.fd.source).toBe("player_shrunk");
     expect(withPosition.fd.source).toBe("position");
   });
+
+  it("honors the per-component policy: rushing off -> position rate, receiving on -> player rate (D-16)", () => {
+    // Player converts BOTH far above position (rush 0.9 vs 0.2, rec 0.7 vs 0.5).
+    const playerRate = { rushFdPerAtt: 0.9, recFdPerRec: 0.7, ownRecRate: 0.72, ownRushRate: 0.9, rushAtt: 100, recRec: 300 };
+    const r = scoreProjection(src, rates, COEF, playerRate, { rushPlayerSpecific: false, recPlayerSpecific: true });
+    // rushing must ignore the player's 0.9 and use the 0.2 position rate...
+    expect(r.rushFdRate).toBeCloseTo(0.2, 10);
+    expect(r.estRushFD).toBeCloseTo(2, 10); // 10 carries * 0.2 position, not 0.9
+    expect(r.fd.rushSource).toBe("position");
+    // ...while receiving still uses his own 0.7.
+    expect(r.recFdRate).toBeCloseTo(0.7, 10);
+    expect(r.estRecFD).toBeCloseTo(70, 6);
+    expect(r.fd.recSource).toBe("player_shrunk");
+  });
 });
 
 describe("assignRanks", () => {

@@ -136,11 +136,21 @@ export function derivePlayerRates(statRows, positionRates, { rushK, recK }) {
  * deriveFirstDownRates output (the fallback). `coef` is the scoring map. When a
  * `playerRate` (from derivePlayerRates) is given, the player's own shrunk rate is
  * used; otherwise (no league history for this player) the position rate is used.
+ *
+ * `opts` selects WHICH components use the player's own rate vs the position rate:
+ *   { rushPlayerSpecific = true, recPlayerSpecific = true }.
+ * The engine (and backtest) set `rushPlayerSpecific: false` — the #19 backtest
+ * showed a player's rushing FD rate barely persists year to year (ρ≈0.14, near
+ * noise), so estimating it per-player added error; receiving FD persists (ρ≈0.52),
+ * so it stays player-specific. The pure default keeps BOTH on for backward-compat.
  */
-export function scoreProjection(src, positionRates, coef, playerRate = null) {
+export function scoreProjection(src, positionRates, coef, playerRate = null, opts = {}) {
+  const { rushPlayerSpecific = true, recPlayerSpecific = true } = opts;
   const pos = positionRates[src.pos] || { recFdPerRec: 0, rushFdPerAtt: 0 };
-  const rushRate = playerRate ? playerRate.rushFdPerAtt : pos.rushFdPerAtt;
-  const recRate = playerRate ? playerRate.recFdPerRec : pos.recFdPerRec;
+  const useRushPlayer = !!playerRate && rushPlayerSpecific;
+  const useRecPlayer = !!playerRate && recPlayerSpecific;
+  const rushRate = useRushPlayer ? playerRate.rushFdPerAtt : pos.rushFdPerAtt;
+  const recRate = useRecPlayer ? playerRate.recFdPerRec : pos.recFdPerRec;
   const estRushFD = (src.rush_att || 0) * rushRate;
   const estRecFD = (src.rec_rec || 0) * recRate;
 
@@ -179,8 +189,12 @@ export function scoreProjection(src, positionRates, coef, playerRate = null) {
   }
 
   // How the first downs were estimated — the "why is this back boosted?" record.
+  // `source` is kept for back-compat; rush/rec now carry their own source because
+  // the policy can differ by component (rushing = position, receiving = player).
   const fd = {
     source: playerRate ? "player_shrunk" : "position",
+    rushSource: useRushPlayer ? "player_shrunk" : "position",
+    recSource: useRecPlayer ? "player_shrunk" : "position",
     rushRate,
     recRate,
     positionRushRate: pos.rushFdPerAtt,

@@ -14,6 +14,8 @@
     "ingest": "node tools/ingest/ingest.mjs",
     "ingest:historical": "node tools/ingest/ingest-historical.mjs",
     "engine": "node tools/engine/run.mjs",
+    "backtest:load": "node tools/backtest/load.mjs",
+    "backtest": "node tools/backtest/run.mjs",
     "profile": "node tools/profile/generate.mjs"
   },
   "dependencies": {

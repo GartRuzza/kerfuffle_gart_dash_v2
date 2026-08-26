@@ -53,6 +53,68 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-26 — Backtest → core fix: receiving-only first-down personalization (D-16)
+
+**Ticket / Issue:** follow-up to [#19](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/19) (the gate feeding back into #18) · **Branch:** feat/issue-18-projection-core · **Deviated from plan:** N/A — this is the gate doing its job.
+
+**Original intent**
+The #19 gate says an inconclusive result goes back into the projection core before dollars. The owner asked the sharp follow-up: for players whose first-down rate differs a lot from their position average, does the adjustment help vs ECR?
+
+**What was actually built**
+An out-of-sample probe (`tools/backtest/ppfd-probe.mjs`) that (a) measures whether FD conversion rate persists year to year and (b) isolates the adjustment's effect by scoring each 2025 player with his own vs the position rate. Finding: **rushing FD/carry barely persists (ρ 0.14); receiving FD/reception persists (ρ 0.52)**, and the adjustment moves rank by <1 spot — in 2025 it nudged the wrong (aging, regressing) players. On that evidence (D-16) the engine now personalizes **only receiving** first downs; rushing uses the position average. `scoreProjection` gained a per-component `opts`; `FD_POLICY` lives in the engine orchestrator and is shared with the backtest. Re-gate: **do-no-harm** (overall ρ unchanged).
+
+**Deviations / Why we deviated**
+None from plan — the gate is designed to feed the core. The surprise is the *content*: the first-down "edge," the product's intended differentiator, is largely redundant with volume for ranking, and its rushing half is close to noise.
+
+**Product implications**
+The tool's value proposition shifts from "we out-rank consensus" (not supported by the data) to "we translate consensus-grade projections into league-specific **dollar** decisions — value, Edge vs market, cap math" (still strong, and the actual in-season/auction use). The owner accepted this reframe and chose to proceed to the dollar layer (#20) after the cheap core fix. The vision's 6-month success measure ("KERFUFFLE-adjusted values beat consensus") should be read as being about *dollar decisions*, not ranking — worth an explicit revisit with PM Claude.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| Rushing FD is now a position constant | Its per-player rate is near-noise year to year (ρ 0.14) | A genuinely elite short-yardage back isn't individually credited on the ground | Revisit with more seasons or a role/goal-line-aware rushing model (backlog) |
+| `ppfd-probe.mjs` is unwired, untested scratch | It answered a one-off question and grounds D-16 | Minor clutter; could bit-rot | Promote into the backtest report as a "signal persistence" section (~half a day) if we want it standing |
+
+**Follow-up decisions needed from the product owner**
+
+- [ ] **Reframe the vision's success measure** from "beat consensus ranking" to "league-specific dollar decisions"? — a vision-doc edit for the owner + PM Claude (not blocking #20).
+
+---
+
+### 2026-08-26 — Backtest: the decision gate (#19)
+
+**Ticket / Issue:** [#19](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/19) · **Branch:** feat/issue-18-projection-core · **Deviated from plan:** No on scope; the **result** is the surprise.
+
+**Original intent**
+Prove the KERFUFFLE re-rank predicts *actual* KERFUFFLE points better than raw FantasyPros ECR (and CBS's own projection) on 2024 & 2025, before investing in the dollar layer. Pass → build dollars; fail/inconclusive → fix the projection core first.
+
+**What was actually built**
+`npm run backtest` (`tools/backtest/`): captures the 2024/2025 preseason FantasyPros boards + projections (archiver season override, FP-only), loads them into **isolated `kind='backtest'` pulls** (migration `006`; `latest_pull` re-scoped to current so history can't masquerade as the live board), re-runs the #18 core **strictly out-of-sample**, and compares Kerf rank vs raw ECR vs FantasyPros' own projection against actual CBS points by Spearman ρ + top-N hit rate per position. Writes a plain-English artifact to `docs/backtest_results.md`. Owner judges the gate.
+
+**Deviations**
+Two, both anticipated in the pre-build Q&A: (1) **CBS's own projection is not recoverable** for past seasons (the CBS year switch isn't a URL param), so the intended three-way is a two-way Kerf-vs-ECR, with FantasyPros' own projection shown as the reference third line — the issue explicitly allows dropping CBS. (2) The historical data is captured *today*, so it is the newest by capture time; isolating it (migration 006 + a separate loader) was necessary work the ticket implied but didn't spell out.
+
+**Why we deviated**
+Data-availability reality (CBS history) and a schema-safety reality (the `latest_pull`-by-capture-time rule from migration 002 would have served a 2025 board as "current"). Neither changes the question the gate answers.
+
+**Product implications**
+**The headline: the KERFUFFLE re-rank shows a REAL but MARGINAL and INCONSISTENT edge over consensus — not the decisive win the thesis hoped for.** Out-of-sample 2025: overall ρ Kerf 0.78 vs ECR 0.77 (edge +0.01, "≈ tie"); per position Kerf helps RB, roughly ties QB/WR, and **trails TE**. The pooled correlation is ~0.8 for both predictors because separating stars from scrubs across ~450 players is easy and dominates the number; the first-down adjustment is a fine-grained re-rank that barely moves the board. This is exactly the call the gate exists to force: **is a marginal edge enough to justify building the dollar machinery on top of it, or should the first-down model be sharpened first?** That is a material product decision — escalated, not decided here.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| Two-season sample; verdict is directional | Only 2024/2025 CBS actuals exist; one clean holdout (2025) | Over-reading a small-sample result | Accrues naturally — each new season adds a holdout year |
+| Overall ρ is dominated by stud/scrub separation | Standard Spearman over the full pool | Could mask (or flatter) the real top-of-board edge | Add a starters-only / top-N-weighted correlation lens (~half a day) |
+| First-down shrinkage (`rushK=75/recK=40`) is heavy and un-tuned | #18 shipped a "moderate" dial; the backtest was meant to calibrate it | The player-specific FD edge may be muted, understating Kerf | A shrinkage sensitivity sweep in the backtest (~half a day) — a natural next step if the owner wants the edge sharpened |
+
+**Follow-up decisions needed from the product owner**
+
+- [ ] **Does the marginal backtest edge clear the gate to build the dollar layer (#20), or do we refine the #18 first-down model first?** — blocks #20 and everything downstream. (Promote to Open product decisions in `roadmap.md`.)
+
+---
+
 ### 2026-08-26 — KERFUFFLE projection engine core: first-down-aware points, ranks, tiers (#18)
 
 **Ticket / Issue:** [#18](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/18) · **Branch:** main · **Deviated from plan:** No (four owner decisions taken in the pre-build Q&A)

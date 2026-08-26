@@ -147,8 +147,9 @@ describe("runEngine (DB integration)", () => {
     const first = runEngine(db);
     const stamp = db.prepare(`SELECT * FROM engine_run WHERE engine_run_id=?`).get(first.engineRunId);
     expect(JSON.parse(stamp.rate_seasons)).toEqual([2024, 2025]);
-    expect(stamp.fd_method).toBe("per_player_eb_shrinkage");
+    expect(stamp.fd_method).toBe("per_player_eb_shrinkage_rec_only"); // D-16: rushing = position avg
     expect(JSON.parse(stamp.params_json).shrinkage).toEqual({ rushK: 75, recK: 40 });
+    expect(JSON.parse(stamp.params_json).fdPolicy).toEqual({ rushPlayerSpecific: false, recPlayerSpecific: true });
     expect(stamp.projection_pull_id).toBe(1);
 
     const second = runEngine(db);
