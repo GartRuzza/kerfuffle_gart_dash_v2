@@ -68,8 +68,9 @@ function fpBoard() {
   };
 }
 
-/** Write a full synthetic archive run; `mutate` tweaks pages before writing. */
-function writeFixtureRun(root, runId, mutate = {}) {
+/** Write a full synthetic archive run; `mutate` tweaks pages before writing.
+ *  `capturedAt` sets the manifest's started_at (when the data was fetched). */
+function writeFixtureRun(root, runId, mutate = {}, capturedAt = "2026-08-25T12:00:00Z") {
   const dir = join(root, runId);
   mkdirSync(join(dir, "cbs"), { recursive: true });
   mkdirSync(join(dir, "fantasypros"), { recursive: true });
@@ -100,7 +101,7 @@ function writeFixtureRun(root, runId, mutate = {}) {
 
   writeFileSync(
     join(dir, "manifest.json"),
-    JSON.stringify({ run_id: runId, started_at: "2026-08-25T12:00:00Z", sources: {}, responses })
+    JSON.stringify({ run_id: runId, started_at: capturedAt, sources: {}, responses })
   );
 }
 
@@ -117,7 +118,10 @@ const counts = () => ({
   rankings: db.prepare("SELECT COUNT(*) c FROM market_ranking").get().c,
   rules: db.prepare("SELECT COUNT(*) c FROM scoring_rule").get().c,
 });
-const ingest = (runId) => db.transaction(() => ingestRun(db, runId, noop, root))();
+// ingestRun wraps itself in a transaction — callers can't forget it.
+const ingest = (runId) => ingestRun(db, runId, noop, root);
+const latestRun = () =>
+  db.prepare(`SELECT run_id FROM pull WHERE pull_id = (SELECT pull_id FROM latest_pull)`).get()?.run_id;
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "gart-ingest-test-"));
@@ -182,6 +186,16 @@ describe("ingest end-to-end (synthetic archive)", () => {
     });
     expect(() => ingest("2026-08-25T12-00-00Z")).toThrowError(/expected column header/);
     expect(counts().pulls).toBe(0);
+  });
+
+  it("serves the latest CAPTURED pull, even when an older run is ingested last", () => {
+    // The documented workflow — a run fails, gets fixed, and is re-ingested later
+    // — must not make a stale snapshot 'latest' and silently show old rosters.
+    writeFixtureRun(root, "2026-08-24T12-00-00Z", {}, "2026-08-24T12:00:00Z"); // older data
+    writeFixtureRun(root, "2026-08-26T12-00-00Z", {}, "2026-08-26T12:00:00Z"); // newer data
+    ingest("2026-08-26T12-00-00Z"); // newer ingested FIRST (lower pull_id)
+    ingest("2026-08-24T12-00-00Z"); // older ingested LAST (higher pull_id)
+    expect(latestRun()).toBe("2026-08-26T12-00-00Z");
   });
 
   it("REJECTS a player who appears on two rosters in one pull (would duplicate in the table)", () => {

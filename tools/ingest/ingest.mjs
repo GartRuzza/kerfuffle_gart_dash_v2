@@ -61,7 +61,18 @@ function readPage(runDir, resp) {
 
 // ---------------------------------------------------------------------------
 
-export function ingestRun(db, runId, { warn, note }, rawRoot = RAW_ROOT) {
+/**
+ * Ingest one archived run. ALWAYS call this rather than the inner function:
+ * the whole run happens inside one transaction, so a parse error or a failed
+ * invariant rolls back everything this run touched and leaves the previous
+ * good data intact (the issue's temp-validate-swap requirement). Making the
+ * transaction structural here means no caller can forget it.
+ */
+export function ingestRun(db, runId, handlers, rawRoot = RAW_ROOT) {
+  return db.transaction(() => ingestRunInner(db, runId, handlers, rawRoot))();
+}
+
+function ingestRunInner(db, runId, { warn, note }, rawRoot) {
   const runDir = join(rawRoot, runId);
   const manifest = loadManifest(runDir);
   if (!manifest) throw new IngestError(`${runId}: no manifest.json — not an archive run`);
@@ -151,7 +162,10 @@ export function ingestRun(db, runId, { warn, note }, rawRoot = RAW_ROOT) {
   // the failure names the player and both teams, rather than surfacing as a bare
   // UNIQUE-constraint error from contract_one_player_per_pull.
   const rosteredBy = new Map();
-  for (let teamId = 1; teamId <= TEAM_COUNT; teamId++) {
+  // Iterate the team ids CBS actually published (above), not a hardcoded 1..12 —
+  // a non-contiguous id would otherwise fail as "missing page roster-report-t12"
+  // and point at the archiver instead of the real cause.
+  for (const { teamId } of teams) {
     const resp = requirePage(`roster-report-t${teamId}`);
     const roster = parseRosterForIngest(readPage(runDir, resp), teamId);
     roster.warnings.forEach(warn);
@@ -303,7 +317,11 @@ export function ingestRun(db, runId, { warn, note }, rawRoot = RAW_ROOT) {
     const board = mapFpBoard(JSON.parse(readPage(runDir, resp)), name);
     const grain = [board.rankingType, board.scoringFormat, board.positionScope, board.week ?? ""].join("|");
     if (boardsSeen.has(grain)) {
-      note(`fp/${name}: same board as an earlier file (${grain}) — skipped as a duplicate`);
+      // Byte-identical duplicates are normal today (FP's dynasty STD/PPR files,
+      // and pre-season /ros returning the draft board). Warn rather than note:
+      // if FP ever serves genuinely different data under a duplicate grain, this
+      // line is the only place it would show.
+      warn(`fp/${name}: declares the same board as an earlier file (${grain}) — skipped as a duplicate`);
       continue;
     }
     boardsSeen.add(grain);
@@ -373,8 +391,7 @@ function main() {
     const warn = (m) => warnings.push(m);
     const note = (m) => notes.push(m);
     try {
-      // ONE transaction per run: validation failure rolls the whole run back.
-      const stats = db.transaction(() => ingestRun(db, runId, { warn, note }))();
+      const stats = ingestRun(db, runId, { warn, note });
       console.log(
         `  ✔ ${runId}  teams:${stats.teams} players:${stats.rosterPlayers} dead-cap:${stats.deadCapRows} ` +
           `tx:${stats.transactions} rules:${stats.scoringRules} boards:${stats.boards} rankings:${stats.rankingRows}`
@@ -385,6 +402,9 @@ function main() {
       failed++;
       console.error(`  ✘ ${runId}  ROLLED BACK — nothing from this run was stored:`);
       console.error(`      ${err.message}`);
+      // Warnings collected before the failure are often the context that explains
+      // it (e.g. the blank salary behind a cap mismatch) — never swallow them.
+      for (const w of warnings) console.error(`      ⚠ (before the failure) ${w}`);
       if (!(err instanceof IngestError)) console.error(err.stack);
     }
   }

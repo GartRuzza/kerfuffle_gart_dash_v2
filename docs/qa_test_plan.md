@@ -8,7 +8,7 @@
 >
 > **The rule that makes this doc real:** a feature is not "Built" in [`pm/current_state.md`](pm/current_state.md) until the checks below pass. When a check fails, that feature's status changes — to Partial, or to a known bug. Test results are the evidence behind every status in that doc, which is why this one keeps it honest.
 
-**Last updated:** 2026-08-25 · **Last full pass:** 2026-08-25 — **storage + ingestion (issue #12)** verified by 31 new unit tests (parsers, loud validation incl. the bad-fixture rejection, DB-level idempotency, board derivation), a real ingest of all 3 archived runs (485-player board), a clean build, and a rendered-page check on real data. · **Result:** Automated checks pass (**69 unit tests** + clean build + live ingest + render); the app's manual interaction checks on real data are pending owner sign-off.
+**Last updated:** 2026-08-25 · **Last full pass:** 2026-08-25 — **storage + ingestion (issue #12)** verified by 46 new unit tests (parsers, loud validation incl. the bad-fixture rejection, DB-level idempotency, board derivation), a real ingest of all 3 archived runs (485-player board), a clean build, and a rendered-page check on real data. An independent code review then found **one stale-data bug** (the board could serve an older snapshot after a re-ingest) plus several hardening items; all were fixed, covered by new tests, and re-verified. · **Result:** Automated checks pass (**84 unit tests** + clean build + live ingest + render); the app's manual interaction checks on real data are pending owner sign-off.
 
 ---
 
@@ -17,9 +17,9 @@
 | | |
 | --- | --- |
 | **How to run them** | `npm test` (Vitest unit tests) and `npm run build` (compile + type-check + lint). |
-| **What they cover** | **Unit (69 tests): app (20)** — board **derivation** (unique contiguous overall ranks even when raw ECR ties; real FantasyPros tiers; engine fields null; loud failure on a position the league doesn't roster), the tier/sort/position **state machine**, the **saved-views model**, and **data-dictionary coverage**. **Ingestion (26, issue #12)** — header-name column mapping (**missing header = loud failure**), deliberate coercion (`"$34"`→34; blank salary → null+warning; a decimal salary or an out-of-domain contract year fails loudly), the Players-cell/standings/transactions parsers, **dead-cap classification** (salary-without-id = dead cap; neither = refusal), and **end-to-end against a synthetic archive**: a full run ingests; **re-running is idempotent (no duplicates, DB-level)**; a roster **over the $500 cap is rejected loudly and rolls back completely**; a missing page or header rejects the run. **Profiler (23, issue #11)** — unchanged. **Build:** compiles clean; the page server-renders from the real store. |
+| **What they cover** | **Unit (84 tests): app (20)** — board **derivation** (unique contiguous overall ranks even when raw ECR ties; real FantasyPros tiers; engine fields null; loud failure on a position the league doesn't roster), the tier/sort/position **state machine**, the **saved-views model**, and **data-dictionary coverage**. **Ingestion (41, issue #12)** — header-name column mapping (**missing header = loud failure**), deliberate coercion (`"$34"`→34; blank salary → null+warning; a decimal salary or an out-of-domain contract year fails loudly), the Players-cell/standings/transactions parsers, **dead-cap classification** (salary-without-id = dead cap; neither = refusal), and **end-to-end against a synthetic archive**: a full run ingests; **re-running is idempotent (no duplicates, DB-level)**; a roster **over the $500 cap is rejected loudly and rolls back completely**; a missing page or header rejects the run. **Profiler (23, issue #11)** — unchanged. **Build:** compiles clean; the page server-renders from the real store. |
 | **What they do not cover** | Click/drag interactions in a real browser (drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. A live `npm run ingest` against the real archive is its own check below. |
-| **Currently passing?** | Yes — `npm test` (**69/69**) and `npm run build` pass clean as of 2026-08-25. |
+| **Currently passing?** | Yes — `npm test` (**84/84**) and `npm run build` pass clean as of 2026-08-25. |
 
 ## Manual checks — the critical flows
 
@@ -104,7 +104,7 @@
 | 5 | Look in `data/` | `gart-dash.sqlite` exists; `git status` shows **nothing under `data/`** (git-ignored). | ☐ |
 | 6 | (Optional, destructive-safe) Delete `data/gart-dash.sqlite`, run `npm run ingest` | The database rebuilds completely from the raw archive — the DB is disposable; the archive is the history. | ☐ |
 
-**What validation protects you from (proven by unit tests, not to try live):** a roster summing **over the $500 cap**, a missing/renamed column header, a missing roster page, an unparseable scoring rule, an unclassifiable roster row, or **the same player showing on two rosters** each **reject the whole run loudly and roll back** — the app keeps showing the last good data.
+**What validation protects you from (proven by unit tests, not to try live):** a roster summing **over the $500 cap**, a missing/renamed column header, a missing roster page, an unparseable scoring rule, an unclassifiable roster row, **the same player showing on two rosters**, or **two FantasyPros entries claiming the same player** each **reject the whole run loudly and roll back** — the app keeps showing the last good data. The table always shows the **most recently captured** snapshot, even if you re-load an older one afterwards.
 
 ## Edge cases and things that should fail gracefully
 

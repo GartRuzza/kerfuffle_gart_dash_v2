@@ -35,9 +35,27 @@ export interface BoardData {
   meta: BoardMeta | null;
 }
 
-export function getBoard(): BoardData {
-  if (!existsSync(DB_PATH)) return { players: [], teams: [], meta: null };
+const EMPTY: BoardData = { players: [], teams: [], meta: null };
 
+export function getBoard(): BoardData {
+  if (!existsSync(DB_PATH)) return EMPTY;
+  try {
+    return readBoard();
+  } catch (err) {
+    // A store that exists but can't be read (half-written file, or built before
+    // a migration this code expects) is a re-ingest away from fixed. Fall back
+    // to the empty state — the banner then tells the owner exactly what to run,
+    // which serves them better than a stack trace.
+    console.error(
+      `[gart-dash] Could not read ${DB_PATH} — showing the no-data state. ` +
+        `Run "npm run ingest" to rebuild it.\n`,
+      err
+    );
+    return EMPTY;
+  }
+}
+
+function readBoard(): BoardData {
   const db = new Database(DB_PATH, { readonly: true, fileMustExist: true });
   try {
     const pull = db
@@ -46,7 +64,7 @@ export function getBoard(): BoardData {
          WHERE pull_id = (SELECT pull_id FROM latest_pull)`
       )
       .get() as { run_id: string; captured_at: string } | undefined;
-    if (!pull) return { players: [], teams: [], meta: null };
+    if (!pull) return EMPTY;
 
     const rows = db.prepare(`SELECT * FROM board`).all() as BoardViewRow[];
     const teamRows = db

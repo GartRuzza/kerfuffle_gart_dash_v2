@@ -3,10 +3,10 @@ import { ALL_COLUMN_IDS, COLUMN_LABELS } from "./views";
 /**
  * Data dictionary — one entry per table column.
  *
- * ⚠ Mostly PLACEHOLDERS for now. Real "source" and "how it's built" content is
- * deferred until data discovery (roadmap #2–3) and the valuation engine (#4–6);
- * `placeholder: true` marks entries still to be written. The structure is stable
- * so later issues just fill in the text. Keep each `definition` under 15 words.
+ * Sourced fields (CBS + FantasyPros) now describe the REAL pipeline (issue #12).
+ * The remaining `placeholder: true` entries are the ENGINE outputs, which show
+ * "—" in the table because the valuation engine does not exist yet — their text
+ * gets written with it. Keep each `definition` under 15 words.
  */
 export interface FieldDoc {
   id: string; // column id
@@ -16,8 +16,8 @@ export interface FieldDoc {
   placeholder: boolean; // content is a stub pending data discovery / engine
 }
 
-const TBD_SOURCE = "Source: TBD after data discovery (roadmap #2–3).";
-const TBD_MECHANICS = "How it's built: TBD after the valuation engine (roadmap #4–6).";
+const TBD_SOURCE = "Source: the valuation engine, which is not built yet.";
+const TBD_MECHANICS = 'Shows "—" until the engine lands; nothing is invented in the meantime.';
 
 // Provisional per-field content. Fields not listed fall back to a placeholder.
 const DOCS: Record<
@@ -26,31 +26,52 @@ const DOCS: Record<
 > = {
   owner: {
     definition: "The fantasy manager who rosters the player, or FA if a free agent.",
-    deepDive: ["Source: CBS league rosters (real data pending).", "Free agents show as FA."],
+    deepDive: [
+      "Source: your CBS league rosters, as of the snapshot date in the top bar.",
+      "FA = on nobody's roster. The free-agent pool comes from the FantasyPros board, so a player nobody ranks won't be listed.",
+    ],
     placeholder: false,
   },
   name: {
     definition: "The NFL player's name.",
-    deepDive: ["Source: CBS / FantasyPros player list (pending)."],
+    deepDive: [
+      "Source: CBS for rostered players, FantasyPros for free agents.",
+      "The two sources are matched on a shared CBS player id — no name guessing.",
+    ],
     placeholder: false,
   },
   pos: {
-    definition: "The player's position: QB, RB, WR, or TE.",
-    deepDive: ["Shown as a color-coded badge.", "Source: CBS (pending)."],
+    definition: "The player's position: QB, RB, WR, TE, or DST.",
+    deepDive: [
+      "Shown as a color-coded badge.",
+      "Source: CBS. Note this is the player's real position, not the lineup slot he's filling.",
+    ],
     placeholder: false,
   },
   nflTeam: {
     definition: "The player's NFL team.",
-    deepDive: ["Source: CBS / FantasyPros (pending)."],
+    deepDive: ["Source: CBS for rostered players, FantasyPros for free agents."],
     placeholder: false,
   },
   kerfOvrRank: { definition: "Our overall player rank by KERFUFFLE value.", placeholder: true },
   kerfPosRank: { definition: "Our within-position rank by KERFUFFLE value.", placeholder: true },
-  projPts: { definition: "Projected KERFUFFLE fantasy points for the player.", placeholder: true },
+  projPts: {
+    definition: "CBS's own projected KERFUFFLE points for the season.",
+    deepDive: [
+      "Source: the Proj column on your CBS roster pages — already scored with KERFUFFLE settings.",
+      'Blank ("—") for free agents: their CBS projections live on a page we don\'t capture yet.',
+      "This is CBS's number, not ours. Our own projection arrives with the engine.",
+    ],
+    placeholder: false,
+  },
   kerfValue: { definition: "The player's KERFUFFLE dollar value from our engine.", placeholder: true },
   ceiling: {
-    definition: "Your own editable ceiling; starts at Kerf Value, held for the session.",
-    deepDive: ["A place to record your max — not computed.", "Resets on reload (prototype)."],
+    definition: "Your own editable max bid; seeded from Kerf Value, held for the session.",
+    deepDive: [
+      "A place to record your max — you type it, nothing computes it.",
+      "Starts blank because it fills from Kerf Value, which needs the engine.",
+      "Resets on reload; saving ceilings for auction day comes with the auction lens.",
+    ],
     placeholder: false,
   },
   edge: {
@@ -62,12 +83,55 @@ const DOCS: Record<
     placeholder: false,
   },
   marketPrice: { definition: "What the league is expected to pay for the player.", placeholder: true },
-  ecr: { definition: "The player's overall expert consensus rank (market).", placeholder: true },
-  posEcr: { definition: "The player's within-position expert consensus rank.", placeholder: true },
-  dynastyEcr: { definition: "The player's overall dynasty expert consensus rank.", placeholder: true },
-  dynPosEcr: { definition: "The player's within-position dynasty consensus rank.", placeholder: true },
-  salary: { definition: "The player's current salary / cap hit, in dollars.", placeholder: true },
-  contractYears: { definition: "Years remaining on the player's contract.", placeholder: true },
+  ecr: {
+    definition: "The player's overall expert consensus rank — lower is better.",
+    deepDive: [
+      "Source: FantasyPros' draft board, standard scoring, from up to 110 experts.",
+      "Shown as a clean 1-2-3 ordering rather than the raw consensus number (which has ties).",
+      "No board matches KERFUFFLE exactly — this league scores first downs, not receptions — so treat it as the market's view, not ours.",
+      "Sorting by this column groups players into FantasyPros' real tier bands.",
+    ],
+    placeholder: false,
+  },
+  posEcr: {
+    definition: "The player's expert consensus rank within his position.",
+    deepDive: [
+      "Source: FantasyPros' draft board (e.g. WR12 = the 12th-ranked receiver).",
+      "Tier bands on this sort use the overall board's tier numbers, so the first band may not read 'Tier 1'.",
+    ],
+    placeholder: false,
+  },
+  dynastyEcr: {
+    definition: "Overall dynasty consensus rank — values future seasons, not just this one.",
+    deepDive: [
+      "Source: FantasyPros' dynasty board (one board; it isn't split by scoring format).",
+      "Useful against contract length: a young player on a long deal is worth more here.",
+    ],
+    placeholder: false,
+  },
+  dynPosEcr: {
+    definition: "The player's dynasty consensus rank within his position.",
+    deepDive: ["Source: FantasyPros' dynasty board."],
+    placeholder: false,
+  },
+  salary: {
+    definition: "What the player currently costs against your $500 cap.",
+    deepDive: [
+      "Source: the Salary column on your CBS roster pages.",
+      'Blank ("—") for free agents (no contract) and for the rare rostered player CBS shows blank.',
+      "Practice-Squad players carry normal salaries and count against the cap.",
+    ],
+    placeholder: false,
+  },
+  contractYears: {
+    definition: "Years remaining on the player's contract (1 to 4).",
+    deepDive: [
+      "Source: the Contract column on your CBS roster pages.",
+      'Blank ("—") for free agents.',
+      "Each snapshot records this fresh, so contract history builds up over time.",
+    ],
+    placeholder: false,
+  },
 };
 
 export const DATA_DICTIONARY: FieldDoc[] = ALL_COLUMN_IDS.map((id) => {

@@ -9,11 +9,16 @@
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** Deterministic, locale-independent "Aug 25, 2026" (safe for SSR). */
+/**
+ * "Aug 25, 2026" in the machine's own timezone. Timestamps are stored in UTC,
+ * so reading the date straight off the string would show tomorrow's date for
+ * any snapshot taken after ~7-8pm Eastern — the owner would see a date he never
+ * captured on. This is a server component, so "local" is his machine.
+ */
 function formatDate(iso: string): string {
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return iso;
-  return `${MONTHS[Number(m[2]) - 1]} ${Number(m[3])}, ${m[1]}`;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 export default function DataBanner({ capturedAt }: { capturedAt: string | null }) {

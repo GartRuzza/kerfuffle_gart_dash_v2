@@ -30,7 +30,7 @@ export function mapFpBoard(json, sourceEndpoint) {
   }
 
   const rows = players.map((p) => ({
-    fpPlayerId: Number(p.player_id),
+    fpPlayerId: toNum(p.player_id),
     cbsPlayerId: p.cbs_player_id != null && String(p.cbs_player_id).match(/^\d+$/)
       ? Number(p.cbs_player_id)
       : null,
@@ -40,18 +40,34 @@ export function mapFpBoard(json, sourceEndpoint) {
     byeWeek: p.player_bye_week != null && String(p.player_bye_week).match(/^\d+$/)
       ? Number(p.player_bye_week)
       : null,
-    rankEcr: Number(p.rank_ecr),
+    rankEcr: toNum(p.rank_ecr),
     posRank: p.pos_rank ? String(p.pos_rank) : null,
-    tier: Number.isFinite(Number(p.tier)) ? Number(p.tier) : null,
+    tier: toNum(p.tier),
     rankMin: toNum(p.rank_min),
     rankMax: toNum(p.rank_max),
     rankAve: toNum(p.rank_ave),
     rankStd: toNum(p.rank_std),
   }));
 
+  const seenCbsIds = new Map();
   for (const r of rows) {
-    if (!Number.isFinite(r.fpPlayerId) || !Number.isFinite(r.rankEcr)) {
+    // Both are required. They go through toNum, so a null/blank stays null here
+    // rather than becoming 0 — which for rank_ecr would read as the best rank
+    // on the board.
+    if (r.fpPlayerId === null || r.rankEcr === null) {
       throw new IngestError(`${sourceEndpoint}: FP row missing player_id/rank_ecr (${r.playerName || "?"})`);
+    }
+    // The board grain is keyed on FP's own id, but the UI joins on cbs_player_id —
+    // two FP entries sharing one CBS id would duplicate that player in the table.
+    if (r.cbsPlayerId !== null) {
+      const first = seenCbsIds.get(r.cbsPlayerId);
+      if (first !== undefined) {
+        throw new IngestError(
+          `${sourceEndpoint}: two FantasyPros entries share cbs_player_id ${r.cbsPlayerId} ` +
+            `("${first}" and "${r.playerName}") — that player would appear twice in the table`
+        );
+      }
+      seenCbsIds.set(r.cbsPlayerId, r.playerName);
     }
   }
 
@@ -66,7 +82,12 @@ export function mapFpBoard(json, sourceEndpoint) {
   };
 }
 
+// "Unknown" must stay unknown. Number(null) and Number("") are both 0, so a
+// naive Number() turns FantasyPros' nulls (an untiered player, a single-vote
+// player with no expert spread) into a real-looking 0 — which would render a
+// "Tier 0" band and hand the engine a spread of 0 meaning "perfect consensus".
 function toNum(v) {
+  if (v === null || v === undefined || v === "") return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
