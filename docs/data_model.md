@@ -30,9 +30,25 @@ Three layers (decision [D-10](decision_log.md)): the **raw archive** (`data/raw/
 
 **Which boards the view displays ([D-12](decision_log.md)):** `draft`/`STD`/**`OP`** (standard scoring, **superflex**) and `dynasty`/**`OP`**. This league starts two QBs, so a 1-QB board would rank them ~20 spots too low. **Team defenses** are absent from superflex boards (`OP` = *offensive* player): they take their **positional** rank and tier from the `ALL` board via `COALESCE`, and their **overall rank stays NULL** — mixing the two boards' overall scales would float defenses into mid-pack, and NULL also sorts them last, which is correct here. **All boards stay ingested at full grain**; changing what the table displays is a view migration, never a re-fetch. `lib/data/derive.ts` adds the display derivations (unique contiguous overall ranks, "WR12"→12, engine fields as null).
 
-## Derived layer (planned — lands with the engine issue, not before)
+## Historical data layer (planned — issue [#17](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/17))
 
-`engine_run`, `projection` (with first downs as a distinct named component), `replacement_level`, `valuation`, `price_curve`, `owner_ceiling_override` (owner-edited, never written by engine runs) — unchanged from D-10's plan; see [`decision_log.md`](decision_log.md). None of these exists in a migration, so none of them is real.
+Owner-provided historical exports, ingested from `data/historical/` on a path **separate** from the automated archiver (they're manual, name-keyed CSVs — not fetched HTML). See [D-14](decision_log.md) (first-down source) and [D-15](decision_log.md) (TRUFFLE). **None exists in a migration yet.**
+
+| Entity (planned) | Grain / key | What it holds |
+| --- | --- | --- |
+| `player_season_stats` | season × player (`cbs_player_id`) | Full stat line per season from CBS: passing/rushing/receiving **first downs** + 2pt (from the "Advanced Categories" export) joined with att/cmp/yds/td, targets/rec/yds/td, fumbles (from the "Standard Categories" export) + FPTS total/avg. Source of the projection's **first-down rates** and the backtest's **actual points**. Players are name-matched to `cbs_player_id` (the CBS files are name-keyed); the raw CBS name string is kept. |
+| `contract_history` | season × player | KERFUFFLE salaries per season (the `'25` etc. schedule columns), contract years, `FT`/`FA` flags, age, team — from `kerfuffle_2025_contracts.csv`. Feeds the **pre-auction price curve**. |
+| `auction_result` | league × season × player (`cbs_player_id`) | Completed-auction rows: final salary, nomination order, verbatim **bid history** JSON. Carries `league` + **`is_reference`**. The TRUFFLE 2026 file loads here with `league='TRUFFLE'`, `is_reference=true`, and **is read by no consumer** (D-15). |
+
+**Name-matching rule:** the CBS stat files and the KERFUFFLE contract file identify players by name (`"Lamar Jackson QB | BAL"`), not id — ingestion must match them to `cbs_player_id` against the `player` universe and **report unmatched rows loudly**, never drop silently. The TRUFFLE file already carries the CBS id.
+
+## Derived layer (planned — the engine issues [#18](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/18) and [#20](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/20))
+
+Split across the two engine stages (see [D-13](decision_log.md)):
+- **Projection core (#18):** `engine_run`, `projection` (**with first downs as a distinct named component** — estimated from `player_season_stats` rates, per D-14), producing Kerf points → overall/positional ranks + tiers.
+- **Valuation (#20):** `replacement_level` (last-starter baselines: QB24/RB~34/WR~34/TE~17/DST12), `valuation` (VORP → cap dollars, both ceiling flavors), `price_curve` (2025 KERFUFFLE + current rosters; TRUFFLE off), `owner_ceiling_override` (owner-edited, never written by engine runs).
+
+None of these exists in a migration, so none of them is real.
 
 ## The two client-side data shapes (unchanged)
 
