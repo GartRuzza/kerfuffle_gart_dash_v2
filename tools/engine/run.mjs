@@ -25,11 +25,17 @@ import {
 } from "./core.mjs";
 
 const RATE_SEASONS = [2024, 2025]; // owner, 2026-08-26: pool both for stable rates
-const FD_METHOD = "per_player_eb_shrinkage"; // per-player rate shrunk toward position (D-14)
+const FD_METHOD = "per_player_eb_shrinkage_rec_only"; // receiving player-specific; rushing = position (D-16)
 // Shrinkage pseudo-counts — "opportunities of position-average evidence" blended
 // in before a player's own rate dominates. Moderate (owner, 2026-08-26): ~half a
-// season. The backtest (#19) will calibrate these; they are the one tuning knob.
+// season. Applies to RECEIVING (the persistent signal); rushing is not per-player.
 const SHRINKAGE = { rushK: 75, recK: 40 };
+// FD player-specific policy (D-16, from the #19 backtest): a player's RUSHING
+// first-down rate barely persists year to year (ρ≈0.14 — near noise), so
+// estimating it per-player added error; his RECEIVING rate persists (ρ≈0.52), so
+// it stays player-specific. Rushing falls back to the position average for all.
+// Exported so the backtest scores the SAME model the app ships.
+export const FD_POLICY = { rushPlayerSpecific: false, recPlayerSpecific: true };
 const POSITIONS = ["QB", "RB", "WR", "TE"];
 
 // Number of distinct FantasyPros tiers on the superflex board — the count we
@@ -100,7 +106,7 @@ export function runEngine(db, { log = () => {} } = {}) {
   // Score every projected player with HIS OWN shrunk first-down rate (falling
   // back to the position rate when he has no league history — rookies, etc.).
   const scored = src.map((s) => {
-    const r = scoreProjection(s, positionRates, coef, playerRates.get(s.cbs_player_id) ?? null);
+    const r = scoreProjection(s, positionRates, coef, playerRates.get(s.cbs_player_id) ?? null, FD_POLICY);
     return { src: s, ...r, cbsId: s.cbs_player_id, pos: s.pos };
   });
 
@@ -133,7 +139,7 @@ export function runEngine(db, { log = () => {} } = {}) {
       pull: latest,
       rate_seasons: JSON.stringify(RATE_SEASONS),
       fd_method: FD_METHOD,
-      params: JSON.stringify({ shrinkage: SHRINKAGE, tierCalibration: "fantasypros-op-board", fpTierCounts: fp }),
+      params: JSON.stringify({ shrinkage: SHRINKAGE, fdPolicy: FD_POLICY, tierCalibration: "fantasypros-op-board", fpTierCounts: fp }),
       notes: `Kerf projection core: ${scored.length} players scored from FantasyPros projections + per-player estimated first downs (shrunk toward position).`,
     });
   const engineRunId = run.engine_run_id;

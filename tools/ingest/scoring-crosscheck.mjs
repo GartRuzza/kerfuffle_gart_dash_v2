@@ -14,7 +14,14 @@
 // Map each KERFUFFLE scoring `code` to the coefficient applied per stat unit.
 // flat rules -> points per event; per_unit rules -> points per single unit.
 export function buildScoringMap(db, pullId) {
-  const pid = pullId ?? db.prepare(`SELECT MAX(pull_id) AS p FROM pull`).get().p;
+  // Default to the latest CURRENT pull, not MAX(pull_id): once the backtest (#19)
+  // loads historical pulls, they carry higher ids but NO scoring_rule rows, so
+  // MAX(pull_id) would resolve to a scoring-less backtest pull and return an empty
+  // map. latest_pull is kind='current' (migration 006); MAX is the final fallback.
+  const pid =
+    pullId ??
+    db.prepare(`SELECT pull_id FROM latest_pull`).get()?.pull_id ??
+    db.prepare(`SELECT MAX(pull_id) AS p FROM pull`).get().p;
   const rows = db.prepare(`SELECT value_json FROM scoring_rule WHERE pull_id = ?`).all(pid);
   const coef = {};
   for (const { value_json } of rows) {

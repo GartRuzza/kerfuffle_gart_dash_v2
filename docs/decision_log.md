@@ -47,6 +47,31 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-16 · 2026-08-26 · First-down estimation is player-specific for RECEIVING only; rushing uses the position average
+
+| | |
+| --- | --- |
+| **Status** | Active (refines the player-specific-first-downs choice made mid-#18) |
+| **Type** | Technical (model methodology), with product sign-off |
+| **Decided by** | Product owner, 2026-08-26, on the #19 backtest evidence |
+
+**The question**
+The projection core (#18) estimated each player's first downs from his OWN shrunk conversion rate for **both** rushing and receiving. The backtest (#19) asked: is that per-player rate actually predictive? Should both components stay player-specific?
+
+**What we decided**
+Keep the **receiving** first-down rate player-specific (empirical-Bayes shrunk, `recK=40`); make the **rushing** first down estimate use the **position average** for everyone (no per-player rushing rate). Implemented as `FD_POLICY = { rushPlayerSpecific: false, recPlayerSpecific: true }` in `tools/engine/run.mjs`, shared with the backtest so both score the same model.
+
+**Why**
+The #19 out-of-sample probe (`tools/backtest/ppfd-probe.mjs`) measured whether a player's first-down conversion rate repeats year to year: **rushing FD/carry ρ(2024→2025) = 0.14** (near noise), **receiving FD/reception ρ = 0.52** (a real, repeatable skill). Estimating rushing first downs per-player therefore mostly added noise — in 2025 it nudged the wrong players (2024's high rush-FD backs regressed), slightly *increasing* error vs consensus. Falling back to the position rate for rushing removes that noise; keeping receiving player-specific preserves the one FD signal that persists. The re-gate confirmed **do-no-harm**: overall ρ unchanged (2025 Kerf 0.78 vs ECR 0.77; 2024 +0.02). First downs are still fully scored — this only changes whether the *rushing* rate is personalized. Supersedes the "both components per-player" implementation detail of [D-14](#).
+
+**What we gave up**
+Crediting a genuinely elite short-yardage back (e.g. a true goal-line hammer) for a rushing-FD rate above his position — the evidence says that rate doesn't carry to next season reliably enough to trust, so we accept treating rushing FD as a position-level constant. Reconsiderable per below.
+
+**What would make us reconsider**
+More seasons showing rushing FD/carry *does* persist (ρ rising well above ~0.3 on a larger sample); a better rushing-FD model (e.g. usage/role- or goal-line-adjusted) that beats the position constant in the backtest; or the league adding scoring that makes rushing first downs materially more valuable.
+
+---
+
 ### D-15 · 2026-08-26 · TRUFFLE auction data retained as inert reference only (non-goal qualified)
 
 | | |

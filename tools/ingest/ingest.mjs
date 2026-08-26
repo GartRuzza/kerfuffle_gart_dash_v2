@@ -434,10 +434,28 @@ function main() {
   const db = openDb();
   applyMigrations(db, { log: console.log });
   const already = new Set(db.prepare("SELECT run_id FROM pull").all().map((r) => r.run_id));
-  const todo = runs.filter((r) => reingestAll || !already.has(r));
+
+  // Skip FP-only historical snapshots (the backtest's 2024/2025 pulls, #19): their
+  // manifest shows CBS was not attempted (no cookie), so they carry no rosters/rules
+  // and would fail the CBS-required ingest. They are loaded by `npm run backtest`
+  // (tools/backtest/load.mjs) into isolated kind='backtest' pulls, never here.
+  const isBacktestRun = (runId) => {
+    try {
+      const m = loadManifest(join(RAW_ROOT, runId));
+      return m?.sources?.cbs?.attempted === false;
+    } catch {
+      return false;
+    }
+  };
+  const skippedBacktest = runs.filter(isBacktestRun);
+  const todo = runs.filter((r) => (reingestAll || !already.has(r)) && !isBacktestRun(r));
 
   console.log(`\nIngest — raw archive -> ${DB_PATH}`);
-  console.log(`  archive runs: ${runs.length}  already ingested: ${already.size}  to ingest: ${todo.length}\n`);
+  console.log(`  archive runs: ${runs.length}  already ingested: ${already.size}  to ingest: ${todo.length}`);
+  if (skippedBacktest.length > 0) {
+    console.log(`  skipping ${skippedBacktest.length} FP-only historical run(s) (loaded by "npm run backtest"): ${skippedBacktest.join(", ")}`);
+  }
+  console.log("");
 
   let failed = 0;
   for (const runId of todo) {
