@@ -23,6 +23,7 @@ const POSITION_OPTIONS: { value: PositionFilter; label: string }[] = [
   { value: "RB", label: "RB" },
   { value: "WR", label: "WR" },
   { value: "TE", label: "TE" },
+  { value: "DST", label: "DST" },
 ];
 
 const ROSTER_MODES: { value: RosterMode; label: string }[] = [

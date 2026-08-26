@@ -83,7 +83,10 @@ export const COLUMN_LABELS: Record<string, string> = {
 /** Column that can never be hidden (identity anchor). */
 export const ALWAYS_VISIBLE = "name";
 
-const DEFAULT_SORT: SortSpec[] = [{ id: "kerfOvrRank", desc: false }];
+// Sort by Ovr ECR on load: the Kerf ranks are blank until the valuation engine
+// exists (issue #12 ships real data; the engine is a later roadmap item), so the
+// real FantasyPros consensus board is the meaningful default order.
+const DEFAULT_SORT: SortSpec[] = [{ id: "ecr", desc: false }];
 
 /** Build a ViewState from a list of visible columns + overrides. */
 function makeState(visible: string[], overrides: Partial<ViewState> = {}): ViewState {
@@ -138,7 +141,7 @@ export const DEFAULT_VIEWS: SavedView[] = [
     state: makeState(
       [
         "owner", "name", "pos", "nflTeam", "kerfOvrRank", "projPts", "kerfValue",
-        "marketPrice", "dynastyEcr", "salary", "contractYears",
+        "marketPrice", "ecr", "dynastyEcr", "salary", "contractYears",
       ],
       { rosterMode: "ROSTERED" },
     ),
@@ -148,7 +151,7 @@ export const DEFAULT_VIEWS: SavedView[] = [
     name: "Start/Sit",
     builtIn: true,
     state: makeState(
-      ["name", "pos", "nflTeam", "kerfOvrRank", "kerfPosRank", "projPts", "kerfValue"],
+      ["name", "pos", "nflTeam", "kerfOvrRank", "kerfPosRank", "projPts", "kerfValue", "ecr"],
       { manager: MY_TEAM },
     ),
   },

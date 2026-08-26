@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import MockDataBanner from "@/components/MockDataBanner";
 
 export const metadata: Metadata = {
-  title: "Gart Dash — Player Table (Prototype)",
+  title: "Gart Dash — Player Table",
   description:
-    "Mock-data prototype of the Gart Dash player table: your KERFUFFLE value vs. the market, side by side.",
+    "The Gart Dash player table: real KERFUFFLE league state — rosters, salaries, contracts — beside market consensus.",
 };
 
 export default function RootLayout({
@@ -15,11 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen">
-        {/* Always-on, per Issue #1: this prototype must never be mistaken for real league data. */}
-        <MockDataBanner />
-        {children}
-      </body>
+      <body className="min-h-screen">{children}</body>
     </html>
   );
 }

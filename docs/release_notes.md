@@ -41,6 +41,37 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-26 — Rankings now reflect that KERFUFFLE is a superflex league
+
+**Fixed**
+- **The expert rankings were from a 1-quarterback board — the wrong one for your league.** Because KERFUFFLE starts two QBs, quarterbacks are worth far more than a standard board says. The table now uses FantasyPros' **superflex** rankings (still standard scoring, as you wanted — you get both). The difference is not subtle: your top five quarterbacks were shown at overall **23rd, 27th, 35th, 43rd and 50th**. They are now **1st through 5th**, which is what a two-QB league actually looks like. Going into the auction with the old numbers would have meant badly underbidding on QBs.
+- Dynasty rankings switched to the superflex dynasty board too, for the same reason.
+
+**Known issues / not yet done**
+- **Team defenses show "—" for overall rank.** FantasyPros' superflex board covers offensive players only. Defenses keep their positional rank (DST1, DST2…) and tier from the standard board, and sort to the bottom of overall-rank sorts — which is where defenses belong in a superflex league. Your rostered defenses still show their real salary and contract.
+- Everything else is unchanged: the engine columns (Kerf Value, Edge, Market Value) still show "—" until the valuation engine is built.
+
+**Requires action from you**
+- Nothing beyond the usual: `npm run archive` then `npm run ingest`. (Already done for you on this build — the new rankings are loaded.)
+
+## 2026-08-25 — The table is real: your actual league, in the app
+
+**New**
+- **The mock data is gone.** The player table now shows your **real KERFUFFLE league**: all 12 rosters with each player's **actual salary, contract length, and roster status**, the **real free-agent pool**, and **FantasyPros' real expert rankings and tiers** (overall + dynasty). Every number traces back to a dated snapshot you captured with `npm run archive`.
+- A new command, **`npm run ingest`**, turns your saved snapshots into a small local **database** (one file, `data/gart-dash.sqlite`, kept on your machine). It checks the league's rules as it loads — exactly 12 teams, every roster row is a real player or a recognized dead-cap amount, **no team over the $500 cap**, contract years 1–4 — and if anything looks wrong it **stops loudly and keeps your last good data untouched**. Re-running never duplicates anything.
+- The amber MOCK-DATA banner is replaced by a quiet one-liner: **"League data as of \<date\>"** — so you always know how fresh what you're looking at is.
+- **Tier bands are now FantasyPros' real tiers** (they appear when you sort by an ECR column, which is also the new default sort). **DST** is now a real position in the table and filters.
+- The archiver now captures the **entire transaction log** (all pages, ~60 entries), not just the first page.
+
+**Known issues / not yet done**
+- **Kerf Value, Kerf ranks/tiers, Market Value, and Edge show "—"** — those come from the valuation engine, which is the next build. The **Ceiling** box is editable but starts blank for the same reason (it pre-fills from Kerf Value once the engine exists).
+- **Proj Points** shows CBS's own projection for rostered players; free agents show "—" for now (their CBS projections live on a page that needs extra handling).
+- Three players on one rival roster currently have **blank salaries on CBS itself** — they show "—" and count $0 toward that team's cap until CBS fills them in.
+- Ceilings still reset on reload; the app is still local-only.
+
+**Requires action from you**
+- **One-time:** run `npm run ingest` once (it builds the database from the snapshots you already have). After that, your routine is: `npm run archive` (fresh snapshot) → `npm run ingest` (load it) → refresh the page.
+
 ## 2026-08-25 — Source profiler (a readable map of what's in the data)
 
 **New**

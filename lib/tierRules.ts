@@ -39,8 +39,10 @@ export const RANK_COLUMNS: Record<string, RankColumn> = {
   dynPosEcr: { tierField: "dynPosTier", scope: "positional" },
 };
 
-/** The sort applied on load and used as the fallback overall order. */
-export const DEFAULT_SORT_ID = "kerfOvrRank";
+/** The sort applied on load and used as the fallback overall order.
+ * "ecr" (Ovr ECR) while the Kerf ranks are blank pre-engine — the real
+ * FantasyPros board is the meaningful default order on real data. */
+export const DEFAULT_SORT_ID = "ecr";
 
 export function isRankColumn(colId: string | undefined): boolean {
   return !!colId && colId in RANK_COLUMNS;

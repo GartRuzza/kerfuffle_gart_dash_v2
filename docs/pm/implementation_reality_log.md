@@ -53,6 +53,88 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-26 — The market board was the wrong one: switched to superflex (D-12)
+
+**Ticket / Issue:** [#12](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/12) follow-up · **Branch:** feat/issue-12-storage-ingestion · **Deviated from plan:** Yes — corrects a choice made during the build.
+
+**Original intent**
+Display FantasyPros consensus rankings beside real league state. The build shipped the **draft / standard / ALL** board, chosen in conversation on 2026-08-25.
+
+**What was actually wrong**
+`ALL` is a **1-QB** board. KERFUFFLE starts **two** quarterbacks. The owner caught it the next day. Measured on the live board, the error was large and one-directional: the first five QBs ranked **23/27/35/43/50** on the board we were showing, versus **1/2/3/4/5** on the superflex board, and the 1-QB top twelve contained **no quarterbacks at all**. The owner would have walked toward an auction reading a board that systematically underpriced the most expensive position on his roster.
+
+**What was built**
+Research first (the owner asked for it before any change), and it resolved the anticipated trade-off in our favour: FantasyPros exposes superflex as `position=OP`, and **`draft`+`STD`+`OP` is a genuinely distinct board** — 475 of 521 shared players rank differently from the PPR superflex board — so *standard scoring* and *superflex* were both available, not either/or. `SUPERFLEX`/`SF` are rejected by the API; `OP` is the only spelling. Dynasty turned out to be scoring-agnostic (one board per position scope), so `dynasty`+`OP` is simply *the* dynasty superflex board. Two probes were added to the archiver, a fresh snapshot taken, and **migration 003** repointed the read view. Result on real data: QBs occupy 6 of the top 8; rostered-player ranking coverage is unchanged at 162/170.
+
+**Deviations**
+**Team defenses lost their overall rank.** `OP` means *offensive* player, so superflex boards exclude DSTs — and the owner rosters 8. Presented as a decision; he chose **positional rank only** (DST1, DST2… and tier, from the 1-QB board) with overall rank left blank. Borrowing their overall rank was rejected on the merits: the two boards have different scales, so a defense ranked ~250th on the 1-QB board would have floated into mid-pack among superflex players and read as more valuable than it is. Blank also sorts defenses last, which is correct here.
+
+**Why we deviated**
+The original choice was made in a conversation about *scoring format* (PPR vs standard) and the *league shape* question was never separated out from it. The scoring axis got the attention; the position-scope axis — which mattered far more for this league — was left at its default. Worth noting for future source choices: **an API's default parameter is not a neutral choice**, and "ALL" reads like "everything" when it actually means "one quarterback".
+
+**Product implications**
+- The market column the owner reads against is now the right one for his league. This is the number the valuation engine will be measured against, so it would have propagated into the engine, the backtest baseline, and every auction ceiling.
+- Defenses show "—" for overall rank by design; their positional rank is intact.
+- **Every board is still ingested at full grain** (11 per pull), so the 1-QB board remains queryable and any future display change is a view migration, not a re-fetch. That property is what made this correction a one-migration change rather than a re-archive.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| The board view now reads four ranking sources (superflex draft/dynasty + the DST rows of both 1-QB boards) | Superflex boards exclude defenses, and the owner rosters 8 | More `COALESCE` logic in one view; a reader must know why DST is special | Contained to migration 003 and documented in `data_model.md` |
+| DST overall rank is permanently blank | Mixing board scales would misprice defenses | Defenses can't be sorted against flex players by overall rank | If FantasyPros ever ships a defense-inclusive superflex board, one view migration |
+
+**Follow-up decisions needed from the product owner**
+None.
+
+### 2026-08-25 — Storage schema + ingestion: the table is on real data (issue #12)
+
+**Ticket / Issue:** [#12](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/12) · **Branch:** feat/issue-12-storage-ingestion · **Deviated from plan:** Small, additive deviations — the issue's core was built as written.
+
+**Original intent**
+Build the D-10 normalized SQLite store (`better-sqlite3`): migrations for the seven entities, ingestion parsers (header-name mapping, deliberate coercion, loud validation of the constitution invariants), `pull` lineage on every row, idempotent upserts, temp-validate-swap writes, and the flat board view — replacing `lib/mockData.ts` behind the same `Player` shape. Blocked-on decision (dead cap / Practice Squad) resolved by the owner before the build: PS = a status; dead cap = a team-level row with no player id (D-11).
+
+**What was actually built**
+Everything the issue asked: `db/migrations/001` + a tiny runner, `npm run ingest` (`tools/ingest/`) reading every archived run in date order inside one transaction per run (rollback = temp-validate-swap), all invariants enforced loudly (12 teams, id-or-dead-cap, cap ≤ $500 incl. IR, contract years 1–4, header-name mapping), idempotent re-ingest proven at DB level, the `board` view, and a data-access module (`lib/data/`) feeding the UI real data — mock module deleted, banner replaced with "League data as of \<date\>". 69 unit tests pass (31 new), build clean, rendered with the real league (485 players: 170 rostered + 315 FAs).
+
+**Deviations**
+1. **The archiver grew transaction pagination** (strictly #10 territory): CBS's transaction log is paginated and only page 1 was being captured. Owner approved. Pagination is plain URL params; both the `?print_rows=9999` print-all view and every `?start_row=N` page are captured (proven live: 60 transactions, was 27).
+2. **The `Player` shape got nullable fields instead of staying identical.** The issue said "same `Player` shape"; in truth engine outputs (Kerf values/ranks/tiers, market value) don't exist yet, and real data has real blanks (FA salaries, unranked players). Fields became `number | null` and the UI renders "—". Same columns, honest values.
+3. **CBS's own `Proj` column is stored and shown** (`contract.proj_points` → "Proj Points") — real, traceable source data the roster page already carries; without it the column would sit empty for no reason. FAs show "—" (their projections live on the JS-rendered `/players` page).
+4. **DST became a real position** (the league rosters DSTs — profiler evidence); position filters updated (SuperFlex excludes DST; a DST option added).
+5. **Default sort moved from Kerf Ovr Rank to Ovr ECR** — the Kerf ranks are blank pre-engine, so the load order is the real FantasyPros board (which also makes tier bands real tiers on load). Display board per owner: **draft, standard scoring** (closest to a first-downs league; trivially changeable).
+6. **`transaction` table is named `league_transaction`** (`TRANSACTION` is a SQL keyword). CBS's log has no type column, so the type is **inferred from the row text** ("- Dropped" → `Dropped`) with the raw text kept verbatim.
+7. **FP payloads self-describe their board, and the file name lies sometimes:** the dynasty board is scoring-agnostic (the "-std" and "-ppr" dynasty files are byte-identical) and the pre-season "ROS" request returns the draft board. Ingestion trusts the payload's declaration and dedupes — 9 distinct boards per pull, not 11 files.
+
+**Why we deviated**
+(1) un-captured transactions are unrecoverable history — the archive exists precisely for this; (2–4) the plan was written before we could see real blanks, real DSTs, and CBS's own projections; (5) a default sort on an all-blank column would render an arbitrary order; (6–7) reality of SQL keywords and the FP API.
+
+**Product implications**
+- The owner now looks at **his actual league** in the tool: real rosters, salaries, contracts, transactions, rules, and market ranks — every value traceable to a dated raw snapshot (`pull` lineage). The routine is `npm run archive` → `npm run ingest` → refresh.
+- The engine (roadmap #7) has everything it was waiting for: the parsed scoring rules in SQL, contract history accruing per pull, and the ranking boards at their proper grain.
+- The Kerf/engine columns visibly show "—" until the engine lands — the table is honest about what's computed vs. sourced.
+- Three rostered players currently have **blank salaries on CBS itself** (t7) — shown as "—", counted $0 toward the cap, warned on every ingest. Worth watching after the auction.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| FA rows come from the FantasyPros board, not CBS's own free-agent page | `/players` is JS-rendered — not in the static archive | An unranked FA (deep bench stash) isn't in the table; FA "Proj Points" blank | Page/JS-render the `/players` capture later; the board view already unions rostered + FA sources |
+| Transaction `players_text` is one verbatim cell; type is inferred, no per-player normalization | CBS gives no type column; full enumeration needs in-season variety | FAB analysis needs parsing later; unknown future type labels land as-is | Parse `players_text` into per-player moves when the price-curve work needs it — raw text is all preserved |
+| Salary is INTEGER; a decimal salary would fail ingestion loudly | League deals in whole dollars; a decimal means CBS changed something | An intentional CBS change to fractional salaries blocks ingest until we look | One-line migration + coercion change — deliberate tripwire, not an accident |
+| `posEcrTier`/`dynPosTier` reuse the overall board's tier | FP's positional boards weren't ingested for STD; overall tiers group identically within one position | Positional tier bands are the overall tiering filtered — fine until someone wants FP's per-position tiers | Ingest positional STD boards (archiver probe + grain already support it) |
+
+**Post-build review round (same day, same issue).** An independent read-only review of the committed diff found **one bug that mattered and several worth fixing**; all are fixed, tested, and re-verified. Recording it here because the first one is the kind of failure that would have been trusted rather than noticed:
+
+- **The board could serve a stale snapshot (fixed — migration 002).** `latest_pull` picked the highest `pull_id`, which is assigned at first successful *ingest*, not at *capture*. The documented recovery workflow — a run fails validation, the parser is fixed, the run is re-ingested with `--all` — would give that older snapshot the highest id and make it "latest": old rosters in the table, the stale date in the banner, and **nothing flagged as wrong**. On auction day that is the worst failure this store has. Now ordered by `captured_at`, with a test that ingests an older run last and asserts the newer one still wins.
+- **FantasyPros nulls were becoming zeros (fixed).** `Number(null)` is `0`, so an untiered player would have rendered a literal **"Tier 0"** band and a single-vote player would have handed the engine an expert spread of `0` — "perfect consensus" — when the truth was "unknown". Writing the test for this surfaced a second instance the reviewer hadn't caught: a null `rank_ecr` was silently becoming **rank 0, the best rank on the board**. No live rows hit either path yet, so this was latent, not observed.
+- **Hardening, all fixed:** the board view's rostered branch now filters to the league's positions (one rostered kicker would have taken the *whole page* down via `deriveBoard`'s throw); the data-access module falls back to the loud "no data" banner instead of a 500 if the store is unreadable; ingestion iterates the team ids CBS actually published rather than a hardcoded 1–12; warnings collected before a failure are printed with it (they are usually the explanation); `ingestRun` wraps its own transaction so no caller can forget atomicity; a duplicate `cbs_player_id` within one FantasyPros board is now refused (the last remaining path to a duplicated table row).
+- **`lib/dataDictionary.ts` was stale and user-visible** — it still said positions were "QB, RB, WR, or TE" and that data was "pending", on the same screen as real league data. Sourced fields now describe the real pipeline; only engine outputs remain marked placeholder.
+- **Tests:** 69 → **84**. The FantasyPros mapper had no tests at all despite being the module whose entire job is surviving source-format drift; it now has 13.
+
+**Follow-up decisions needed from the product owner**
+None. (D-11 was decided before the build; the display-board choice — draft/standard — was decided in the same conversation.)
+
 ### 2026-08-25 — Source-profiling spike (CBS field inventory + FantasyPros HOF re-verification)
 
 **Ticket / Issue:** [#11](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/11) · **Branch:** feat/issue-10-raw-archival · **Deviated from plan:** Yes (one owner decision changed the deliverable's contents; findings corrected several plan assumptions)
