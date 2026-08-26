@@ -41,6 +41,28 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-26 — The dollars are here: what a player's worth, what he costs, and the gap
+
+**New**
+- **Kerf Value ($) — what a player is worth to a typical team.** The board now turns each player's projected KERFUFFLE points into a real auction dollar figure. It's a VORP model: your points *above the last starter your league actually fields* (QB24, RB34, WR34, TE17 — the "24" because superflex means ~24 QBs start), converted to dollars against the $500 cap so **all the prices add up to the cap**. The top running backs price around $200; the best players at each position command the most, replacement-level players about $1.
+- **Roster Value ($) — what he's worth to *the Raccoons specifically*.** A second dollar column that values a player above *your own* worst startable player at his spot, not the league's. So a position you're thin at values a target **up**, and one you're stacked at (you roster two strong QBs) values him **down** — the number that actually matters for a trade or a roster-specific bid.
+- **Two market prices.** **Market (Now)** is what a player of this position and rank costs on today's rosters; **Market (Auction)** is what he went for at the 2025 auction. Both are built from real KERFUFFLE salaries.
+- **Edge.** Kerf Value minus Market (Now), in green (**+**, a bargain — we value him above what the market pays) or red (**−**). This is the gap the whole tool exists to find. Heads-up: elite QBs often show a **red** Edge — our model says the market *overpays* for top quarterbacks relative to their points-above-replacement. That's a real, defensible signal, and you can drill into exactly why.
+- **The Ceiling box now starts filled** with the Kerf Value (rounded to a whole dollar). It's still yours to edit and override freely — the engine never overwrites your number.
+- **Every dollar is explained.** The Data Dictionary (button at the bottom) now describes each money column in plain English — no more "Placeholder" tags.
+
+**Improved**
+- The **Auction Prep** and **Trades** views now include the new value and market columns by default.
+
+**Known issues**
+- **Team defenses show "—" for all the dollar columns.** We can't project a defense's scoring from the offensive data, so they aren't priced.
+- **Ceilings still reset when you reload.** Saving them for auction day is the next piece of work (the auction-prep lens).
+- **The valuation is single-season and prices running backs above quarterbacks.** That's how last-starter VORP works in a superflex league — treat it as a transparent starting point to sanity-check against your own read, not gospel. Dynasty value and contract length stay as separate context, never blended in.
+- **The market price curve is coarse at the extremes** (it's built from ~12 salaries per position); a very deep player flattens to the cheapest observed salary.
+
+**Requires action from you**
+- After refreshing data, run **`npm run engine`** once (it now computes the dollars as well as the ranks) and reload the app. It prints the replacement baselines, the dollars-per-point, and a "prices sum to the cap ✔" check.
+
 ## 2026-08-26 — The table now has KERFUFFLE-adjusted ranks, tiers, and projections
 
 **New**

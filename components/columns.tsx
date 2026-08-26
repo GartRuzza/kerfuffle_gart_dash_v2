@@ -18,7 +18,10 @@ import EditableCeilingCell from "./EditableCeilingCell";
  */
 
 const dash = <span className="text-ink-faint">—</span>;
-const dollars = (n: number) => `$${n}`;
+// Auction money is whole dollars (you can't bid $130.26). The engine stores cents
+// for drill-down/reconstruction; the table rounds for display. Salaries/market
+// prices are already whole, so rounding them is a no-op.
+const dollars = (n: number) => `$${Math.round(n)}`;
 
 /** Positional-rank cells render as "WR3" (position + within-position rank). */
 const posRankCell = (info: CellContext<PlayerRow, unknown>) => {
@@ -105,6 +108,7 @@ export const columns: ColumnDef<PlayerRow>[] = [
     id: "kerfValue",
     accessorFn: (r) => r.kerfValue ?? undefined,
     sortUndefined: "last",
+    sortDescFirst: true,
     header: "Kerf Value",
     cell: (info) => {
       const v = info.getValue<number | undefined>();
@@ -112,6 +116,14 @@ export const columns: ColumnDef<PlayerRow>[] = [
         <span className="font-semibold tabular-nums">{dollars(v)}</span>
       );
     },
+  },
+  {
+    id: "rosterValue",
+    accessorFn: (r) => r.rosterValue ?? undefined,
+    sortUndefined: "last",
+    sortDescFirst: true,
+    header: "Roster Value",
+    cell: money,
   },
   {
     id: "ceiling",
@@ -139,7 +151,7 @@ export const columns: ColumnDef<PlayerRow>[] = [
       const cls = v > 0 ? "text-edge-up" : v < 0 ? "text-edge-down" : "text-edge";
       return (
         <span className={`font-medium tabular-nums ${cls}`}>
-          {sign}${Math.abs(v)}
+          {sign}${Math.round(Math.abs(v))}
         </span>
       );
     },
@@ -150,7 +162,16 @@ export const columns: ColumnDef<PlayerRow>[] = [
     id: "marketPrice",
     accessorFn: (r) => r.marketPrice ?? undefined,
     sortUndefined: "last",
-    header: "Market Value",
+    sortDescFirst: true,
+    header: "Market (Now)",
+    cell: money,
+  },
+  {
+    id: "marketPreAuction",
+    accessorFn: (r) => r.marketPreAuction ?? undefined,
+    sortUndefined: "last",
+    sortDescFirst: true,
+    header: "Market (Auction)",
     cell: money,
   },
   // Ovr ECR / Dyn Ovr ECR use the UNIQUE derived overall rank (not the raw ECR,
@@ -194,10 +215,12 @@ export const GART_COLUMNS = new Set([
   "kerfPosRank",
   "projPts",
   "kerfValue",
+  "rosterValue",
   "ceiling",
 ]);
 export const MARKET_COLUMNS = new Set([
   "marketPrice",
+  "marketPreAuction",
   "ecr",
   "posEcr",
   "dynastyEcr",

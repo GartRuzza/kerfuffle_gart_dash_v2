@@ -16,7 +16,9 @@ import { POSITIONS, type Player, type Position } from "../types";
  *  - Engine fields (kerf ranks/tiers) come from the latest engine_run's
  *    `projection` rows (issue #18), passed in as `projById`. A player with no
  *    projection (defenses, unprojected players) keeps them null → renders "—".
- *    `marketPrice`/`kerfValue` stay null — dollars are the valuation issue (#20).
+ *  - Dollar fields (`kerfValue`, `rosterValue`, `marketPrice`, `marketPreAuction`)
+ *    come from the latest engine_run's `valuation` rows (issue #20), passed in as
+ *    `valById`. Null for players the engine doesn't price (defenses, unprojected).
  *  - `projPts`: for offensive players the engine projects, this is now the
  *    KERFUFFLE-scored projected points (owner, 2026-08-26 — replaces CBS's own
  *    number, and finally gives free agents a projection). Defenses and
@@ -54,6 +56,17 @@ export interface ProjectionRow {
   kerf_pos_tier: number | null;
 }
 
+/**
+ * One player's engine valuation (from the latest engine_run's `valuation` rows,
+ * keyed by cbs_player_id). Only the fields the board needs (issue #20).
+ */
+export interface ValuationRow {
+  kerf_value: number | null; // league-generic ceiling ($)
+  roster_value: number | null; // Raccoons-specific ceiling ($)
+  market_in_season: number | null; // current-salary price curve ($)
+  market_pre_auction: number | null; // 2025 price curve ($)
+}
+
 /** "WR12" -> 12 (FantasyPros pos_rank strings). */
 export function posRankNumber(posRank: string | null): number | null {
   if (!posRank) return null;
@@ -89,13 +102,15 @@ function uniqueRanks(
 
 export function deriveBoard(
   rows: BoardViewRow[],
-  projById: Map<number, ProjectionRow> = new Map()
+  projById: Map<number, ProjectionRow> = new Map(),
+  valById: Map<number, ValuationRow> = new Map()
 ): Player[] {
   const ovrRank = uniqueRanks(rows, (r) => r.ecr);
   const dynRank = uniqueRanks(rows, (r) => r.dynasty_ecr);
 
   return rows.map((r) => {
     const proj = projById.get(r.cbs_player_id) ?? null;
+    const val = valById.get(r.cbs_player_id) ?? null;
     return {
     id: String(r.cbs_player_id),
     name: r.name,
@@ -103,8 +118,10 @@ export function deriveBoard(
     nflTeam: r.nfl_team ?? "",
     owner: r.owner,
 
-    kerfValue: null, // dollars — the valuation issue (#20)
-    marketPrice: null,
+    kerfValue: val?.kerf_value ?? null, // dollars — the valuation engine (#20)
+    rosterValue: val?.roster_value ?? null,
+    marketPrice: val?.market_in_season ?? null,
+    marketPreAuction: val?.market_pre_auction ?? null,
     kerfOvrRank: proj?.kerf_ovr_rank ?? null,
     kerfPosRank: proj?.kerf_pos_rank ?? null,
     kerfOvrTier: proj?.kerf_ovr_tier ?? null,

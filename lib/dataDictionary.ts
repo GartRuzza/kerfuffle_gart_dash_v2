@@ -3,10 +3,9 @@ import { ALL_COLUMN_IDS, COLUMN_LABELS } from "./views";
 /**
  * Data dictionary — one entry per table column.
  *
- * Sourced fields (CBS + FantasyPros) now describe the REAL pipeline (issue #12).
- * The remaining `placeholder: true` entries are the ENGINE outputs, which show
- * "—" in the table because the valuation engine does not exist yet — their text
- * gets written with it. Keep each `definition` under 15 words.
+ * Every column now describes the REAL pipeline: CBS + FantasyPros (issue #12),
+ * the projection engine (#18), and the valuation engine — dollars/ceilings/market/
+ * Edge (#20). No placeholders remain. Keep each `definition` under 15 words.
  */
 export interface FieldDoc {
   id: string; // column id
@@ -80,25 +79,61 @@ const DOCS: Record<
     ],
     placeholder: false,
   },
-  kerfValue: { definition: "The player's KERFUFFLE dollar value from our engine.", placeholder: true },
+  kerfValue: {
+    definition: "The player's league-generic dollar ceiling — worth to a typical team.",
+    deepDive: [
+      "Source: our valuation engine (VORP). It converts projected KERFUFFLE points ABOVE positional replacement into dollars against the $500 cap.",
+      "Replacement = the 'last starter' your league actually fields: QB24, RB~34, WR~34, TE~17 (superflex counts a QB in the SFLEX slot, so elite QBs stay premium).",
+      "Dollars: the league's spendable money ($500 × 12, minus a $1 minimum per roster spot) is split across everyone's points-above-replacement — so prices sum to the cap and the top of each position commands the most.",
+      'Team defenses show "—" (their scoring isn\'t projected from the offensive feed).',
+    ],
+    placeholder: false,
+  },
+  rosterValue: {
+    definition: "The player's dollar value to the Raccoons specifically, given your roster.",
+    deepDive: [
+      "Source: the same VORP dollars, but measured above YOUR worst startable player at the slot he'd fill (replace-your-starter), not the league's replacement level.",
+      "So a position you're thin at values a new player UP; a position you're stacked at (e.g. two strong QBs) values him DOWN — the number that matters for a trade or a roster-specific bid.",
+      "Superflex-aware: a QB competes with your QB and SFLEX starters; an RB/WR/TE competes with your flex and SFLEX starters too.",
+      "Falls back to the league replacement for a position your roster can't field.",
+    ],
+    placeholder: false,
+  },
   ceiling: {
     definition: "Your own editable max bid; seeded from Kerf Value, held for the session.",
     deepDive: [
       "A place to record your max — you type it, nothing computes it.",
-      "Starts blank because it fills from Kerf Value, which needs the engine.",
+      "Starts from Kerf Value (the league-generic ceiling); edit it freely — the engine never overwrites your number.",
       "Resets on reload; saving ceilings for auction day comes with the auction lens.",
     ],
     placeholder: false,
   },
   edge: {
-    definition: "Kerf Value minus Market Value — the gap you're exploiting.",
+    definition: "Kerf Value minus Market (Now) — the gap you're exploiting.",
     deepDive: [
-      "Green when we value a player above the market, red below.",
-      "Derived from Kerf Value and Market Value.",
+      "Green (+) when we value a player above what the market pays now — a bargain; red (−) when the market pays above our value.",
+      "Derived from Kerf Value and Market (Now). Compare against Market (Auction) yourself for an auction-day view.",
     ],
     placeholder: false,
   },
-  marketPrice: { definition: "What the league is expected to pay for the player.", placeholder: true },
+  marketPrice: {
+    definition: "What the league pays now for a player of this position and rank.",
+    deepDive: [
+      "Source: a price curve fit from the 12 teams' CURRENT salaries — 'what the Nth-best player at this position currently costs' — read off by the player's Kerf positional rank.",
+      "This is the in-season 'what would he cost today' number; pair it with Edge.",
+      'Team defenses show "—" (not priced by the engine).',
+    ],
+    placeholder: false,
+  },
+  marketPreAuction: {
+    definition: "What a player of this position and rank went for at the 2025 auction.",
+    deepDive: [
+      "Source: the same kind of price curve, fit from the 2025 KERFUFFLE salaries (including players since dropped) — the last full-auction market.",
+      "Use it as the auction-day price reference; Market (Now) reflects today's rostered salaries instead.",
+      "A year old and pre-season, so treat it as directional. TRUFFLE auction data is deliberately NOT used.",
+    ],
+    placeholder: false,
+  },
   ecr: {
     definition: "Overall expert consensus rank, on a superflex board — lower is better.",
     deepDive: [

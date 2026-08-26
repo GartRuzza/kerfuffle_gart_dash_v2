@@ -47,6 +47,34 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-17 · 2026-08-26 · Valuation build (#20) — the four params D-13 left open
+
+| | |
+| --- | --- |
+| **Status** | Active (implements [D-13](#); does not reverse it) |
+| **Type** | Product (how the dollars appear + a modelling knob) |
+| **Decided by** | Product owner, 2026-08-26, in the pre-build Q&A for issue #20 |
+
+**The question**
+D-13 locked the valuation *method* (VORP, last-starter replacement, two ceilings, single-season). But four choices were left to the build: (1) the **sign of Edge**, (2) **how roster-aware value appears**, (3) **which market snapshot** the table shows, (4) **how many roster spots** owe a $1 minimum in the dollar conversion. The issue text itself flagged 2–4 as "decide/parameterize."
+
+**What we decided**
+1. **Edge = Kerf Value − Market (Now)** (a bargain is positive/green), **not** the issue's literal "market − ceiling." The existing table already computed it this way and the owner kept the intuitive UX.
+2. **Roster Value is its own column** (replace-your-starter, Raccoons-specific), sitting beside the league-generic **Kerf Value** — not folded into one number. The owner's **Ceiling** stays *his* editable value (seeded from Kerf Value), **session-only** — so no `owner_ceiling_override` table this issue (that's the auction-prep lens).
+3. **Both market snapshots shown**, as two columns: **Market (Now)** from current roster salaries and **Market (Auction)** from the 2025 salaries.
+4. **19 roster spots per team** owe a $1 minimum (10 starters + 9 bench; IR excluded — an in-season designation, not an auction buy). A tunable constant; the choice moves the dollar scale ~2%.
+
+**Why**
+Each is the owner's call on presentation or a low-stakes knob, not a change to the method. The Edge sign is the only genuine conflict with the written issue; green-means-bargain matches how the owner reads the board and the vision's "the gap is the game." Two ceiling columns keep both the auction-generic and roster-specific numbers visible (vision principle 2). Two market columns serve the now-in-season use *and* the auction reference. 19 spots is the natural active-roster size.
+
+**What we gave up**
+The literal issue wording for Edge (documented here so a future agent doesn't "correct" the sign back). A single, less-cluttered market column. A persisted ceiling (deferred to roadmap #10, deliberately).
+
+**What would make us reconsider**
+The owner wanting Edge flipped, one market column, or ceilings persisted before the auction-prep lens; or evidence that the roster-size assumption materially distorts prices (it shouldn't at ~2%).
+
+---
+
 ### D-16 · 2026-08-26 · First-down estimation is player-specific for RECEIVING only; rushing uses the position average
 
 | | |

@@ -147,8 +147,9 @@ interface Props {
 
 export default function PlayerTable({ players, teams }: Props) {
   const [data, setData] = useState<PlayerRow[]>(() =>
-    // Ceiling seeds from the Kerf model's value — null (blank) until the engine exists.
-    players.map((p) => ({ ...p, ceiling: p.kerfValue })),
+    // Ceiling seeds from the Kerf model's league-generic value, rounded to a whole
+    // dollar (you bid whole dollars); null (blank) for players the engine can't price.
+    players.map((p) => ({ ...p, ceiling: p.kerfValue == null ? null : Math.round(p.kerfValue) })),
   );
 
   const [sorting, setSorting] = useState<SortingState>(FULL_VIEW.state.sorting);

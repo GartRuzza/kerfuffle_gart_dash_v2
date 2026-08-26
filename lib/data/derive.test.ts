@@ -86,8 +86,35 @@ describe("deriveBoard", () => {
       id: "7",
       kerfOvrRank: 12, kerfPosRank: 4, kerfOvrTier: 3, kerfPosTier: 2,
       projPts: 288.4, // the engine's KERFUFFLE projection, even for a free agent
-      kerfValue: null, marketPrice: null, // dollars still wait for the valuation issue
+      kerfValue: null, marketPrice: null, // no valuation row passed → dollars stay "—"
     });
+  });
+
+  it("surfaces the valuation dollars: Kerf/Roster value + both market prices (issue #20)", () => {
+    const val = new Map([
+      [7, { kerf_value: 130, roster_value: 110, market_in_season: 201, market_pre_auction: 180 }],
+    ]);
+    const [p] = deriveBoard(
+      [row({ cbs_player_id: 7, name: "Priced Guy", owner: "FA", ecr: 3 })],
+      new Map(),
+      val
+    );
+    expect(p).toMatchObject({
+      id: "7",
+      kerfValue: 130, rosterValue: 110, marketPrice: 201, marketPreAuction: 180,
+    });
+  });
+
+  it("a player with no valuation keeps every dollar field null (defenses, unpriced)", () => {
+    const [p] = deriveBoard(
+      [row({ cbs_player_id: 9, name: "Defense", pos: "DST", proj_points: 110 })],
+      new Map(),
+      new Map() // no valuation row for this player
+    );
+    expect(p.kerfValue).toBeNull();
+    expect(p.rosterValue).toBeNull();
+    expect(p.marketPrice).toBeNull();
+    expect(p.marketPreAuction).toBeNull();
   });
 
   it("a player with no projection keeps Kerf fields null and CBS's own Proj Points", () => {

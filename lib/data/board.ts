@@ -2,7 +2,12 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 import { MY_TEAM, type Player } from "../types";
-import { deriveBoard, type BoardViewRow, type ProjectionRow } from "./derive";
+import {
+  deriveBoard,
+  type BoardViewRow,
+  type ProjectionRow,
+  type ValuationRow,
+} from "./derive";
 
 /**
  * THE data-access boundary (decision D-10, issue #12) — the single module the
@@ -82,6 +87,18 @@ function readBoard(): BoardData {
       .all() as (ProjectionRow & { cbs_player_id: number })[];
     for (const p of projRows) projById.set(p.cbs_player_id, p);
 
+    // The latest engine run's per-player valuation (issue #20). Empty until the
+    // engine has run with the valuation layer — dollar fields then stay "—".
+    const valById = new Map<number, ValuationRow>();
+    const valRows = db
+      .prepare(
+        `SELECT cbs_player_id, kerf_value, roster_value, market_in_season, market_pre_auction
+         FROM valuation
+         WHERE engine_run_id = (SELECT engine_run_id FROM latest_engine_run)`
+      )
+      .all() as (ValuationRow & { cbs_player_id: number })[];
+    for (const v of valRows) valById.set(v.cbs_player_id, v);
+
     const teamRows = db
       .prepare(`SELECT name FROM fantasy_team ORDER BY name`)
       .all() as { name: string }[];
@@ -91,7 +108,7 @@ function readBoard(): BoardData {
     ];
 
     return {
-      players: deriveBoard(rows, projById),
+      players: deriveBoard(rows, projById, valById),
       teams,
       meta: { runId: pull.run_id, capturedAt: pull.captured_at },
     };

@@ -53,6 +53,39 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-26 — Valuation engine: VORP dollars, ceilings, price curves, Edge (#20)
+
+**Ticket / Issue:** [#20](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/20) · **Branch:** feat/issue-19-backtest-gate · **Deviated from plan:** Mostly no — four sub-decisions the issue left open were resolved by the owner up front ([D-17](../decision_log.md)).
+
+**Original intent**
+Turn #18's Kerf points into auction-usable dollars: VORP league-generic ceilings, a market price curve, and Edge — stage 2 of "stage in two," built after the #19 gate cleared. Two ceilings (league-generic + roster-aware), single-season, drillable.
+
+**What was actually built**
+`npm run engine` now produces dollars alongside points (migration `007` + `tools/engine/valuation.mjs`): last-starter replacement (QB24/RB34/WR34/TE17 from the lineup + 40/40/20 FLEX split, SFLEX = 100% QB), marginal $/point (prices sum to the cap), a **Kerf Value** (league-generic ceiling), a **Roster Value** (replace-your-starter, Raccoons-specific), **two market curves** (current salaries + 2025 salaries, read by Kerf positional rank), and **Edge = Kerf Value − Market (Now)**. Four table columns added; the data dictionary is now placeholder-free.
+
+**Deviations**
+The issue text and D-13 literally define "Edge = market price − ceiling," but the existing table already computed "Kerf Value − Market" (bargain = green +). The owner kept the existing convention — so Edge is **value − price**, not the issue's literal formula. The issue also listed `owner_ceiling_override` in the derived layer; the owner clarified the Ceiling stays **session-only** this issue (persistence is the auction-prep lens), so that table was not built. Roster-aware value ships as its **own column** (not folded into Kerf Value), and **both** market snapshots are shown (not one default).
+
+**Why we deviated**
+All four were owner calls made in the pre-build Q&A ([D-17](../decision_log.md)) — the issue itself flagged the $-conversion/roster and display choices as "decide/parameterize." The Edge sign is the only genuine contradiction with the written issue; the owner chose the intuitive UX (green = bargain) over the literal wording.
+
+**Product implications**
+The table now shows, for every projected offensive player and free agent, **what he's worth to a typical team, what he's worth to the Raccoons specifically, what the market pays (now and at the last auction), and the gap.** This is the core value proposition, live end to end. One thing the owner should understand before trusting it at a bid: **last-starter VORP prices RBs above QBs and reads elite QBs as cheaper than the market pays** — because superflex means ~24 startable QBs, so even a top QB's points-above-replacement is modest. That is a correct, transparent VORP outcome and precisely the kind of Edge the tool exists to surface (Josh Allen: Kerf $130 vs Market $201), not a bug — but it is a real judgment the owner will want to sanity-check against his instincts, using the drill-down. DST remains unpriced (no offensive projection).
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| Price curve is a step function off ~12 salaries/position | Simple, transparent, inspectable; matches "what the Nth-best player costs" | Coarse at the extremes; a deep player flattens to the min salary | Add smoothing/regression to `buildPriceCurve` — ~half a day |
+| Roster-aware = replace-your-starter greedy lineup | Standard, principled, superflex-aware | A heuristic, not a full marginal-value optimization | A proper optimizer if the owner wants it later — modest |
+| Ceilings still session-only | Persistence belongs to the auction-prep lens (#10) | Edited ceilings reset on reload | The auction lens (`owner_ceiling_override`) — a planned next step |
+
+**Follow-up decisions needed from the product owner**
+
+- [ ] Does the VORP result (RBs over QBs; elite QBs below market) match how the owner wants to value the superflex QB premium, or does he want a QB-scarcity adjustment on top of last-starter VORP? — affects trust at auction; a possible richer model, currently backlog not a blocker.
+
+---
+
 ### 2026-08-26 — Backtest → core fix: receiving-only first-down personalization (D-16)
 
 **Ticket / Issue:** follow-up to [#19](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/19) (the gate feeding back into #18) · **Branch:** feat/issue-18-projection-core · **Deviated from plan:** N/A — this is the gate doing its job.

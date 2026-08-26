@@ -31,9 +31,11 @@ export const FREE_AGENT = "FA";
  * the join key both sources publish.
  *
  * Nullability is meaningful:
- *  - Engine outputs (`kerfValue`, `marketPrice`, the `kerf*` ranks/tiers) are
- *    null for everyone — the valuation engine doesn't exist yet (it is a later
- *    roadmap item). The UI renders them as "—".
+ *  - Engine outputs (`kerfValue`, `rosterValue`, `marketPrice`,
+ *    `marketPreAuction`, the `kerf*` ranks/tiers) come from the latest engine run
+ *    (projections #18, dollars #20). They are null for players the engine can't
+ *    price — team defenses (no offensive projection) and anyone with no
+ *    projection — and render as "—".
  *  - `salary`/`contractYears` are null for free agents (meaningfully: no
  *    contract) and, rarely, for rostered players CBS shows blank.
  *  - ECR fields are null for rostered players FantasyPros doesn't rank.
@@ -49,8 +51,10 @@ export interface Player {
   owner: string; // fantasy team name, or FREE_AGENT ("FA")
 
   // --- Engine outputs (null until the valuation engine exists) ---
-  kerfValue: number | null; // "Kerf Value" ($)
-  marketPrice: number | null; // "Market Value" ($)
+  kerfValue: number | null; // "Kerf Value" ($) — league-generic VORP ceiling
+  rosterValue: number | null; // "Roster Value" ($) — Raccoons-specific (replace-your-starter)
+  marketPrice: number | null; // "Market (Now)" ($) — in-season current-salary price curve
+  marketPreAuction: number | null; // "Market (Auction)" ($) — 2025 pre-auction price curve
   kerfOvrRank: number | null;
   kerfPosRank: number | null;
   kerfOvrTier: number | null;
