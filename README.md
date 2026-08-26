@@ -2,7 +2,7 @@
 
 **Gart Dash gives the Rangoon Raccoons owner two numbers side by side — what a player is worth in KERFUFFLE and what he costs — so every bid, claim, start, and trade is made on a visible edge instead of a gut feel.**
 
-**Status:** Prototype — the player table (UI only, mock data) is built; see [`docs/pm/current_state.md`](docs/pm/current_state.md)
+**Status:** The player table runs on **real league data** (local SQLite store); the valuation engine is next — see [`docs/pm/current_state.md`](docs/pm/current_state.md)
 **Live at:** not deployed (local-first by design)
 
 ---
@@ -43,8 +43,8 @@ This project's source of truth is its docs, not any chat history. **Start here:*
 | Table | **TanStack Table** v8 (sort / filter / column show-hide + reorder / editable cells); **@dnd-kit** for header drag |
 | Styling | **Tailwind CSS** v3 with a semantic design-token layer, dark theme (D-02, D-03) |
 | Testing | **Vitest** — `npm test` (D-04) |
-| Persistence | Browser **localStorage** for saved views only (D-05) |
-| Data | Mock in-repo fixture for now — real CBS + FantasyPros data is deferred (roadmap #2–3). |
+| Persistence | **SQLite** (`better-sqlite3`) for league data (D-10); browser **localStorage** for saved views only (D-05) |
+| Data | Real **CBS** (authenticated HTML, D-08) + **FantasyPros** (JSON API, HOF tier, D-09), joined on `cbs_player_id`. Fetched out-of-band, never at page load. |
 
 ## Running it locally
 
@@ -52,10 +52,18 @@ Requires [Node.js](https://nodejs.org). From the project folder:
 
 ```
 npm install     # once
-npm run dev      # then open http://localhost:3000
+
+npm run archive  # 1. save a fresh, dated snapshot of CBS + FantasyPros (needs credentials)
+npm run ingest   # 2. load those snapshots into the local database (validates loudly)
+npm run dev      # 3. open http://localhost:3000
 ```
 
-That opens the player-table prototype — one screen, mock data, no login. Ceilings you type reset on reload (expected for the prototype). Run the unit tests with `npm test`.
+Steps 1–2 are the data routine (~weekly, whenever you want fresh data); step 3 is the app.
+Credentials live in git-ignored `.env` files — see [`tools/archive/README.md`](tools/archive/README.md);
+check yours first with `npm run archive:check-cookie`. The database (`data/gart-dash.sqlite`) is
+git-ignored and disposable: delete it and `npm run ingest` rebuilds it from the raw archive.
+
+Run the unit tests with `npm test`.
 
 ## How we work
 
@@ -73,7 +81,7 @@ Follow [`docs/qa_test_plan.md`](docs/qa_test_plan.md) once checks exist. A featu
 
 ## Known limitations
 
-- Only the player-table **prototype** exists, and it runs on **mock data** — invented salaries and values, not real league data.
-- Neither data source is verified: CBS API access and FantasyPros access are both unproven (roadmap items #2–3).
-- Contract-length data may not live in CBS at all (roadmap open decision #1).
-- The 2026 Free Agent Auction is the fixed deadline the whole Now column is scoped to.
+- **No valuation engine yet** — Kerf value/ranks/tiers, Market Value, and Edge show "—", and the Ceiling box starts blank. That engine is the next roadmap item; everything it needs is now in the store.
+- **Data freshness is manual** — `npm run archive` then `npm run ingest`; nothing is scheduled (a scheduled run with an expired CBS cookie would silently collect nothing). The "League data as of" banner is the tell.
+- **Free agents come from the FantasyPros board**, not CBS's own free-agent page (that page is JavaScript-rendered and not captured yet).
+- Local only, single user, no login. The 2026 Free Agent Auction is the fixed deadline the whole Now column is scoped to.

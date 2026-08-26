@@ -47,6 +47,33 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-11 · 2026-08-25 · Dead cap is a team-level amount; Practice Squad is a status
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Both (schema + how the league's rules are modelled) |
+| **Decided by** | Product owner, 2026-08-25, on issue #11's evidence — closing roadmap open decision #7 |
+
+**The question**
+How are **dead-cap pseudo-rows** (commissioner-added cap hits for previously dropped players) and **Practice-Squad players** represented in the storage schema? This was the one open decision blocking issue #12's schema (D-10 approved the storage *shape* but explicitly not this).
+
+**What we decided**
+- **Practice Squad = a `roster_status` value** (`Active` / `Reserves` / `Injured` / `Practice`) on an ordinary roster/contract row. PS players are normal players with normal salaries and contracts — they count against the $500 cap but not roster-size limits — so they get no special table, just their status.
+- **Dead cap = a row in the same `contract` snapshot table with NO player attached** (`row_type = 'dead_cap'`, null `cbs_player_id`, the page's label text kept verbatim). The owner's framing: what matters is that **the amount exists for the team**, not which player it once was. Team cap sums are then a simple addition over one table.
+- Ingestion **refuses to classify silently**: a roster row with no player id *and* no salary is a loud failure, not a guess.
+
+**Why**
+Issue #11's evidence: a PS player is an ordinary player row in a `Practice` section (10 exist), and a dead-cap row is detectable as "salary but no player link" (0 exist pre-auction — the detection rule is confirmed, no live example yet). Both facts point at the simplest modelling: one roster-observation table, a status column, and a nullable player id.
+
+**What we gave up**
+A separate dead-cap table (cleaner separation, but structure we have no live example to justify) and synthetic "pseudo-player" records (would pollute the real player identity table and the CBS↔FantasyPros join). Also the ability to trace a dead-cap hit back to the specific dropped player — deliberately declined by the owner as not needed.
+
+**What would make us reconsider**
+The first real dead-cap rows appearing after the auction and not fitting this shape (e.g. CBS renders them with a player link after all, or per-player dead-cap tracking becomes a real need for the drop/dead-cap tool in the backlog). The `label` text is preserved verbatim precisely so a richer model could be back-filled from it.
+
+---
+
 ### D-10 · 2026-08-24 · Three-layer storage: raw file archive → SQLite (normalized + derived)
 
 | | |

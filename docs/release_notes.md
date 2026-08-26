@@ -41,6 +41,24 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-25 — The table is real: your actual league, in the app
+
+**New**
+- **The mock data is gone.** The player table now shows your **real KERFUFFLE league**: all 12 rosters with each player's **actual salary, contract length, and roster status**, the **real free-agent pool**, and **FantasyPros' real expert rankings and tiers** (overall + dynasty). Every number traces back to a dated snapshot you captured with `npm run archive`.
+- A new command, **`npm run ingest`**, turns your saved snapshots into a small local **database** (one file, `data/gart-dash.sqlite`, kept on your machine). It checks the league's rules as it loads — exactly 12 teams, every roster row is a real player or a recognized dead-cap amount, **no team over the $500 cap**, contract years 1–4 — and if anything looks wrong it **stops loudly and keeps your last good data untouched**. Re-running never duplicates anything.
+- The amber MOCK-DATA banner is replaced by a quiet one-liner: **"League data as of \<date\>"** — so you always know how fresh what you're looking at is.
+- **Tier bands are now FantasyPros' real tiers** (they appear when you sort by an ECR column, which is also the new default sort). **DST** is now a real position in the table and filters.
+- The archiver now captures the **entire transaction log** (all pages, ~60 entries), not just the first page.
+
+**Known issues / not yet done**
+- **Kerf Value, Kerf ranks/tiers, Market Value, and Edge show "—"** — those come from the valuation engine, which is the next build. The **Ceiling** box is editable but starts blank for the same reason (it pre-fills from Kerf Value once the engine exists).
+- **Proj Points** shows CBS's own projection for rostered players; free agents show "—" for now (their CBS projections live on a page that needs extra handling).
+- Three players on one rival roster currently have **blank salaries on CBS itself** — they show "—" and count $0 toward that team's cap until CBS fills them in.
+- Ceilings still reset on reload; the app is still local-only.
+
+**Requires action from you**
+- **One-time:** run `npm run ingest` once (it builds the database from the snapshots you already have). After that, your routine is: `npm run archive` (fresh snapshot) → `npm run ingest` (load it) → refresh the page.
+
 ## 2026-08-25 — Source profiler (a readable map of what's in the data)
 
 **New**

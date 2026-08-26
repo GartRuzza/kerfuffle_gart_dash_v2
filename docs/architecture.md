@@ -8,15 +8,15 @@
 >
 > **Describe what is real.** If a component is planned but not built, mark it **(planned)** explicitly.
 
-**Last updated:** 2026-08-25 · **Reflects commit:** feat/issue-10-raw-archival. *The **raw archive layer** (issue #10, `tools/archive/` → `data/raw/`) and the **source profiler** (issue #11, `tools/profile/` → `docs/profiles/`) now exist as offline operator tools; the rest of the D-10 storage architecture (SQLite normalized + derived, the data-access module) is still **(planned)**.*
+**Last updated:** 2026-08-25 · **Reflects commit:** feat/issue-12-storage-ingestion. *The D-10 storage architecture's **raw archive** (issue #10), **source profiler** (issue #11), and now the **normalized SQLite store + ingestion + data-access module** (issue #12) are real. The **derived layer** (engine outputs) is still **(planned)**.*
 
 ---
 
 ## The shape of it
 
-Gart Dash is a single [Next.js](https://nextjs.org) web app written in TypeScript. Today it is one screen: an interactive player table. The whole thing runs in the browser — you start it locally with `npm run dev`, and the page renders a table from a hand-authored mock-data file bundled into the app. There is no server logic, no database, no login, and no network calls yet. The same app is built so it can be deployed to the web later (e.g. Vercel) without rearchitecting — that is why the stack was chosen up front (decision [D-01](decision_log.md)).
+Gart Dash is a single [Next.js](https://nextjs.org) web app written in TypeScript. Today it is one screen: an interactive player table showing the **real KERFUFFLE league**. Data flows in three offline steps and one read path: `npm run archive` fetches CBS + FantasyPros and saves every response **verbatim** to `data/raw/` (append-only); `npm run ingest` parses the archive into a **normalized SQLite database** (`data/gart-dash.sqlite`, one file, `better-sqlite3`), validating the league's constitution invariants loudly; and the page (a server component, rendered per request) reads the flat **`board`** view through the single data-access module `lib/data/` and hands the table its `Player` rows. **The app never calls CBS or FantasyPros at request time** — it only ever reads the local store. No login. The same app deploys to the web later without rearchitecting (D-01); the file-SQLite store is the one contained exception (below).
 
-Everything the product will become — CBS + FantasyPros ingestion, the valuation engine, the auction/waiver/trade lenses — is **(planned)** and will grow inside this same app (server routes for data, a pure engine module), reusing this one table.
+Still **(planned)**, growing inside this same app: the valuation engine (a pure module + the derived DB layer) and the auction/waiver/trade lenses — all reusing this one table.
 
 ## The stack
 
@@ -28,21 +28,22 @@ Everything the product will become — CBS + FantasyPros ingestion, the valuatio
 | Testing | [Vitest](https://vitest.dev) (`npm test`) | Fast, TS-native unit tests for the pure logic (mock-data derivation, tier/sort/position rules, views model) | D-04 |
 | Drag & drop | [@dnd-kit](https://dndkit.com) | Accessible column-header drag-to-reorder, bound to TanStack `columnOrder` | D-05 |
 | Persistence | Browser **localStorage** (custom views only) | Local-first: saved views survive reloads with no backend. Per-browser, not synced. | D-05 |
-| Data source | In-repo mock fixture (`lib/mockData.ts`) | Prototype only — real data (CBS API, FantasyPros) is unverified and deliberately deferred (roadmap #2–3) | — |
-| Backend / API | **(planned)** — Next.js server routes | Real data ingestion + engine live here later, behind a clean boundary. Ingestion runs on a schedule (manual for now); the app never fetches CBS/FantasyPros at request time | D-01 |
-| Database | **(planned)** — **SQLite** via **`better-sqlite3`**, one file (normalized + derived layers) | Relational data (player → contract → team, transactions across seasons) plus the point-in-time history the price curve and backtest need; one file, zero setup, real SQL | [D-10](decision_log.md) |
-| Raw data archive | **Built (issue #10)** — `tools/archive/` (`npm run archive`) writes timestamped, dated folders under `data/raw/{timestamp}/{cbs,fantasypros}/` (CBS HTML, FP JSON) + a per-run `manifest.json`, append-only, git-ignored | Every fetched response saved verbatim, so a wrong parser is fixed by re-parsing the archive (never re-fetching), and un-snapshotted weeks aren't lost history. Capture only — no read path, no parsing, no DB yet | [D-10](decision_log.md) |
+| Data source | **Built (issue #12)** — the data-access module `lib/data/` (`board.ts` + pure `derive.ts`) reading the SQLite `board` view, read-only | THE read boundary (D-10): returns the `Player` shape from the latest ingested pull; free agents derived from the FantasyPros board; engine fields null until the engine exists. Replaced `lib/mockData.ts` | [D-10](decision_log.md) |
+| Ingestion | **Built (issue #12)** — `tools/ingest/` (`npm run ingest`), reusing the profiler's parsers; migrations in `db/` (`client.mjs` runner + `migrations/*.sql`) | Parses every archived run into the normalized store inside one transaction per run: header-name column mapping, deliberate coercion, loud constitution validation, idempotent upserts, `pull` lineage on every row | D-10, [D-11](decision_log.md) |
+| Backend / API | Server-component read (no API routes yet) | The one page is `force-dynamic` and calls `lib/data/` directly server-side; the app never fetches CBS/FantasyPros at request time. Dedicated routes can come with deployment | D-01 |
+| Database | **Built (issue #12)** — **SQLite** via **`better-sqlite3`** at `data/gart-dash.sqlite` (git-ignored), **normalized layer** + the `board` read view; the **derived layer is (planned)** for the engine issue | Relational data (player → contract → team, transactions across seasons) plus the point-in-time history the price curve and backtest need; one file, zero setup, real SQL. Rebuildable from the raw archive at any time | [D-10](decision_log.md) |
+| Raw data archive | **Built (issue #10; transactions pagination added in #12)** — `tools/archive/` (`npm run archive`) writes timestamped, dated folders under `data/raw/{timestamp}/{cbs,fantasypros}/` (CBS HTML incl. the full paginated transaction log, FP JSON) + a per-run `manifest.json`, append-only, git-ignored | Every fetched response saved verbatim, so a wrong parser is fixed by re-parsing the archive (never re-fetching), and un-snapshotted weeks aren't lost history. Capture only — `npm run ingest` is the read path | [D-10](decision_log.md) |
 | Source profiler | **Built (issue #11)** — `tools/profile/` (`npm run profile`) reads the latest `data/raw/` run and writes a committed, **shape-only** field profile to `docs/profiles/` (JSON + `PROFILE.md`) + the `/rules` scoring config in full. Uses **`node-html-parser`** (dev-only) for header-name column mapping | Turns source drift into a git diff; produces the field-shape evidence the schema (#12) is built on. Discovery/docs tooling — reads the local archive only, writes no DB, is not part of the app | [D-10](decision_log.md) |
 | Auth | **(none — single-user, local)** | One owner, one machine; no accounts by design (vision non-goal) | — |
 | Hosting / deploy | **(planned)** — Vercel | Local-first proves the tool; deployment waits (roadmap "Later") | D-01 |
 
 ## System boundaries
 
-- **The mock-data boundary — `lib/mockData.ts` is the only place invented data enters.** Every component reads the typed `Player` / `PlayerRow` shapes from `lib/types.ts`; none of them know the numbers are fake. When real CBS/FantasyPros data arrives, this one module is replaced (with a server route that returns the same shapes) and the UI does not change. **Do not scatter mock values through components**, and **do not grow a database around the `Player` type** — it is a fixture shape, not a schema. If a real schema becomes necessary, stop and flag the owner.
+- **The data-access boundary — `lib/data/` is the only place league data enters the app (built, issue #12; replaces the old mock-data boundary).** Every component reads the typed `Player` / `PlayerRow` shapes from `lib/types.ts`; only `lib/data/board.ts` touches the database (read-only), and only `tools/ingest/` writes it. Two rules ride on this boundary: (1) **the app never fetches CBS or FantasyPros at request/page-load time** — the archiver fetches out-of-band, ingest normalizes, the UI reads the store; (2) **the raw archive is append-only and never edited** — a wrong parse is fixed by re-parsing the archive (`npm run ingest -- --all`), never by re-fetching. This boundary is also what keeps the deploy path open: a later swap to Turso/Postgres touches `lib/data/` (and `db/`) only. **Do not scatter data reads through components, and do not grow tables from the `Player` type** — it is the read model's output; the schema lives in `db/migrations/` (`data_model.md`).
 - **One table, many filters.** There is exactly one table component. Flows differ only by how it is filtered (roster, position). Never add a dedicated per-flow screen (a "waiver screen", a "trade screen") that duplicates the table — that is the drift [`user_flows.md`](user_flows.md) exists to prevent.
-- **The prototype does no network I/O, and the only storage is localStorage.** No server calls, no login. In-session state (filters, sort, edited ceilings) lives in React memory and resets on reload; the sole persisted thing is **custom views** in `localStorage` (`lib/views.ts`, key `gartdash.customViews.v1`) — read on mount in a `useEffect` to stay SSR-safe. Keep it that way: localStorage holds UI config only, never domain data or anything sensitive.
+- **Client-side storage stays localStorage-only.** No login. In-session state (filters, sort, edited ceilings) lives in React memory and resets on reload; the sole browser-persisted thing is **custom views** in `localStorage` (`lib/views.ts`, key `gartdash.customViews.v1`) — read on mount in a `useEffect` to stay SSR-safe. Keep it that way: localStorage holds UI config only, never domain data or anything sensitive. Domain data lives server-side in the SQLite store.
 - **The raw-archive tool is a separate, offline operator process — not part of the app (built, issue #10).** `tools/archive/capture.mjs` (`npm run archive`) is a plain Node script the owner runs by hand; it fetches CBS + FantasyPros with the owner's credentials and writes each response verbatim to `data/raw/{timestamp}/`, append-only, with a per-run `manifest.json`. It reads credentials from the existing spike `.env` files and lives entirely outside the Next.js request path — so the "the app never fetches CBS/FantasyPros at request time" rule below is preserved (the tool *is* the out-of-band fetch). It does **only** capture: no parsing, no normalization, no database, and no read path back into the app yet (those are the planned layers below, issues #11/#12). `data/` and all credentials are git-ignored.
-- **(planned) The data-access boundary — one module, the same `Player` shape (D-10).** When real data lands, every read and write goes through a **single data-access module** that replaces `lib/mockData.ts` and returns the same typed `Player`/`PlayerRow` shapes, backed by the store: **raw file archive → SQLite (normalized + derived)**. Two rules ride on this boundary: (1) **the app never fetches CBS or FantasyPros at request/page-load time** — ingestion runs on a schedule (manual for now), writes to the store, and the UI reads only from the store; (2) **the raw archive is append-only and never edited** — a wrong parse is fixed by re-parsing the archive, not re-fetching. This is also what keeps the deploy path open (below): the store swap is contained to this one module.
+- **The ingest tool is a separate, offline operator process — not part of the app (built, issue #12).** `tools/ingest/ingest.mjs` (`npm run ingest`) is a plain Node script: it reads **only** the local raw archive (never the network), applies pending migrations, and normalizes each archived run inside one transaction with loud validation — so a bad page or failed invariant rolls back completely and the app keeps reading the last good pull. Re-running is idempotent; `--all` re-ingests after a parser fix.
 
 ## Styling & design tokens
 
@@ -80,9 +81,9 @@ to this behavior goes in that one module — never spread the rules into compone
 
 ### Rendering the table
 
-1. `app/page.tsx` (a server component, the one screen) renders `<PlayerTable />`.
-2. `components/PlayerTable.tsx` (`"use client"`) seeds React state from `MOCK_PLAYERS` (each row gets a `ceiling` = `kerfValue`) and builds a [TanStack Table](https://tanstack.com/table) from the flat column set in `components/columns.tsx`.
-3. It renders the header (drag-reorder via @dnd-kit, mounted client-side) and body, tinting columns into GartStats / Market / Contract-Info groups and injecting tier-band rows. Around it sit `ViewBar` (saved views), `ColumnPicker` (show/hide), `FilterBar` (roster toggle + Manager + position), and `DataDictionary` (the bottom overlay defined by `lib/dataDictionary.ts`).
+1. `app/page.tsx` (a server component, `force-dynamic` so the store is read per request) calls `getBoard()` from `lib/data/board.ts` — which opens `data/gart-dash.sqlite` read-only, reads the `board` view (latest pull) + team names, and derives display fields in `lib/data/derive.ts` — then renders `<DataBanner capturedAt=…/>` ("League data as of …", or a loud no-data state) and `<PlayerTable players teams />`.
+2. `components/PlayerTable.tsx` (`"use client"`) seeds React state from the passed players (each row gets a `ceiling` = `kerfValue` — null until the engine exists, so it starts blank) and builds a [TanStack Table](https://tanstack.com/table) from the flat column set in `components/columns.tsx`. Engine columns and real blanks render "—" and sort last (`sortUndefined`).
+3. It renders the header (drag-reorder via @dnd-kit, mounted client-side) and body, tinting columns into GartStats / Market / Contract-Info groups and injecting tier-band rows (FantasyPros' real tiers; a trailing "Unranked" band for players off that board). Around it sit `ViewBar` (saved views), `ColumnPicker` (show/hide), `FilterBar` (roster toggle + Manager + position incl. DST), and `DataDictionary` (the bottom overlay defined by `lib/dataDictionary.ts`).
 
 ### Editing a ceiling / filtering / sorting / views
 
@@ -95,13 +96,13 @@ to this behavior goes in that one module — never spread the rules into compone
 | | Local | Staging | Production |
 | --- | --- | --- | --- |
 | **URL** | http://localhost:3000 | — (none) | — (none) |
-| **Database** | none | — | — |
-| **How to run** | `npm install` (once), then `npm run dev` | — | — |
+| **Database** | `data/gart-dash.sqlite` (git-ignored; rebuild anytime with `npm run ingest`) | — | — |
+| **How to run** | `npm install` (once) · `npm run archive` → `npm run ingest` (data) · `npm run dev` (the app) | — | — |
 
 ## Constraints an agent must respect
 
-- **Mock data stays in `lib/mockData.ts`.** Nowhere else invents numbers. Everything else consumes the `Player` / `PlayerRow` types.
-- **No schema, no persistence, no auth, no network** in this prototype. Adding any of these is a structural change — update this doc and flag the owner first (per CLAUDE.md, these are sensitive areas).
+- **League data enters the app only through `lib/data/`; only `tools/ingest/` writes the store.** Everything else consumes the `Player` / `PlayerRow` types. No component reads the database, the raw archive, or the network.
+- **No request-time external fetches, no auth, no invented values.** Schema changes go through `db/migrations/` with owner approval (CLAUDE.md sensitive area — the current schema is approved via D-10/D-11).
 - **One table.** Filtered views, not new screens.
 - **Keep it deployable.** Nothing may assume a local-only environment in a way that would block a later Vercel deploy (e.g. reading the filesystem at request time). The (planned) **file-based SQLite store (D-10)** is the one deliberate exception, contained by design: a writable file doesn't survive serverless, so all access goes through the single data-access module and a later swap to **Turso/Postgres** touches only that module — no other code may assume file-SQLite.
 - Secrets, when they eventually exist, live in environment variables only — never in code or the repo.
@@ -110,11 +111,13 @@ to this behavior goes in that one module — never spread the rules into compone
 
 | Limit | Bites when | What it would take to fix |
 | --- | --- | --- |
-| All data is an in-memory mock fixture | The first real feature needs live CBS/FantasyPros data | Add server routes + a real data source behind the mock-data boundary; the `Player` shape likely grows into a real schema (`data_model.md`) |
-| No persistence — state resets on reload | The owner wants ceilings saved for auction day | Add storage (roadmap #7, "ceilings saved for auction day") — a deliberate later step |
+| Data freshness is manual (archive → ingest by hand) | The owner forgets a weekly snapshot; the banner date goes stale | Automated scheduling — deliberately deferred until cookie lifetime is solved (roadmap "Later") |
+| Free agents come from the FantasyPros board, not CBS's own FA page (`/players` is JS-rendered) | A deep, unranked FA isn't in the table; FA Proj Points are blank | Page/JS-render the `/players` capture; the board view already unions the two sources |
+| No engine — Kerf values/ranks/tiers, Market Value, Edge, and Ceiling seeds are blank ("—") | Every day until the valuation engine (next roadmap item) lands | The engine issue: derived layer + the pure engine module |
+| Client state resets on reload (edited ceilings) | The owner wants ceilings saved for auction day | The auction-prep lens item ("ceilings saved for auction day") — a deliberate later step |
 | Single-user, no auth | Never, by design | Out of scope permanently unless the vision changes |
 | Next.js 15 carries 3 high-severity transitive advisories (build-time postcss, unused sharp) | Before any public web deployment | Upgrade to Next 16 (a breaking major-dependency change — owner's call) and re-verify |
 
 ---
 
-**Related docs:** [`data_model.md`](data_model.md) (the entities behind this — none yet) · [`decision_log.md`](decision_log.md) (why these choices were made — D-01) · [`pm/current_state.md`](pm/current_state.md) (what of this is actually built)
+**Related docs:** [`data_model.md`](data_model.md) (the entities behind this — the normalized layer, migration 001) · [`decision_log.md`](decision_log.md) (why these choices were made — D-01, D-10, D-11) · [`pm/current_state.md`](pm/current_state.md) (what of this is actually built)

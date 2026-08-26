@@ -18,6 +18,8 @@ data/raw/2026-08-25T14-30-00Z/
   cbs/                     ← every CBS page, saved as raw .html
     roster-report-t1.html … roster-report-t12.html   (all 12 team rosters)
     teams-myteam.html, players-available.html, transactions.html,
+    transactions-all.html (print-all view), transactions-p31.html … (every
+    pagination page — the log is 30 rows/page; both forms are captured),
     rules.html, draft-results.html, … (the full league page set)
   fantasypros/             ← every FantasyPros response, saved as raw .json
     ecr-draft-ppr-all.json, ecr-dynasty-ppr-all.json, projections-all.json, …
@@ -50,7 +52,8 @@ Or without npm: `node tools/archive/check-cookie.mjs` and `node tools/archive/ca
 
 If a batch of CBS pages come back as **LOGIN REDIRECT**, your cookie expired — refresh
 it in `spikes/cbs-api/.env` and run again. If FantasyPros rows come back at ~520 with
-`public_api_limited: false` in the manifest, the HOF key is unlocking the full board.
+`tier: "premium"` in the manifest, the HOF key is unlocking the full board. (Do **not**
+judge by `public_api_limited` — it stays `true` even on HOF; see issue #11.)
 
 ## Deliberately out of scope
 

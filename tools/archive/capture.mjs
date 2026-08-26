@@ -15,6 +15,8 @@
 // OUT OF SCOPE (deliberately): parsing/normalization, any database, scheduling.
 // Historical seasons are NOT captured — the CBS year switch isn't a URL param
 // (see docs/cbs_data_discovery.md); this archives the CURRENT season only.
+// The transaction log IS captured completely (issue #12): the ?print_rows=9999
+// print-all view plus a walk of every ?start_row=N pagination page.
 //
 // RUN (from project root):  npm run archive   (or: node tools/archive/capture.mjs)
 // Node 18+ (built-in fetch). No npm install. Credentials come from the spike .env
@@ -67,7 +69,10 @@ async function captureCbs(runDir, responses) {
   }
 
   let ok = 0, failed = 0, loginRedirects = 0;
-  for (const page of cbsPages()) {
+
+  // Fetch one CBS page, write it verbatim, record it in the manifest.
+  // Returns the body so the transaction-pagination walk can discover further pages.
+  async function fetchCbsPage(page) {
     const url = `https://${host}${page.path}`;
     const fetched_at = new Date().toISOString();
     try {
@@ -96,6 +101,7 @@ async function captureCbs(runDir, responses) {
         `  cbs/${page.name.padEnd(20)} ${String(res.status).padEnd(4)} ${String(body.length).padStart(8)} bytes` +
           (loginRedirect ? "  ⚠ LOGIN REDIRECT (cookie expired?)" : "")
       );
+      return { body, ok: res.status >= 200 && res.status < 400 && !loginRedirect };
     } catch (err) {
       failed++;
       responses.push({
@@ -103,8 +109,54 @@ async function captureCbs(runDir, responses) {
         status: null, error: String(err?.message || err),
       });
       console.log(`  cbs/${page.name.padEnd(20)} ERROR ${err?.message || err}`);
+      return { body: "", ok: false };
     }
   }
+
+  let transactionsPage1 = null;
+  for (const page of cbsPages()) {
+    const result = await fetchCbsPage(page);
+    if (page.name === "transactions") transactionsPage1 = result;
+  }
+
+  // The transaction log is paginated (30 rows/page, plain ?start_row=N links) and
+  // page 1 also links a ?print_rows=9999 "print all" view. Un-captured pages are
+  // unrecoverable history, so capture BOTH: the print-all view (one complete page)
+  // and every start_row page discovered by walking the pagination links — the
+  // belt-and-suspenders in case either form is ever incomplete.
+  if (transactionsPage1?.ok) {
+    await fetchCbsPage({ name: "transactions-all", path: "/transactions?print_rows=9999" });
+    const TX_PAGE_CAP = 50; // safety cap; ~30 rows/page => covers 1500 transactions
+    const seen = new Set();
+    const queue = [];
+    const discover = (body) => {
+      for (const m of body.matchAll(/\/transactions\?start_row=(\d+)/g)) {
+        const startRow = Number(m[1]);
+        if (startRow > 1 && !seen.has(startRow)) {
+          seen.add(startRow);
+          queue.push(startRow);
+        }
+      }
+    };
+    discover(transactionsPage1.body);
+    let fetched = 0;
+    while (queue.length > 0 && fetched < TX_PAGE_CAP) {
+      const startRow = queue.shift();
+      await sleep(250); // be gentle
+      const result = await fetchCbsPage({
+        name: `transactions-p${startRow}`,
+        path: `/transactions?start_row=${startRow}`,
+      });
+      fetched++;
+      if (result.ok) discover(result.body); // windowed pagers reveal pages incrementally
+    }
+    if (queue.length > 0) {
+      console.log(`  ⚠ transaction pagination cap (${TX_PAGE_CAP}) hit — ${queue.length} page(s) NOT captured`);
+    }
+  } else {
+    console.log("  ⚠ transactions page 1 failed — skipping pagination walk + print-all view");
+  }
+
   if (loginRedirects > 0) {
     console.log(
       `\n  ⚠ ${loginRedirects} CBS page(s) redirected to login — your cookie is likely expired.` +
@@ -125,6 +177,7 @@ function fpProbes(sport, season) {
     { name: "ecr-draft-ppr-rb",    path: `/${sport}/${season}/consensus-rankings`, q: { type: "draft",   scoring: "PPR",  position: "RB" } },
     { name: "ecr-draft-ppr-op",    path: `/${sport}/${season}/consensus-rankings`, q: { type: "draft",   scoring: "PPR",  position: "OP" } }, // OP = superflex
     { name: "ecr-dynasty-ppr-all", path: `/${sport}/${season}/consensus-rankings`, q: { type: "dynasty", scoring: "PPR",  position: "ALL" } },
+    { name: "ecr-dynasty-std-all", path: `/${sport}/${season}/consensus-rankings`, q: { type: "dynasty", scoring: "STD",  position: "ALL" } },
     { name: "ecr-dynasty-ppr-qb",  path: `/${sport}/${season}/consensus-rankings`, q: { type: "dynasty", scoring: "PPR",  position: "QB" } },
     { name: "ecr-ros-ppr-all",     path: `/${sport}/${season}/consensus-rankings`, q: { type: "ros",     scoring: "PPR",  position: "ALL" } },
     { name: "ecr-weekly-ppr-all",  path: `/${sport}/${season}/consensus-rankings`, q: { type: "weekly",  scoring: "PPR",  position: "ALL", week: "1" } },

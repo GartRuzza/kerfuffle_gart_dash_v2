@@ -8,7 +8,7 @@
 >
 > **The rule that makes this doc real:** a feature is not "Built" in [`pm/current_state.md`](pm/current_state.md) until the checks below pass. When a check fails, that feature's status changes — to Partial, or to a known bug. Test results are the evidence behind every status in that doc, which is why this one keeps it honest.
 
-**Last updated:** 2026-08-25 · **Last full pass:** 2026-08-25 — the **source profiler (issue #11)** was verified end-to-end against the real archive (leak check passed, 0 leaks over 451 fields) and by 23 new unit tests; the **raw snapshot archiver (issue #10)** was verified by two live runs; the app's unit tests + build pass (manual interaction checks still ready for the owner to run). · **Result:** Automated checks pass (**44 unit tests** + clean build); the archiver's and profiler's checks pass; the app's manual interaction checks are pending owner sign-off.
+**Last updated:** 2026-08-25 · **Last full pass:** 2026-08-25 — **storage + ingestion (issue #12)** verified by 31 new unit tests (parsers, loud validation incl. the bad-fixture rejection, DB-level idempotency, board derivation), a real ingest of all 3 archived runs (485-player board), a clean build, and a rendered-page check on real data. · **Result:** Automated checks pass (**69 unit tests** + clean build + live ingest + render); the app's manual interaction checks on real data are pending owner sign-off.
 
 ---
 
@@ -17,32 +17,33 @@
 | | |
 | --- | --- |
 | **How to run them** | `npm test` (Vitest unit tests) and `npm run build` (compile + type-check + lint). |
-| **What they cover** | **Unit (44 tests): app (21)** — mock-data derivation incl. the **unique-rank invariant** (overall ECR/Dynasty ranks are 1..N and tiers stay contiguous — the guard for the tier-band bug), the tier/sort/position **state machine**, the **saved-views model**, and **data-dictionary coverage**. **Profiler (23, issue #11)** — type inference, blank-rate, the `/rules` scoring parser (flat/per-unit/tiered), and the **sanitizer safety invariant** (masking leaves no real value — the guard that keeps league data out of the public repo). **Build:** the app compiles clean and server-renders every column, tier bands, badges, the view selector, the column picker, the dictionary button, and drag-free headers. |
-| **What they do not cover** | Click/drag interactions in a real browser (drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. The profiler's end-to-end output is verified by running `npm run profile` (see its checks below). |
-| **Currently passing?** | Yes — `npm test` (**44/44**) and `npm run build` pass clean as of 2026-08-25. |
+| **What they cover** | **Unit (69 tests): app (20)** — board **derivation** (unique contiguous overall ranks even when raw ECR ties; real FantasyPros tiers; engine fields null; loud failure on a position the league doesn't roster), the tier/sort/position **state machine**, the **saved-views model**, and **data-dictionary coverage**. **Ingestion (26, issue #12)** — header-name column mapping (**missing header = loud failure**), deliberate coercion (`"$34"`→34; blank salary → null+warning; a decimal salary or an out-of-domain contract year fails loudly), the Players-cell/standings/transactions parsers, **dead-cap classification** (salary-without-id = dead cap; neither = refusal), and **end-to-end against a synthetic archive**: a full run ingests; **re-running is idempotent (no duplicates, DB-level)**; a roster **over the $500 cap is rejected loudly and rolls back completely**; a missing page or header rejects the run. **Profiler (23, issue #11)** — unchanged. **Build:** compiles clean; the page server-renders from the real store. |
+| **What they do not cover** | Click/drag interactions in a real browser (drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. A live `npm run ingest` against the real archive is its own check below. |
+| **Currently passing?** | Yes — `npm test` (**69/69**) and `npm run build` pass clean as of 2026-08-25. |
 
 ## Manual checks — the critical flows
 
-*This prototype serves [`user_flows.md`](user_flows.md) flow 1 (Auction prep), seeded with mock data. Run these after `npm install`.*
+*The table serves [`user_flows.md`](user_flows.md) flow 1 (Auction prep), now on **real league data**. Run these after `npm install` and at least one `npm run archive` + `npm run ingest`.*
 
-### The table (prototype, v2 dark redesign)
+### The table (real data, issue #12)
 
-**Setup:** In a terminal in the project folder, run `npm install` once, then `npm run dev`. Open http://localhost:3000.
+**Setup:** In a terminal in the project folder: `npm install` (once), `npm run ingest` (builds the database from your snapshots), then `npm run dev`. Open http://localhost:3000.
 
 | # | Do this | You should see | Pass? |
 | --- | --- | --- | --- |
-| 1 | Open the page | One **dark** screen: the player table, centered "Gart Dash" title, amber **"MOCK DATA"** bar on top. No login. | ☐ |
-| 2 | Read the header | Owner, Player, Pos, Team, then GartStats (Kerf Ovr Rank, Kerf Pos Rank, Proj Points, Kerf Value, Ceiling), Edge, Market (Market Value, Ovr ECR, Pos ECR, Dyn Ovr ECR, Dyn Pos ECR), Contract Info (Salary, Contract). A **color key** shows the three group tints. "Showing 79 of 79 players." | ☐ |
-| 3 | Look at the Pos column | Each is a **colored badge** — QB green, RB red, WR blue, TE tan. | ☐ |
-| 4 | On first load | Rows are sorted by **Kerf Ovr Rank** and **"Tier 1 / Tier 2 / …" band rows** separate the tiers. | ☐ |
-| 5 | Click the **Proj Points** header | Rows re-sort; the **tier bands disappear** (Proj Points isn't a rank column). Filled caret shows the sort direction. | ☐ |
-| 6 | Click **Kerf Ovr Rank** again | Overall Kerf tier bands come back. | ☐ |
-| 7 | Set Position = **QB**, then click **Kerf Pos Rank** | Only QBs show, banded by QB Kerf tiers (QB1 at top). | ☐ |
-| 8 | With Position = **All**, click **Kerf Pos Rank** | The app **auto-switches Position to QB** (positional rank needs one position) and shows QB tiers. | ☐ |
-| 9 | While positionally sorted, set Position back to **All** (or SuperFlex/Flex) | Sort falls back to Kerf Ovr Rank order with **no bands**, until you click a rank header again. | ☐ |
-| 10 | Sort by **Ovr ECR**, then **Dyn Ovr ECR** | Bands change to ECR-overall, then Dynasty-overall tiers — the band set follows the sort field. | ☐ |
-| 11 | Edit a **Ceiling** box (pre-filled with Kerf Value) | The row updates immediately and the value stays as you sort/filter. | ☐ |
-| 12 | Reload the page | Ceilings reset — expected for this prototype. | ☐ |
+| 1 | Open the page | One **dark** screen: the player table, centered "Gart Dash" title, and a quiet **"League data as of \<date\>"** line on top (the date of your latest snapshot). **No amber MOCK-DATA banner anywhere.** | ☐ |
+| 2 | Read the table | **Your real league**: your Rangoon Raccoons roster with each player's **actual salary and contract**, the 11 rival teams, and real free agents. "Showing ~485 of ~485 players" (grows as rankings change). | ☐ |
+| 3 | Check a few numbers against CBS | Pick 2–3 of your own players on the CBS site: salary, contract years, and roster status should match exactly. | ☐ |
+| 4 | On first load | Rows are sorted by **Ovr ECR** (the expert consensus board) with **"Tier 1 / Tier 2 / …" bands** — these are **FantasyPros' real tiers** now. At the bottom, rostered players FantasyPros doesn't rank sit under an **"Unranked"** band. | ☐ |
+| 5 | Look at the engine columns | **Kerf Ovr/Pos Rank, Kerf Value, Market Value, Edge show "—"**, and **Ceiling boxes start empty** — the valuation engine doesn't exist yet; nothing is invented to fill its columns. | ☐ |
+| 6 | Look at the Pos column | Colored badges — QB green, RB red, WR blue, TE tan, and **DST purple** (real DSTs are rostered in this league). | ☐ |
+| 7 | Set Position = **QB**, then click **Pos ECR** | Only QBs show, banded by tier, QB1 at the top. | ☐ |
+| 8 | With Position = **All**, click **Pos ECR** | The app **auto-switches Position to QB** (positional rank needs one position). | ☐ |
+| 9 | While positionally sorted, set Position back to **All** (or SuperFlex/Flex) | Sort falls back to the overall order with no positional bands, until you click a rank header again. | ☐ |
+| 10 | Sort by **Salary** (descending) | Your league's most expensive contracts on top; free agents ("—" salary) at the bottom — blanks always sort last. | ☐ |
+| 11 | Type a number in a **Ceiling** box | The row updates immediately and the value stays as you sort/filter. Clearing the box returns it to blank. | ☐ |
+| 12 | Reload the page | Ceilings reset (still session-only — persistence comes with the auction-prep work). | ☐ |
+| 13 | Roster toggle → **Free Agents** | Real available players (from the expert board), salary "—". Toggle **Rostered** → only the 12 teams' players. | ☐ |
 
 ### The view system (Phase 2)
 
@@ -90,21 +91,36 @@
 
 **Known, not failures:** the `adp` endpoint shows `403` and dead-cap pseudo-rows show `0` (there are none pre-auction) — both are correct findings, not errors. The **leak check failing** *is* a real failure and blocks all writes — investigate before committing.
 
+### Ingestion — raw archive → database (issue #12)
+
+*An operator command — no UI. It reads the local raw archive (never the network) and builds/updates the SQLite database the app reads. Requires at least one `npm run archive` run to exist.*
+
+| # | Do this | You should see | Pass? |
+| --- | --- | --- | --- |
+| 1 | Run `npm run ingest` | On first run: "migration applied: 001…", then one **`✔`** line per archive run — `teams:12 players:~170 … rules:24 boards:9 rankings:~3800` — and a closing **"Board view: N players (N rostered, N free agents)"**. | ☐ |
+| 2 | Run `npm run ingest` **again** | "to ingest: 0" — already-ingested runs are skipped; the board summary is **unchanged**. | ☐ |
+| 3 | Run `npm run ingest -- --all` | Every run re-ingests and the board summary is **still identical** — re-running never duplicates anything. | ☐ |
+| 4 | Read the `⚠` warnings on a run | Currently expected: **three t7 players with blank salaries on CBS itself** (stored as unknown, counted $0). Warnings are informational; a **`✘ ROLLED BACK`** line is a real failure — read its reason. | ☐ |
+| 5 | Look in `data/` | `gart-dash.sqlite` exists; `git status` shows **nothing under `data/`** (git-ignored). | ☐ |
+| 6 | (Optional, destructive-safe) Delete `data/gart-dash.sqlite`, run `npm run ingest` | The database rebuilds completely from the raw archive — the DB is disposable; the archive is the history. | ☐ |
+
+**What validation protects you from (proven by unit tests, not to try live):** a roster summing **over the $500 cap**, a missing/renamed column header, a missing roster page, an unparseable scoring rule, an unclassifiable roster row, or **the same player showing on two rosters** each **reject the whole run loudly and roll back** — the app keeps showing the last good data.
+
 ## Edge cases and things that should fail gracefully
 
 | # | Try this | It should | Pass? |
 | --- | --- | --- | --- |
 | 1 | Filter to a rival team **and** a position with no players on it (e.g. a team with no TE) | Show "No players match these filters." — never a blank/broken table. | ☐ |
-| 2 | Clear a Ceiling box (delete the number) | Treat it as 0 rather than breaking the row. | ☐ |
+| 2 | Clear a Ceiling box (delete the number) | Return to blank ("—"-style empty box) rather than breaking the row. | ☐ |
 | 3 | Narrow the browser window | The table scrolls sideways inside its own box; the horizontal scrollbar is reachable **without scrolling to the bottom**, and the header stays pinned while you scroll rows. | ☐ |
 | 4 | Sort by **Ovr ECR**, then **Dyn Ovr ECR** (regression: tier-band bug) | Tier bands are clean — in order, no repeats — and there is **no console error**. | ☐ |
 | 5 | Open the browser console on load (regression: hydration bug) | **No hydration / console errors** appear. | ☐ |
 
 ## Security and permissions checks
 
-**The app** (player table prototype) has no login, no accounts, no permissions, no database, no network calls, and no user input beyond the in-memory Ceiling boxes — deliberately, since Issue #1 is UI-only.
+**The app** has no login, no accounts, and no permissions. It opens the local database **read-only** and makes **no network calls at request time** — only the archiver (an operator command you run yourself) ever talks to CBS/FantasyPros. Real league data lives only in `data/` (git-ignored, never committed or uploaded).
 
-**The raw snapshot archiver (issue #10)** is the first thing that handles credentials and talks to the network, so it gets its own checks:
+**The raw snapshot archiver (issue #10)** handles the credentials and the network, so it gets its own checks:
 
 | # | Check | Expectation | Pass? |
 | --- | --- | --- | --- |
@@ -118,7 +134,8 @@
 | Area | State | Why |
 | --- | --- | --- |
 | Click-level interactions in a real browser (sort, filter, inline edit) | Untested by automation | The pure logic under them (tier rules, derivation) is unit-tested; the DOM wiring is not yet — covered by the manual checks above. Add component tests (Testing Library) when it stabilizes. |
-| Everything downstream of mock data | Not built | No real data, engine, or persistence exists yet — see [`pm/current_state.md`](pm/current_state.md). |
+| Dead-cap rows against real data | Untested live | Zero exist pre-auction. The classification is unit-tested against synthetic fixtures; the first real one (post-auction cut) should be spot-checked in the DB and warnings. |
+| The valuation engine and everything downstream | Not built | Engine columns deliberately show "—" — see [`pm/current_state.md`](pm/current_state.md). |
 
 ---
 

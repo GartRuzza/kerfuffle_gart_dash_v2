@@ -32,8 +32,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import { MOCK_PLAYERS, TEAMS } from "@/lib/mockData";
-import type { PlayerRow, PositionFilter } from "@/lib/types";
+import type { Player, PlayerRow, PositionFilter } from "@/lib/types";
 import {
   positionAfterSort,
   shouldClearSortOnPositionChange,
@@ -139,9 +138,17 @@ const GROUP_LEGEND = [
 
 const FULL_VIEW = DEFAULT_VIEWS.find((v) => v.id === DEFAULT_VIEW_ID)!;
 
-export default function PlayerTable() {
+interface Props {
+  /** Real league data from the data-access module (lib/data/board.ts). */
+  players: Player[];
+  /** The fantasy team names for the Manager filter (owner's team first). */
+  teams: string[];
+}
+
+export default function PlayerTable({ players, teams }: Props) {
   const [data, setData] = useState<PlayerRow[]>(() =>
-    MOCK_PLAYERS.map((p) => ({ ...p, ceiling: p.kerfValue })),
+    // Ceiling seeds from the Kerf model's value — null (blank) until the engine exists.
+    players.map((p) => ({ ...p, ceiling: p.kerfValue })),
   );
 
   const [sorting, setSorting] = useState<SortingState>(FULL_VIEW.state.sorting);
@@ -214,7 +221,7 @@ export default function PlayerTable() {
     return f;
   }, [manager, rosterMode, positionFilter]);
 
-  const updateCeiling = (rowIndex: number, value: number) =>
+  const updateCeiling = (rowIndex: number, value: number | null) =>
     setData((old) => old.map((row, i) => (i === rowIndex ? { ...row, ceiling: value } : row)));
 
   const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
@@ -265,19 +272,21 @@ export default function PlayerTable() {
   const { showTiers, tierField } = tierPlan(sorting[0]?.id, positionFilter);
 
   // Build the body, inserting a tier band whenever the tier value changes.
-  // Band keys carry a running index so they never collide even if (defensively)
-  // a tier value ever appeared in two groups.
+  // A null tier (player not on that ranking board) gets one "Unranked" band —
+  // those rows sort to the bottom, so it appears once at the end. Band keys
+  // carry a running index so they never collide even if (defensively) a tier
+  // value ever appeared in two groups.
   const body: ReactNode[] = [];
-  let lastTier: number | null = null;
+  let lastTier: number | null | undefined = undefined;
   let bandIdx = 0;
   rows.forEach((row) => {
     if (showTiers && tierField) {
-      const t = row.original[tierField] as number;
+      const t = row.original[tierField] as number | null;
       if (t !== lastTier) {
         body.push(
           <tr key={`band-${bandIdx++}`}>
             <td colSpan={leafCount} className="border-y-2 border-tier-line bg-tier-band px-3 py-1 text-xs font-bold uppercase tracking-wide text-tier-text">
-              Tier {t}
+              {t == null ? "Unranked" : `Tier ${t}`}
             </td>
           </tr>,
         );
@@ -348,7 +357,7 @@ export default function PlayerTable() {
 
       <div className="mb-3">
         <FilterBar
-          teams={TEAMS}
+          teams={teams}
           manager={manager}
           onManagerChange={setManager}
           rosterMode={rosterMode}

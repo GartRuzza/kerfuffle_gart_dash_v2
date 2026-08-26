@@ -53,6 +53,46 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-25 — Storage schema + ingestion: the table is on real data (issue #12)
+
+**Ticket / Issue:** [#12](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/12) · **Branch:** feat/issue-12-storage-ingestion · **Deviated from plan:** Small, additive deviations — the issue's core was built as written.
+
+**Original intent**
+Build the D-10 normalized SQLite store (`better-sqlite3`): migrations for the seven entities, ingestion parsers (header-name mapping, deliberate coercion, loud validation of the constitution invariants), `pull` lineage on every row, idempotent upserts, temp-validate-swap writes, and the flat board view — replacing `lib/mockData.ts` behind the same `Player` shape. Blocked-on decision (dead cap / Practice Squad) resolved by the owner before the build: PS = a status; dead cap = a team-level row with no player id (D-11).
+
+**What was actually built**
+Everything the issue asked: `db/migrations/001` + a tiny runner, `npm run ingest` (`tools/ingest/`) reading every archived run in date order inside one transaction per run (rollback = temp-validate-swap), all invariants enforced loudly (12 teams, id-or-dead-cap, cap ≤ $500 incl. IR, contract years 1–4, header-name mapping), idempotent re-ingest proven at DB level, the `board` view, and a data-access module (`lib/data/`) feeding the UI real data — mock module deleted, banner replaced with "League data as of \<date\>". 69 unit tests pass (31 new), build clean, rendered with the real league (485 players: 170 rostered + 315 FAs).
+
+**Deviations**
+1. **The archiver grew transaction pagination** (strictly #10 territory): CBS's transaction log is paginated and only page 1 was being captured. Owner approved. Pagination is plain URL params; both the `?print_rows=9999` print-all view and every `?start_row=N` page are captured (proven live: 60 transactions, was 27).
+2. **The `Player` shape got nullable fields instead of staying identical.** The issue said "same `Player` shape"; in truth engine outputs (Kerf values/ranks/tiers, market value) don't exist yet, and real data has real blanks (FA salaries, unranked players). Fields became `number | null` and the UI renders "—". Same columns, honest values.
+3. **CBS's own `Proj` column is stored and shown** (`contract.proj_points` → "Proj Points") — real, traceable source data the roster page already carries; without it the column would sit empty for no reason. FAs show "—" (their projections live on the JS-rendered `/players` page).
+4. **DST became a real position** (the league rosters DSTs — profiler evidence); position filters updated (SuperFlex excludes DST; a DST option added).
+5. **Default sort moved from Kerf Ovr Rank to Ovr ECR** — the Kerf ranks are blank pre-engine, so the load order is the real FantasyPros board (which also makes tier bands real tiers on load). Display board per owner: **draft, standard scoring** (closest to a first-downs league; trivially changeable).
+6. **`transaction` table is named `league_transaction`** (`TRANSACTION` is a SQL keyword). CBS's log has no type column, so the type is **inferred from the row text** ("- Dropped" → `Dropped`) with the raw text kept verbatim.
+7. **FP payloads self-describe their board, and the file name lies sometimes:** the dynasty board is scoring-agnostic (the "-std" and "-ppr" dynasty files are byte-identical) and the pre-season "ROS" request returns the draft board. Ingestion trusts the payload's declaration and dedupes — 9 distinct boards per pull, not 11 files.
+
+**Why we deviated**
+(1) un-captured transactions are unrecoverable history — the archive exists precisely for this; (2–4) the plan was written before we could see real blanks, real DSTs, and CBS's own projections; (5) a default sort on an all-blank column would render an arbitrary order; (6–7) reality of SQL keywords and the FP API.
+
+**Product implications**
+- The owner now looks at **his actual league** in the tool: real rosters, salaries, contracts, transactions, rules, and market ranks — every value traceable to a dated raw snapshot (`pull` lineage). The routine is `npm run archive` → `npm run ingest` → refresh.
+- The engine (roadmap #7) has everything it was waiting for: the parsed scoring rules in SQL, contract history accruing per pull, and the ranking boards at their proper grain.
+- The Kerf/engine columns visibly show "—" until the engine lands — the table is honest about what's computed vs. sourced.
+- Three rostered players currently have **blank salaries on CBS itself** (t7) — shown as "—", counted $0 toward the cap, warned on every ingest. Worth watching after the auction.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| FA rows come from the FantasyPros board, not CBS's own free-agent page | `/players` is JS-rendered — not in the static archive | An unranked FA (deep bench stash) isn't in the table; FA "Proj Points" blank | Page/JS-render the `/players` capture later; the board view already unions rostered + FA sources |
+| Transaction `players_text` is one verbatim cell; type is inferred, no per-player normalization | CBS gives no type column; full enumeration needs in-season variety | FAB analysis needs parsing later; unknown future type labels land as-is | Parse `players_text` into per-player moves when the price-curve work needs it — raw text is all preserved |
+| Salary is INTEGER; a decimal salary would fail ingestion loudly | League deals in whole dollars; a decimal means CBS changed something | An intentional CBS change to fractional salaries blocks ingest until we look | One-line migration + coercion change — deliberate tripwire, not an accident |
+| `posEcrTier`/`dynPosTier` reuse the overall board's tier | FP's positional boards weren't ingested for STD; overall tiers group identically within one position | Positional tier bands are the overall tiering filtered — fine until someone wants FP's per-position tiers | Ingest positional STD boards (archiver probe + grain already support it) |
+
+**Follow-up decisions needed from the product owner**
+None. (D-11 was decided before the build; the display-board choice — draft/standard — was decided in the same conversation.)
+
 ### 2026-08-25 — Source-profiling spike (CBS field inventory + FantasyPros HOF re-verification)
 
 **Ticket / Issue:** [#11](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/11) · **Branch:** feat/issue-10-raw-archival · **Deviated from plan:** Yes (one owner decision changed the deliverable's contents; findings corrected several plan assumptions)

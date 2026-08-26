@@ -1,9 +1,11 @@
 import type { RowData } from "@tanstack/react-table";
 
-export type Position = "QB" | "RB" | "WR" | "TE";
-export const POSITIONS: Position[] = ["QB", "RB", "WR", "TE"];
-/** "Flex" grouping — RB/WR/TE (excludes QB). */
+export type Position = "QB" | "RB" | "WR" | "TE" | "DST";
+export const POSITIONS: Position[] = ["QB", "RB", "WR", "TE", "DST"];
+/** "Flex" grouping — RB/WR/TE (excludes QB and DST). */
 export const FLEX_POSITIONS: Position[] = ["RB", "WR", "TE"];
+/** "SuperFlex" grouping — QB/RB/WR/TE (excludes DST). */
+export const SUPERFLEX_POSITIONS: Position[] = ["QB", "RB", "WR", "TE"];
 
 /** Position filter value: individual positions plus the multi-position groups. */
 export type PositionFilter = "ALL" | "SUPERFLEX" | "FLEX" | Position;
@@ -20,54 +22,65 @@ export const MY_TEAM = "Rangoon Raccoons";
 export const FREE_AGENT = "FA";
 
 /**
- * One player as shown in the table.
+ * One player as shown in the table — REAL league data (issue #12).
  *
- * ⚠ MOCK-DATA BOUNDARY. A flat, hand-authored + derived fixture shape for the UI
- * prototype ONLY — NOT a real data schema. When real CBS / FantasyPros data
- * arrives (roadmap #2–3), `lib/mockData.ts` is the single module replaced. The
- * six `*Tier` fields and the derived ranks below are mock: real tiers come from
- * the engine (Kerf) and FantasyPros (ECR). If a real schema becomes necessary,
- * stop and flag the owner (per Issue #1).
+ * Produced only by the data-access module (`lib/data/`), which reads the
+ * normalized SQLite store's flat `board` view (decision D-10): CBS rosters,
+ * salaries and contracts joined with FantasyPros consensus rankings, with
+ * free agents derived from the ranking board. `id` is the CBS player id —
+ * the join key both sources publish.
+ *
+ * Nullability is meaningful:
+ *  - Engine outputs (`kerfValue`, `marketPrice`, the `kerf*` ranks/tiers) are
+ *    null for everyone — the valuation engine doesn't exist yet (it is a later
+ *    roadmap item). The UI renders them as "—".
+ *  - `salary`/`contractYears` are null for free agents (meaningfully: no
+ *    contract) and, rarely, for rostered players CBS shows blank.
+ *  - ECR fields are null for rostered players FantasyPros doesn't rank.
+ *  - `projPts` is CBS's own KERFUFFLE-scored season projection (source data,
+ *    not engine output); null for free agents for now.
  */
 export interface Player {
+  /** CBS player id (the CBS↔FantasyPros join key), as a string row id. */
   id: string;
   name: string;
   pos: Position;
   nflTeam: string;
-  owner: string; // fantasy team, or FREE_AGENT ("FA")
+  owner: string; // fantasy team name, or FREE_AGENT ("FA")
 
-  // --- Hand-authored ---
-  /** @deprecated Legacy single tier; superseded by the six `*Tier` fields. */
-  tier: number;
-  kerfValue: number; // "Kerf Value" ($)
-  marketPrice: number; // displayed as "Market Value" ($)
-  ecr: number; // "Ovr ECR" — overall expert consensus rank (lower = better)
-  dynastyEcr: number; // "Dyn Ovr ECR" — overall dynasty rank (lower = better)
-  salary: number; // $ (0 for FAs)
-  contractYears: number | null; // years remaining; null for FAs
+  // --- Engine outputs (null until the valuation engine exists) ---
+  kerfValue: number | null; // "Kerf Value" ($)
+  marketPrice: number | null; // "Market Value" ($)
+  kerfOvrRank: number | null;
+  kerfPosRank: number | null;
+  kerfOvrTier: number | null;
+  kerfPosTier: number | null;
 
-  // --- Derived (computed in mockData.ts) ---
-  projPts: number; // "Proj Points" — mock projected KERFUFFLE points
-  kerfOvrRank: number; // "Kerf Ovr Rank" — overall, by Kerf value
-  kerfPosRank: number; // "Kerf Pos Rank" — within position, by Kerf value
-  ovrEcrRank: number; // "Ovr ECR" — unique overall rank by ECR (display + sort)
-  posEcr: number; // "Pos ECR" — within position, by ECR
-  dynOvrRank: number; // "Dyn Ovr ECR" — unique overall rank by dynasty ECR
-  dynPosEcr: number; // "Dyn Pos ECR" — within position, by dynasty ECR
+  // --- CBS (contract snapshot, latest pull) ---
+  salary: number | null; // whole $; null = free agent / unassigned
+  contractYears: number | null; // 1–4; null for free agents
+  projPts: number | null; // CBS's KERFUFFLE-scored season projection
 
-  // --- Six tier dimensions (one per rank column that shows tier bands) ---
-  kerfOvrTier: number;
-  kerfPosTier: number;
-  ovrEcrTier: number;
-  posEcrTier: number;
-  dynOvrTier: number;
-  dynPosTier: number;
+  // --- FantasyPros (draft STD board + dynasty board, latest pull) ---
+  ecr: number | null; // raw overall ECR (draft, standard scoring)
+  dynastyEcr: number | null; // raw overall dynasty ECR
+  ovrEcrRank: number | null; // unique contiguous overall rank (display + sort)
+  posEcr: number | null; // rank within position
+  dynOvrRank: number | null; // unique contiguous overall dynasty rank
+  dynPosEcr: number | null; // dynasty rank within position
+  ovrEcrTier: number | null; // FantasyPros' real tier (draft board)
+  posEcrTier: number | null;
+  dynOvrTier: number | null; // FantasyPros' real tier (dynasty board)
+  dynPosTier: number | null;
 }
 
 /** A table row: a Player plus the owner's editable, in-session ceiling ($). */
 export interface PlayerRow extends Player {
-  /** Editable; initialized to `kerfValue`. Resets on reload (by design). */
-  ceiling: number;
+  /**
+   * Editable; seeded from `kerfValue` (the Kerf model) — which is null until
+   * the engine exists, so it starts blank. Resets on reload (by design).
+   */
+  ceiling: number | null;
 }
 
 /**
@@ -76,6 +89,6 @@ export interface PlayerRow extends Player {
  */
 declare module "@tanstack/react-table" {
   interface TableMeta<TData extends RowData> {
-    updateCeiling: (rowIndex: number, value: number) => void;
+    updateCeiling: (rowIndex: number, value: number | null) => void;
   }
 }
