@@ -84,19 +84,21 @@ const DOCS: Record<
   },
   marketPrice: { definition: "What the league is expected to pay for the player.", placeholder: true },
   ecr: {
-    definition: "The player's overall expert consensus rank — lower is better.",
+    definition: "Overall expert consensus rank, on a superflex board — lower is better.",
     deepDive: [
-      "Source: FantasyPros' draft board, standard scoring, from up to 110 experts.",
+      "Source: FantasyPros' draft board — standard scoring, SUPERFLEX — from ~106 experts.",
+      "Superflex matters enormously here: because KERFUFFLE starts two QBs, quarterbacks fill the top of this board. On an ordinary 1-QB board the same players sit ~20 spots lower.",
       "Shown as a clean 1-2-3 ordering rather than the raw consensus number (which has ties).",
       "No board matches KERFUFFLE exactly — this league scores first downs, not receptions — so treat it as the market's view, not ours.",
-      "Sorting by this column groups players into FantasyPros' real tier bands.",
+      'Team defenses are blank ("—") here: the superflex board covers offensive players only. See Pos ECR for their ranking.',
     ],
     placeholder: false,
   },
   posEcr: {
     definition: "The player's expert consensus rank within his position.",
     deepDive: [
-      "Source: FantasyPros' draft board (e.g. WR12 = the 12th-ranked receiver).",
+      "Source: FantasyPros' superflex draft board (e.g. WR12 = the 12th-ranked receiver).",
+      "Team defenses get their DST1/DST2 rank from the 1-QB board, which is the only one that ranks them.",
       "Tier bands on this sort use the overall board's tier numbers, so the first band may not read 'Tier 1'.",
     ],
     placeholder: false,
@@ -104,14 +106,15 @@ const DOCS: Record<
   dynastyEcr: {
     definition: "Overall dynasty consensus rank — values future seasons, not just this one.",
     deepDive: [
-      "Source: FantasyPros' dynasty board (one board; it isn't split by scoring format).",
+      "Source: FantasyPros' dynasty board, superflex. Dynasty isn't split by scoring format — there is one dynasty board per league shape.",
       "Useful against contract length: a young player on a long deal is worth more here.",
+      'Blank ("—") for team defenses, same as Ovr ECR.',
     ],
     placeholder: false,
   },
   dynPosEcr: {
     definition: "The player's dynasty consensus rank within his position.",
-    deepDive: ["Source: FantasyPros' dynasty board."],
+    deepDive: ["Source: FantasyPros' superflex dynasty board (defenses come from the 1-QB board)."],
     placeholder: false,
   },
   salary: {

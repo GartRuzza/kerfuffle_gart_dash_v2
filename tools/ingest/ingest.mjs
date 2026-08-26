@@ -348,16 +348,23 @@ function ingestRunInner(db, runId, { warn, note }, rawRoot) {
       stats.rankingRows++;
     }
   }
-  // The display board the UI reads must exist (owner decision: draft + STD).
-  const hasDisplayBoard = db
-    .prepare(
-      `SELECT COUNT(*) c FROM market_ranking
-       WHERE pull_id = ? AND ranking_type='draft' AND scoring_format='STD' AND position_scope='ALL'`
-    )
-    .get(pullId).c;
-  if (hasDisplayBoard === 0) {
-    throw new IngestError(`${runId}: the draft/STD/ALL FantasyPros board is missing — the UI's display board`);
-  }
+  // The boards the UI reads must exist. The display board is draft/STD/OP —
+  // superflex, per the owner (this league starts two QBs); the ALL board is
+  // still required because it is the only one that ranks team defenses.
+  const requireBoard = (where, label) => {
+    const n = db
+      .prepare(`SELECT COUNT(*) c FROM market_ranking WHERE pull_id = ? AND ${where}`)
+      .get(pullId).c;
+    if (n === 0) {
+      throw new IngestError(`${runId}: the ${label} FantasyPros board is missing — the UI reads it`);
+    }
+  };
+  requireBoard(`ranking_type='draft' AND scoring_format='STD' AND position_scope='OP'`, "draft/STD/OP (superflex)");
+  requireBoard(`ranking_type='dynasty' AND position_scope='OP'`, "dynasty/OP (superflex)");
+  requireBoard(
+    `ranking_type='draft' AND scoring_format='STD' AND position_scope='ALL' AND player_pos='DST'`,
+    "draft/STD/ALL (the only board that ranks defenses)"
+  );
   if (noCbsId > 0) note(`fp: ${noCbsId} ranking row(s) have no cbs_player_id (unjoinable; kept in market_ranking, excluded from the board view)`);
 
   return stats;

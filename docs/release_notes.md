@@ -41,6 +41,19 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-26 — Rankings now reflect that KERFUFFLE is a superflex league
+
+**Fixed**
+- **The expert rankings were from a 1-quarterback board — the wrong one for your league.** Because KERFUFFLE starts two QBs, quarterbacks are worth far more than a standard board says. The table now uses FantasyPros' **superflex** rankings (still standard scoring, as you wanted — you get both). The difference is not subtle: your top five quarterbacks were shown at overall **23rd, 27th, 35th, 43rd and 50th**. They are now **1st through 5th**, which is what a two-QB league actually looks like. Going into the auction with the old numbers would have meant badly underbidding on QBs.
+- Dynasty rankings switched to the superflex dynasty board too, for the same reason.
+
+**Known issues / not yet done**
+- **Team defenses show "—" for overall rank.** FantasyPros' superflex board covers offensive players only. Defenses keep their positional rank (DST1, DST2…) and tier from the standard board, and sort to the bottom of overall-rank sorts — which is where defenses belong in a superflex league. Your rostered defenses still show their real salary and contract.
+- Everything else is unchanged: the engine columns (Kerf Value, Edge, Market Value) still show "—" until the valuation engine is built.
+
+**Requires action from you**
+- Nothing beyond the usual: `npm run archive` then `npm run ingest`. (Already done for you on this build — the new rankings are loaded.)
+
 ## 2026-08-25 — The table is real: your actual league, in the app
 
 **New**

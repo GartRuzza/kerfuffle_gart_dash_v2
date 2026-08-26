@@ -176,6 +176,10 @@ function fpProbes(sport, season) {
     { name: "ecr-draft-ppr-qb",    path: `/${sport}/${season}/consensus-rankings`, q: { type: "draft",   scoring: "PPR",  position: "QB" } },
     { name: "ecr-draft-ppr-rb",    path: `/${sport}/${season}/consensus-rankings`, q: { type: "draft",   scoring: "PPR",  position: "RB" } },
     { name: "ecr-draft-ppr-op",    path: `/${sport}/${season}/consensus-rankings`, q: { type: "draft",   scoring: "PPR",  position: "OP" } }, // OP = superflex
+    // THE display board (owner decision 2026-08-26): standard scoring + superflex.
+    // KERFUFFLE starts two QBs, so a 1-QB board ranks QBs ~20 spots too low.
+    { name: "ecr-draft-std-op",    path: `/${sport}/${season}/consensus-rankings`, q: { type: "draft",   scoring: "STD",  position: "OP" } },
+    { name: "ecr-dynasty-op",      path: `/${sport}/${season}/consensus-rankings`, q: { type: "dynasty", scoring: "STD",  position: "OP" } }, // dynasty is scoring-agnostic
     { name: "ecr-dynasty-ppr-all", path: `/${sport}/${season}/consensus-rankings`, q: { type: "dynasty", scoring: "PPR",  position: "ALL" } },
     { name: "ecr-dynasty-std-all", path: `/${sport}/${season}/consensus-rankings`, q: { type: "dynasty", scoring: "STD",  position: "ALL" } },
     { name: "ecr-dynasty-ppr-qb",  path: `/${sport}/${season}/consensus-rankings`, q: { type: "dynasty", scoring: "PPR",  position: "QB" } },

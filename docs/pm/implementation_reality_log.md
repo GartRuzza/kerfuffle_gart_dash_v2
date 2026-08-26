@@ -53,6 +53,40 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-26 — The market board was the wrong one: switched to superflex (D-12)
+
+**Ticket / Issue:** [#12](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/12) follow-up · **Branch:** feat/issue-12-storage-ingestion · **Deviated from plan:** Yes — corrects a choice made during the build.
+
+**Original intent**
+Display FantasyPros consensus rankings beside real league state. The build shipped the **draft / standard / ALL** board, chosen in conversation on 2026-08-25.
+
+**What was actually wrong**
+`ALL` is a **1-QB** board. KERFUFFLE starts **two** quarterbacks. The owner caught it the next day. Measured on the live board, the error was large and one-directional: the first five QBs ranked **23/27/35/43/50** on the board we were showing, versus **1/2/3/4/5** on the superflex board, and the 1-QB top twelve contained **no quarterbacks at all**. The owner would have walked toward an auction reading a board that systematically underpriced the most expensive position on his roster.
+
+**What was built**
+Research first (the owner asked for it before any change), and it resolved the anticipated trade-off in our favour: FantasyPros exposes superflex as `position=OP`, and **`draft`+`STD`+`OP` is a genuinely distinct board** — 475 of 521 shared players rank differently from the PPR superflex board — so *standard scoring* and *superflex* were both available, not either/or. `SUPERFLEX`/`SF` are rejected by the API; `OP` is the only spelling. Dynasty turned out to be scoring-agnostic (one board per position scope), so `dynasty`+`OP` is simply *the* dynasty superflex board. Two probes were added to the archiver, a fresh snapshot taken, and **migration 003** repointed the read view. Result on real data: QBs occupy 6 of the top 8; rostered-player ranking coverage is unchanged at 162/170.
+
+**Deviations**
+**Team defenses lost their overall rank.** `OP` means *offensive* player, so superflex boards exclude DSTs — and the owner rosters 8. Presented as a decision; he chose **positional rank only** (DST1, DST2… and tier, from the 1-QB board) with overall rank left blank. Borrowing their overall rank was rejected on the merits: the two boards have different scales, so a defense ranked ~250th on the 1-QB board would have floated into mid-pack among superflex players and read as more valuable than it is. Blank also sorts defenses last, which is correct here.
+
+**Why we deviated**
+The original choice was made in a conversation about *scoring format* (PPR vs standard) and the *league shape* question was never separated out from it. The scoring axis got the attention; the position-scope axis — which mattered far more for this league — was left at its default. Worth noting for future source choices: **an API's default parameter is not a neutral choice**, and "ALL" reads like "everything" when it actually means "one quarterback".
+
+**Product implications**
+- The market column the owner reads against is now the right one for his league. This is the number the valuation engine will be measured against, so it would have propagated into the engine, the backtest baseline, and every auction ceiling.
+- Defenses show "—" for overall rank by design; their positional rank is intact.
+- **Every board is still ingested at full grain** (11 per pull), so the 1-QB board remains queryable and any future display change is a view migration, not a re-fetch. That property is what made this correction a one-migration change rather than a re-archive.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| The board view now reads four ranking sources (superflex draft/dynasty + the DST rows of both 1-QB boards) | Superflex boards exclude defenses, and the owner rosters 8 | More `COALESCE` logic in one view; a reader must know why DST is special | Contained to migration 003 and documented in `data_model.md` |
+| DST overall rank is permanently blank | Mixing board scales would misprice defenses | Defenses can't be sorted against flex players by overall rank | If FantasyPros ever ships a defense-inclusive superflex board, one view migration |
+
+**Follow-up decisions needed from the product owner**
+None.
+
 ### 2026-08-25 — Storage schema + ingestion: the table is on real data (issue #12)
 
 **Ticket / Issue:** [#12](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/12) · **Branch:** feat/issue-12-storage-ingestion · **Deviated from plan:** Small, additive deviations — the issue's core was built as written.

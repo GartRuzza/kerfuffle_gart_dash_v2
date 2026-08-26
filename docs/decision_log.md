@@ -47,6 +47,31 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-12 · 2026-08-26 · The table's market board is SUPERFLEX (draft, standard scoring)
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Product (which market signal the owner reads against) |
+| **Decided by** | Product owner, 2026-08-26 — correcting the choice made 2026-08-25 |
+
+**The question**
+Which FantasyPros consensus board should the table's ranking columns (Ovr ECR, Pos ECR, Dyn Ovr, Dyn Pos) display? The initial build shipped **draft / standard / ALL**, a **1-QB** board. KERFUFFLE starts two quarterbacks.
+
+**What we decided**
+Display **`draft` + `STD` + `OP`** — standard scoring, **superflex** (FantasyPros exposes superflex as `position=OP`, "offensive player"), and **`dynasty` + `OP`** for the dynasty columns. **Team defenses**, absent from superflex boards, keep their **positional** rank and tier from the 1-QB board and get **no overall rank** (owner, same day).
+
+**Why**
+A 1-QB board misprices the single most expensive position in a superflex league. Measured on the live board: the first five QBs rank **23/27/35/43/50** on the 1-QB board versus **1/2/3/4/5** on superflex; the 1-QB top twelve contains **no quarterbacks at all**. Reading that next to a $500 cap would have systematically undervalued QBs going into the auction. Research also settled a worry: `draft/STD/OP` is a genuinely distinct board (475 of 521 shared players rank differently from the PPR superflex board), so the owner's preference for standard scoring *and* superflex is satisfiable at once — no trade-off was needed. Dynasty is scoring-agnostic on FantasyPros (one board per position scope), so "standard dynasty" isn't a thing to give up.
+
+**What we gave up**
+The superflex boards cover offensive players only, so **defenses lose their overall rank**. We rejected borrowing their overall rank from the 1-QB board: the two boards have different scales, and a defense ranked ~250th there would float into mid-pack among superflex players, making defenses look more valuable than they are. Positional rank (DST1, DST2…) is preserved, blank overall sorts them to the bottom, and rostered-player coverage is unchanged at 162/170. We also give up the 1-QB view of the board — recoverable at any time, since **every board is still ingested at full grain**; changing the display is a view migration, not a re-fetch.
+
+**What would make us reconsider**
+The league changing its starting lineup away from superflex; FantasyPros publishing a first-down-scored or defense-inclusive superflex board (either would be a closer fit); or the owner wanting both boards visible side by side rather than one.
+
+---
+
 ### D-11 · 2026-08-25 · Dead cap is a team-level amount; Practice Squad is a status
 
 | | |

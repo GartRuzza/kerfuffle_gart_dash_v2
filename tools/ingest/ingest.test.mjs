@@ -50,22 +50,59 @@ const rulesHtml = `<table>
   <tr class="row2"><td>PaYd</td><td>Passing Yards</td><td>0+ PaYds = .04 points for every 1 PaYd</td></tr>
 </table>`;
 
-function fpBoard() {
-  const p = (fp, cbs, name, pos, ecr, posRank, tier) => ({
-    player_id: fp, cbs_player_id: cbs, player_name: name, player_position_id: pos,
-    player_team_id: "BUF", player_bye_week: "9", rank_ecr: ecr, pos_rank: posRank,
-    tier, rank_min: ecr - 1, rank_max: ecr + 1, rank_ave: ecr, rank_std: 1.5,
-  });
-  return {
-    ranking_type_name: "draft", type: "Draft", scoring: "STD", position_id: "ALL",
-    week: "0", total_experts: 5, public_api_limited: true, tier: "premium",
+const fpPlayer = (fp, cbs, name, pos, ecr, posRank, tier) => ({
+  player_id: fp, cbs_player_id: cbs, player_name: name, player_position_id: pos,
+  player_team_id: "BUF", player_bye_week: "9", rank_ecr: ecr, pos_rank: posRank,
+  tier, rank_min: ecr - 1, rank_max: ecr + 1, rank_ave: ecr, rank_std: 1.5,
+});
+
+const fpEnvelope = (over) => ({
+  ranking_type_name: "draft", type: "Draft", scoring: "STD", position_id: "ALL",
+  week: "0", total_experts: 5, public_api_limited: true, tier: "premium",
+  ...over,
+});
+
+// The display board: superflex (OP) — offensive players only, no defenses.
+function fpSuperflexBoard() {
+  return fpEnvelope({
+    position_id: "OP",
     players: [
-      p(9001, 111, "Rostered Star", "QB", 1, "QB1", 1), // rostered on team 1
-      p(9002, 555, "Available Guy", "WR", 2, "WR1", 1), // a free agent
-      p(9003, 666, "Some Kicker", "K", 3, "K1", 1),     // league rosters no kickers
-      p(9004, null, "No Join Key", "RB", 4, "RB1", 2),  // unjoinable
+      fpPlayer(9001, 111, "Rostered Star", "QB", 1, "QB1", 1), // rostered on team 1
+      fpPlayer(9002, 555, "Available Guy", "WR", 2, "WR1", 1), // a free agent
+      fpPlayer(9004, null, "No Join Key", "RB", 4, "RB1", 2),  // unjoinable
     ],
-  };
+  });
+}
+
+function fpDynastySuperflexBoard() {
+  return fpEnvelope({
+    ranking_type_name: "dynasty", type: "Dynasty", scoring: "PPR", position_id: "OP",
+    players: [
+      fpPlayer(9001, 111, "Rostered Star", "QB", 1, "QB1", 1),
+      fpPlayer(9002, 555, "Available Guy", "WR", 3, "WR2", 2),
+    ],
+  });
+}
+
+// The 1-QB board: the only one that ranks defenses (and kickers, which we drop).
+function fpAllBoard() {
+  return fpEnvelope({
+    position_id: "ALL",
+    players: [
+      fpPlayer(9001, 111, "Rostered Star", "QB", 20, "QB1", 3),
+      fpPlayer(9002, 555, "Available Guy", "WR", 2, "WR1", 1),
+      fpPlayer(9003, 666, "Some Kicker", "K", 3, "K1", 1),   // league rosters no kickers
+      fpPlayer(9005, 777, "Rostered Defense", "DST", 250, "DST2", 5), // rostered on team 3
+      fpPlayer(9006, 888, "Available Defense", "DST", 260, "DST3", 5), // a free agent
+    ],
+  });
+}
+
+function fpDynastyAllBoard() {
+  return fpEnvelope({
+    ranking_type_name: "dynasty", type: "Dynasty", scoring: "PPR", position_id: "ALL",
+    players: [fpPlayer(9005, 777, "Rostered Defense", "DST", 300, "DST4", 6)],
+  });
 }
 
 /** Write a full synthetic archive run; `mutate` tweaks pages before writing.
@@ -80,24 +117,32 @@ function writeFixtureRun(root, runId, mutate = {}, capturedAt = "2026-08-25T12:0
     responses.push({ source: "cbs", page, file: `cbs/${page}.html`, url: `https://x/${page}`, fetched_at: "2026-08-25T12:00:00Z", status: 200 });
   };
   const addFp = (page, json) => {
+    if (mutate.dropBoards?.includes(page)) return; // simulate a board that didn't come back
     writeFileSync(join(dir, `fantasypros/${page}.json`), JSON.stringify(json));
     responses.push({ source: "fantasypros", page, file: `fantasypros/${page}.json`, url: `https://x/${page}`, fetched_at: "2026-08-25T12:00:00Z", status: 200 });
   };
 
   addCbs("standings-overall", standingsHtml());
   for (let t = 1; t <= 12; t++) {
-    const rows =
-      t === 1
-        ? [
-            playerRow({ slot: "QB", name: "Rostered Star", pos: "QB", team: "BUF", salary: mutate.t1Salary ?? "50", contract: "2", id: 111 }),
-            deadCapRow("Former Player (dead cap)", "12"),
-          ]
-        : [playerRow({ slot: "RB", name: `Runner ${t}`, pos: "RB", team: "DET", salary: "20", contract: "1", id: 1000 + t })];
+    let rows;
+    if (t === 1) {
+      rows = [
+        playerRow({ slot: "QB", name: "Rostered Star", pos: "QB", team: "BUF", salary: mutate.t1Salary ?? "50", contract: "2", id: 111 }),
+        deadCapRow("Former Player (dead cap)", "12"),
+      ];
+    } else if (t === 3) {
+      rows = [playerRow({ slot: "DST", name: "Rostered Defense", pos: "DST", team: "BUF", salary: "5", contract: "1", id: 777 })];
+    } else {
+      rows = [playerRow({ slot: "RB", name: `Runner ${t}`, pos: "RB", team: "DET", salary: "20", contract: "1", id: 1000 + t })];
+    }
     addCbs(`roster-report-t${t}`, mutate.rosterHtml?.(t) ?? rosterHtml(rows));
   }
   addCbs("transactions", txHtml);
   addCbs("rules", rulesHtml);
-  addFp("ecr-draft-std-all", fpBoard());
+  addFp("ecr-draft-std-op", fpSuperflexBoard());
+  addFp("ecr-dynasty-op", fpDynastySuperflexBoard());
+  addFp("ecr-draft-std-all", fpAllBoard());
+  addFp("ecr-dynasty-ppr-all", fpDynastyAllBoard());
 
   writeFileSync(
     join(dir, "manifest.json"),
@@ -144,13 +189,51 @@ describe("ingest end-to-end (synthetic archive)", () => {
     const orphan = db.prepare("SELECT COUNT(*) c FROM contract WHERE pull_id NOT IN (SELECT pull_id FROM pull)").get().c;
     expect(orphan).toBe(0);
 
-    // the board: 12 rostered + 1 free agent (the kicker and the unjoinable row are excluded)
+    // the board: 12 rostered + 2 free agents (one flex player, one defense).
+    // The kicker and the row with no CBS id are excluded.
     const board = db.prepare("SELECT owner, name, pos FROM board ORDER BY owner, name").all();
-    expect(board).toHaveLength(13);
-    const fa = board.filter((r) => r.owner === "FA");
-    expect(fa).toEqual([{ owner: "FA", name: "Available Guy", pos: "WR" }]);
+    expect(board).toHaveLength(14);
+    const fa = board.filter((r) => r.owner === "FA").map((r) => r.name).sort();
+    expect(fa).toEqual(["Available Defense", "Available Guy"]);
+    expect(board.some((r) => /Kicker/.test(r.name))).toBe(false);
     // dead cap is stored but not a board row
     expect(board.some((r) => /dead cap/i.test(r.name))).toBe(false);
+  });
+
+  it("ranks from the SUPERFLEX board, not the 1-QB board", () => {
+    writeFixtureRun(root, "2026-08-25T12-00-00Z");
+    ingest("2026-08-25T12-00-00Z");
+    // The QB is #1 on the superflex board and #20 on the 1-QB board.
+    const qb = db.prepare("SELECT ecr, ecr_pos_rank FROM board WHERE name='Rostered Star'").get();
+    expect(qb).toMatchObject({ ecr: 1, ecr_pos_rank: "QB1" });
+    // Both boards are still stored at full grain — only the display changed.
+    const scopes = db
+      .prepare(`SELECT DISTINCT position_scope FROM market_ranking WHERE ranking_type='draft' ORDER BY 1`)
+      .all().map((r) => r.position_scope);
+    expect(scopes).toEqual(["ALL", "OP"]);
+  });
+
+  it("gives defenses a positional rank but NO overall rank (owner decision)", () => {
+    writeFixtureRun(root, "2026-08-25T12-00-00Z");
+    ingest("2026-08-25T12-00-00Z");
+    for (const name of ["Rostered Defense", "Available Defense"]) {
+      const d = db.prepare("SELECT * FROM board WHERE name=?").get(name);
+      expect(d.pos).toBe("DST");
+      expect(d.ecr).toBeNull(); // never mix the two boards' overall scales
+      expect(d.dynasty_ecr).toBeNull();
+      expect(d.ecr_pos_rank).toMatch(/^DST\d+$/); // from the 1-QB board
+      expect(d.ecr_tier).toBe(5);
+    }
+    // the rostered defense still carries its real contract
+    const rostered = db.prepare("SELECT salary, contract_years, owner FROM board WHERE name='Rostered Defense'").get();
+    expect(rostered).toMatchObject({ salary: 5, contract_years: 1 });
+    expect(rostered.owner).not.toBe("FA");
+  });
+
+  it("REJECTS a run whose superflex display board is missing", () => {
+    writeFixtureRun(root, "2026-08-25T12-00-00Z", { dropBoards: ["ecr-draft-std-op"] });
+    expect(() => ingest("2026-08-25T12-00-00Z")).toThrowError(/superflex.*board is missing/);
+    expect(counts().pulls).toBe(0);
   });
 
   it("re-running the same run is IDEMPOTENT — no duplicate rows anywhere", () => {

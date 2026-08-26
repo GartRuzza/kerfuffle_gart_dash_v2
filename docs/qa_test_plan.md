@@ -8,7 +8,7 @@
 >
 > **The rule that makes this doc real:** a feature is not "Built" in [`pm/current_state.md`](pm/current_state.md) until the checks below pass. When a check fails, that feature's status changes — to Partial, or to a known bug. Test results are the evidence behind every status in that doc, which is why this one keeps it honest.
 
-**Last updated:** 2026-08-25 · **Last full pass:** 2026-08-25 — **storage + ingestion (issue #12)** verified by 46 new unit tests (parsers, loud validation incl. the bad-fixture rejection, DB-level idempotency, board derivation), a real ingest of all 3 archived runs (485-player board), a clean build, and a rendered-page check on real data. An independent code review then found **one stale-data bug** (the board could serve an older snapshot after a re-ingest) plus several hardening items; all were fixed, covered by new tests, and re-verified. · **Result:** Automated checks pass (**84 unit tests** + clean build + live ingest + render); the app's manual interaction checks on real data are pending owner sign-off.
+**Last updated:** 2026-08-26 · **Last full pass:** 2026-08-26 — **storage + ingestion (issue #12)** verified by 49 new unit tests (parsers, loud validation incl. the bad-fixture rejection, DB-level idempotency, board derivation), a real ingest of all 4 archived runs (572-player board), a clean build, and a rendered-page check on real data. An independent code review then found **one stale-data bug** (the board could serve an older snapshot after a re-ingest) plus several hardening items; all were fixed, covered by new tests, and re-verified. The **superflex display board** (D-12) was then verified live: quarterbacks occupy 6 of the top 8, defenses carry positional rank with no overall rank, and rostered-player coverage held at 162/170. · **Result:** Automated checks pass (**87 unit tests** + clean build + live ingest + render); the app's manual interaction checks on real data are pending owner sign-off.
 
 ---
 
@@ -17,9 +17,9 @@
 | | |
 | --- | --- |
 | **How to run them** | `npm test` (Vitest unit tests) and `npm run build` (compile + type-check + lint). |
-| **What they cover** | **Unit (84 tests): app (20)** — board **derivation** (unique contiguous overall ranks even when raw ECR ties; real FantasyPros tiers; engine fields null; loud failure on a position the league doesn't roster), the tier/sort/position **state machine**, the **saved-views model**, and **data-dictionary coverage**. **Ingestion (41, issue #12)** — header-name column mapping (**missing header = loud failure**), deliberate coercion (`"$34"`→34; blank salary → null+warning; a decimal salary or an out-of-domain contract year fails loudly), the Players-cell/standings/transactions parsers, **dead-cap classification** (salary-without-id = dead cap; neither = refusal), and **end-to-end against a synthetic archive**: a full run ingests; **re-running is idempotent (no duplicates, DB-level)**; a roster **over the $500 cap is rejected loudly and rolls back completely**; a missing page or header rejects the run. **Profiler (23, issue #11)** — unchanged. **Build:** compiles clean; the page server-renders from the real store. |
+| **What they cover** | **Unit (87 tests): app (20)** — board **derivation** (unique contiguous overall ranks even when raw ECR ties; real FantasyPros tiers; engine fields null; loud failure on a position the league doesn't roster), the tier/sort/position **state machine**, the **saved-views model**, and **data-dictionary coverage**. **Ingestion (44, issue #12)** — header-name column mapping (**missing header = loud failure**), deliberate coercion (`"$34"`→34; blank salary → null+warning; a decimal salary or an out-of-domain contract year fails loudly), the Players-cell/standings/transactions parsers, **dead-cap classification** (salary-without-id = dead cap; neither = refusal), and **end-to-end against a synthetic archive**: a full run ingests; **re-running is idempotent (no duplicates, DB-level)**; a roster **over the $500 cap is rejected loudly and rolls back completely**; a missing page or header rejects the run. **Profiler (23, issue #11)** — unchanged. **Build:** compiles clean; the page server-renders from the real store. |
 | **What they do not cover** | Click/drag interactions in a real browser (drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. A live `npm run ingest` against the real archive is its own check below. |
-| **Currently passing?** | Yes — `npm test` (**84/84**) and `npm run build` pass clean as of 2026-08-25. |
+| **Currently passing?** | Yes — `npm test` (**87/87**) and `npm run build` pass clean as of 2026-08-26. |
 
 ## Manual checks — the critical flows
 
@@ -32,9 +32,11 @@
 | # | Do this | You should see | Pass? |
 | --- | --- | --- | --- |
 | 1 | Open the page | One **dark** screen: the player table, centered "Gart Dash" title, and a quiet **"League data as of \<date\>"** line on top (the date of your latest snapshot). **No amber MOCK-DATA banner anywhere.** | ☐ |
-| 2 | Read the table | **Your real league**: your Rangoon Raccoons roster with each player's **actual salary and contract**, the 11 rival teams, and real free agents. "Showing ~485 of ~485 players" (grows as rankings change). | ☐ |
+| 2 | Read the table | **Your real league**: your Rangoon Raccoons roster with each player's **actual salary and contract**, the 11 rival teams, and real free agents. "Showing ~570 of ~570 players" (the exact number moves as rankings change). | ☐ |
 | 3 | Check a few numbers against CBS | Pick 2–3 of your own players on the CBS site: salary, contract years, and roster status should match exactly. | ☐ |
-| 4 | On first load | Rows are sorted by **Ovr ECR** (the expert consensus board) with **"Tier 1 / Tier 2 / …" bands** — these are **FantasyPros' real tiers** now. At the bottom, rostered players FantasyPros doesn't rank sit under an **"Unranked"** band. | ☐ |
+| 4 | On first load | Rows are sorted by **Ovr ECR** (the expert consensus board) with **"Tier 1 / Tier 2 / …" bands** — these are **FantasyPros' real tiers** now. At the bottom, players with no overall rank (and all defenses) sit under an **"Unranked"** band. | ☐ |
+| 4b | Look at the top of the board | **Quarterbacks fill the top spots** (roughly 6 of the top 8). This is the superflex board — the correct one for a two-QB league. If you see no QBs in the top ten, the wrong board is loaded. | ☐ |
+| 4c | Set Position = **DST** | Defenses show **"—" for Ovr ECR** but a real **Pos ECR (DST1, DST2…)** and tier, plus real salary/contract for the ones you roster. | ☐ |
 | 5 | Look at the engine columns | **Kerf Ovr/Pos Rank, Kerf Value, Market Value, Edge show "—"**, and **Ceiling boxes start empty** — the valuation engine doesn't exist yet; nothing is invented to fill its columns. | ☐ |
 | 6 | Look at the Pos column | Colored badges — QB green, RB red, WR blue, TE tan, and **DST purple** (real DSTs are rostered in this league). | ☐ |
 | 7 | Set Position = **QB**, then click **Pos ECR** | Only QBs show, banded by tier, QB1 at the top. | ☐ |
@@ -104,7 +106,7 @@
 | 5 | Look in `data/` | `gart-dash.sqlite` exists; `git status` shows **nothing under `data/`** (git-ignored). | ☐ |
 | 6 | (Optional, destructive-safe) Delete `data/gart-dash.sqlite`, run `npm run ingest` | The database rebuilds completely from the raw archive — the DB is disposable; the archive is the history. | ☐ |
 
-**What validation protects you from (proven by unit tests, not to try live):** a roster summing **over the $500 cap**, a missing/renamed column header, a missing roster page, an unparseable scoring rule, an unclassifiable roster row, **the same player showing on two rosters**, or **two FantasyPros entries claiming the same player** each **reject the whole run loudly and roll back** — the app keeps showing the last good data. The table always shows the **most recently captured** snapshot, even if you re-load an older one afterwards.
+**What validation protects you from (proven by unit tests, not to try live):** a roster summing **over the $500 cap**, a missing/renamed column header, a missing roster page, an unparseable scoring rule, an unclassifiable roster row, **the same player showing on two rosters**, **two FantasyPros entries claiming the same player**, or **a missing superflex display board** each **reject the whole run loudly and roll back** — the app keeps showing the last good data. The table always shows the **most recently captured** snapshot, even if you re-load an older one afterwards.
 
 ## Edge cases and things that should fail gracefully
 
