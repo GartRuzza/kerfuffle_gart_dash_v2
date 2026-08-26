@@ -12,6 +12,7 @@
     "archive": "node tools/archive/capture.mjs",
     "archive:check-cookie": "node tools/archive/check-cookie.mjs",
     "ingest": "node tools/ingest/ingest.mjs",
+    "ingest:historical": "node tools/ingest/ingest-historical.mjs",
     "profile": "node tools/profile/generate.mjs"
   },
   "dependencies": {

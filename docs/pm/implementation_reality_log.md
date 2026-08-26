@@ -53,6 +53,44 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-26 — Historical data storage: CBS 2024/25 stats, 2025 salaries, TRUFFLE reference (#17)
+
+**Ticket / Issue:** [#17](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/17) · **Branch:** docs/valuation-engine-plan · **Deviated from plan:** No (a few owner-approved refinements)
+
+**Original intent**
+Bring the owner-provided historical exports into the normalized store — CBS 2024/25 stat lines (incl. first downs), KERFUFFLE 2025 salaries, and the TRUFFLE 2026 auction as inert reference — behind a separate ingestion path, with a name→id matcher and a scoring cross-check. Data layer only; the prerequisite for the whole engine block.
+
+**What was actually built**
+Migration `004` added three tables — `player_season_stats` (season×player: rush/rec/pass first downs + 2pt from the "Advanced" export joined with full volume from the "Standard" export + FPTS), `contract_history` (KERFUFFLE 2025 salary per player), `auction_result` (TRUFFLE 2026, `is_reference=1`). A new `npm run ingest:historical` (`tools/ingest/ingest-historical.mjs` + `parse-historical.mjs` + `match-players.mjs`) reads `data/historical/`, parses the 3-row grouped CBS headers by anchored column index, joins the two files per player asserting their FPTS agree, matches names→`cbs_player_id`, and loads idempotently inside one whole-run transaction (each season/league replaced wholesale, not merged). A scoring cross-check (`scoring-crosscheck.mjs`) recomputes KERFUFFLE points from components using the parsed `scoring_rule` config and compares to CBS's FPTS Total. 28 new tests (115 total); build clean; live full-rebuild verified.
+
+**Deviations**
+Three owner-approved refinements to the issue's shape (all decided during the pre-build Q&A, 2026-08-26):
+1. **Stat coverage:** store only players in our ~960-player universe (not all ~1,943 exported) — the engine only values players we can rank. 864 of each season matched; the ~1,077 deep-bench rows are skipped by design (count reported).
+2. **Contract grain:** store **only the 2025 salary** as authoritative, not the full `'24`..`'28` schedule. The owner flagged the `'24` column as unreliable (a 1-yr-2024 player who changed teams) and future years as superseded by CBS. The raw schedule is kept verbatim in a `schedule_raw` column for provenance only, read by nothing.
+3. **Cross-check:** run **both** a tight curated-sample pass and a loose all-players pass (owner's "do both").
+
+**Why we deviated**
+Each is a data-quality/scope judgment the owner owns; none changes the issue's intent. They make the stored data smaller and more trustworthy (no unreliable future-year salaries, no deep-bench noise).
+
+**Post-review fixes (the real surprise)**
+Independent code + data-model reviews caught a genuine matching bug before it could mislead the engine: the name-matcher's name-only fallback matched a source row to a sole same-name universe player **even across a different position**, so a deep-bench "Josh Johnson WR | DET" was force-matched to the rostered "Josh Johnson QB | CIN" (same for a Brandon Johnson RB/WR pair) — silently overwriting the real player's stat line. The loud same-id collision guard (added on the reviewers' recommendation) turned this into a hard, named failure instead; the fix makes the fallback respect position, so those rows now correctly fall to *unmatched/skipped*. Corrected stat coverage is **864/season** (was an inflated 870 that included the false matches). Also hardened: whole-season/league **replace** on load (a re-match after an alias fix can't leave a phantom old-id row), a **single whole-run transaction** (a late failure rolls back everything, matching the documented temp-validate-swap invariant), and 2025 salary taken **only** from the `'25` cell (no fallback to a possibly-stale generic Salary column). This is exactly the class of error the validation gate exists to catch — the green synthetic-fixture suite passed while the real ingest was wrong, so the real-data cross-check and a live rebuild are the checks that count.
+
+**Product implications**
+No user-visible change yet — this is plumbing. What it unlocks: the projection core (#18) now has real per-position **first-down rates** (the KERFUFFLE scoring edge), the backtest (#19) has **actual KERFUFFLE points** for 2024/25, and the price curve (#20) has **2025 salaries**. The scoring cross-check is the headline result: recomputing points from components lands on CBS's own FPTS Total for **~96% of players within 0.5 pt and 99.8% within 5 pt**, with every residual a small *negative* (CBS awards special-teams/return points the offense-only export omits). This proves our stat parse and our parsed scoring rules agree — de-risking the engine before it's built. It also surfaced a scoring fact that matters for #18: **this league scores no PPR reception points and no passing first downs** — only rushing/receiving first downs (1 pt each) on top of standard yardage/TD scoring.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| 11 KERFUFFLE contract players stored with a null `cbs_player_id` | They're dropped/retired/unranked since 2025 (Amari Cooper, Derek Carr, Russell Wilson, …) — no id exists in the current universe to match to | The price curve (#20) can't per-player-join those 11; it must treat them as raw salary signals or skip them | Adding them would mean synthesizing player-identity rows (rejected, same reason as D-11) — leave as-is; they're named in the ingest report |
+| CBS stat parse maps by fixed column **index**, not header name | The 3-row grouped headers are positionally shifted and don't align 1:1 with data rows, so header-name mapping isn't possible here | If CBS changes the export layout, a silent misalignment | Mitigated now: anchor assertions (Josh Allen 177/46, Chase 73) + per-player cross-file FPTS agreement fail the ingest loudly on any drift |
+| 1 dead-cap row (`Pos='DC'`, "Mark Andrews Dead Cap") stored with null id | It's a team cap obligation, not a player | The price curve must filter `cbs_player_id IS NOT NULL` for player prices | None needed — honest as stored; documented |
+
+**Follow-up decisions needed from the product owner**
+None blocking. One thing for the **backtest (#19)** to decide explicitly, not now: `player_season_stats` holds only players in the *current* universe (~864/season), so a player who was rostered/projected in 2024–25 but has since left the league has no stored actual — the backtest can only score survivors. That's defensible (replacement level QB24/RB34/WR34 sits well inside the universe), but #19 should choose whether to exclude missing-actual players or treat them as a named blind spot, rather than discover it mid-build. (Raised by the data-model review.)
+
+---
+
 ### 2026-08-26 — Valuation-engine planning: scoped, de-risked, and split into four issues (#17–#20)
 
 **Ticket / Issue:** planning cycle → created [#17](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/17)–[#20](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/20) · **Branch:** n/a (docs + issues only) · **Deviated from plan:** N/A (this *is* the plan)
