@@ -83,7 +83,7 @@ const DOCS: Record<
     definition: "The player's league-generic dollar ceiling — worth to a typical team.",
     deepDive: [
       "Source: our valuation engine (VORP). It converts projected KERFUFFLE points ABOVE positional replacement into dollars against the $500 cap.",
-      "Replacement = the 'last starter' your league actually fields: QB24, RB~34, WR~34, TE~17 (superflex counts a QB in the SFLEX slot, so elite QBs stay premium).",
+      "Replacement = the freely-available player at each position: RB~34, WR~34, TE~17 (the 'last starter'), and QB~30 — set at the last ROSTERED QB, because superflex forces two QB slots plus backups and QB scoring cliffs after ~QB30, so elite QBs are correctly premium.",
       "Dollars: the league's spendable money ($500 × 12, minus a $1 minimum per roster spot) is split across everyone's points-above-replacement — so prices sum to the cap and the top of each position commands the most.",
       'Team defenses show "—" (their scoring isn\'t projected from the offensive feed).',
     ],
@@ -117,10 +117,11 @@ const DOCS: Record<
     placeholder: false,
   },
   marketPrice: {
-    definition: "What the league pays now for a player of this position and rank.",
+    definition: "What a player costs now — his salary if rostered, else an estimate.",
     deepDive: [
-      "Source: a price curve fit from the 12 teams' CURRENT salaries — 'what the Nth-best player at this position currently costs' — read off by the player's Kerf positional rank.",
-      "This is the in-season 'what would he cost today' number; pair it with Edge.",
+      "Rostered players show their OWN current KERFUFFLE salary — the true market price they're held at today.",
+      "Free agents have no salary, so they fall back to a price curve fit from the 12 teams' current salaries ('what the Nth-best at this position costs'), read off by Kerf positional rank.",
+      "This is the in-season 'what would he cost today' number; pair it with Edge. For an auction-day reference use Market (Auction) instead.",
       'Team defenses show "—" (not priced by the engine).',
     ],
     placeholder: false,

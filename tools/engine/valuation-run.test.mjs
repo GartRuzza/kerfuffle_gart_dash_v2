@@ -40,7 +40,10 @@ const P = [
   { id: 9, pos: "TE", ry: 0, rtd: 0, rec: 65, recy: 750, sal: 20, s25: 22 },
 ];
 
-function seed() {
+// `freeAgents` are extra players with a projection (so they get scored + Kerf-
+// ranked) but NO contract row — i.e. unrostered, no salary — to exercise the
+// Market (Now) curve fallback.
+function seed({ freeAgents = [] } = {}) {
   const db = new Database(":memory:");
   db.pragma("foreign_keys = ON");
   for (const f of readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort()) {
@@ -100,6 +103,12 @@ function seed() {
       stat.run(season, p.id, `Player ${p.id}`, p.pos, ra, Math.round(ra * 0.25), p.rec || 0, Math.round((p.rec || 0) * 0.5), now);
     }
   });
+
+  // Free agents: projected + rankable, but no contract (no salary).
+  freeAgents.forEach((p) => {
+    player.run(p.id, `FA ${p.id}`, p.pos, 900 + p.id, now);
+    proj.run(p.id, 900 + p.id, `FA ${p.id}`, p.pos, p.py || 0, p.ptd || 0, p.ry ? Math.round(p.ry / 5) : 0, p.ry || 0, p.rtd || 0, p.rec || 0, p.recy || 0, 0, now);
+  });
   return db;
 }
 
@@ -118,7 +127,7 @@ describe("runEngine valuation (DB integration)", () => {
   it("records the last-starter baselines in replacement_level", () => {
     const rows = db.prepare(`SELECT pos, baseline_n FROM replacement_level WHERE engine_run_id=?`).all(res.engineRunId);
     const byPos = Object.fromEntries(rows.map((r) => [r.pos, r.baseline_n]));
-    expect(byPos).toMatchObject({ QB: 24, RB: 34, WR: 34, TE: 17, DST: 12 });
+    expect(byPos).toMatchObject({ QB: 30, RB: 34, WR: 34, TE: 17, DST: 12 });
   });
 
   it("prices sum to the cap: Σ(kerf_value − 1) == discretionary", () => {
@@ -133,6 +142,38 @@ describe("runEngine valuation (DB integration)", () => {
     const rb1 = db.prepare(`SELECT * FROM valuation WHERE engine_run_id=? AND cbs_player_id=1`).get(res.engineRunId);
     expect(rb1.market_in_season).not.toBeNull();
     expect(rb1.market_pre_auction).not.toBeNull();
+  });
+
+  it("Market (Now) is a rostered player's ACTUAL salary, not a curve price", () => {
+    // Player 1 is rostered at $100. Its Kerf pos rank is RB1, but the top RB salary
+    // knot is also 100 here — so to prove it's the salary (not the rank-1 knot) we
+    // rely on the free-agent test below where the two diverge. Here we assert the
+    // straightforward invariant: a rostered player's Market (Now) == its own salary.
+    const rows = db.prepare(`SELECT cbs_player_id, market_in_season FROM valuation WHERE engine_run_id=?`).all(res.engineRunId);
+    const salaries = Object.fromEntries(P.map((p) => [p.id, p.sal]));
+    for (const r of rows) {
+      expect(r.market_in_season).toBe(salaries[r.cbs_player_id]); // every seeded player is rostered
+    }
+  });
+
+  it("free agents fall back to the curve; rostered players keep their actual salary", () => {
+    // An unrostered RB with volume between players 2 and 3 → no salary of its own.
+    const db2 = seed({ freeAgents: [{ id: 20, pos: "RB", ry: 900, rtd: 6, rec: 35, recy: 300 }] });
+    const r2 = runEngine(db2);
+    const fa = db2.prepare(`SELECT * FROM valuation WHERE engine_run_id=? AND cbs_player_id=20`).get(r2.engineRunId);
+
+    // It has no contract, so Market (Now) must come from the in-season RB curve,
+    // read (and clamped) by its Kerf positional rank — mirroring priceFromCurve.
+    const knots = db2
+      .prepare(`SELECT price FROM price_curve WHERE engine_run_id=? AND basis='in_season' AND pos='RB' ORDER BY pos_rank`)
+      .all(r2.engineRunId)
+      .map((k) => k.price);
+    const idx = Math.min(Math.max(1, fa.pos_rank_used), knots.length) - 1;
+    expect(fa.market_in_season).toBe(knots[idx]);
+
+    // ...while a rostered player still shows its real salary.
+    const rb1 = db2.prepare(`SELECT market_in_season FROM valuation WHERE engine_run_id=? AND cbs_player_id=1`).get(r2.engineRunId);
+    expect(rb1.market_in_season).toBe(100);
   });
 
   it("computes a Raccoons-specific roster value that differs from the generic ceiling", () => {

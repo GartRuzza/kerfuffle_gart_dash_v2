@@ -1,7 +1,7 @@
 // KERFUFFLE valuation — pure-core unit tests (issue #20, D-13).
 //
 // No database: deterministic transforms. Covers the acceptance-critical math —
-// the last-starter baselines (incl. the superflex QB24), replacement points,
+// the replacement baselines (incl. the superflex QB30 depth, D-19), replacement points,
 // marginal $/point + the prices-sum-to-cap invariant, PAR floored at 0,
 // replace-your-starter roster value, and the market price curve.
 
@@ -22,20 +22,22 @@ import {
 } from "./valuation.mjs";
 
 describe("replacementBaselines (last-starter, superflex)", () => {
-  it("matches the documented D-13 baselines: QB24 / RB34 / WR34 / TE17 / DST12", () => {
+  it("matches the documented baselines: QB30 / RB34 / WR34 / TE17 / DST12", () => {
     const b = replacementBaselines();
-    expect(b.QB).toBe(24); // 12 × (1 QB + 1 SFLEX) — the superflex effect
+    expect(b.QB).toBe(30); // 12 × 2.5 rostered QBs/team — superflex depth + cliff (D-19)
     expect(b.RB).toBe(34); // 12 × (2 + 2×0.4) = 33.6 → 34
     expect(b.WR).toBe(34);
     expect(b.TE).toBe(17); // 12 × (1 + 2×0.2) = 16.8 → 17
     expect(b.DST).toBe(12);
   });
 
-  it("elite QBs are premium because SFLEX counts as a QB, not a flex", () => {
-    // Without the SFLEX-as-QB rule the QB baseline would be 12 (QB12), badly
-    // underpricing quarterbacks in a two-QB league — the whole point of D-13.
+  it("QB floor sits past the last starter to reflect superflex depth (D-19)", () => {
+    // Last-starter math gives 12×(1 QB + 1 SFLEX) = QB24. The superflex depth
+    // adjustment pushes it deeper (QB30), correctly pricing elite QBs as premium
+    // in a two-QB league. It must be well past the single-QB baseline of 12.
     const b = replacementBaselines();
-    expect(b.QB).toBeGreaterThan(12);
+    expect(b.QB).toBeGreaterThan(24);
+    expect(replacementBaselines({ qbReplacementPerTeam: 2.0 }).QB).toBe(24); // tunable back to last-starter
   });
 });
 

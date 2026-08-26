@@ -5,8 +5,9 @@
 // writing `valuation`/`replacement_level`/`price_curve`) lives in run.mjs.
 //
 // The pipeline this module implements, on top of #18's Kerf points:
-//   1. replacementBaselines  — the "last-starter" N per position from the 12-team
-//      superflex lineup (SFLEX = 100% QB; FLEX split RB/WR/TE 40/40/20).
+//   1. replacementBaselines  — the replacement rank N per position from the 12-team
+//      superflex lineup (RB/WR/TE = last starter, FLEX split 40/40/20; QB = last
+//      ROSTERED QB ≈ 2.5/team for superflex depth + the QB cliff, D-19).
 //   2. replacementPoints     — the projected points at each baseline rank.
 //   3. dollarsPerPoint        — marginal $/point: discretionary ÷ Σ PAR.
 //   4. leagueValue            — $1 + PAR_league × $/point  (the Kerf Value ceiling).
@@ -25,8 +26,19 @@ export const LINEUP = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 2, SFLEX: 1, DST: 1 };
 export const FLEX_POS = ["RB", "WR", "TE"];
 export const SFLEX_POS = ["QB", "RB", "WR", "TE"];
 // How the FLEX demand splits across RB/WR/TE (D-13). The SFLEX slot is modelled as
-// 100% QB — the superflex effect that makes elite QBs correctly premium (QB24).
+// 100% QB — the superflex effect that makes elite QBs correctly premium.
 export const FLEX_SPLIT = { RB: 0.4, WR: 0.4, TE: 0.2 };
+// Superflex QB replacement depth (D-19, owner 2026-08-26). The "last starter" math
+// puts QB replacement at 12×(QB+SFLEX)=24. But in a two-QB league teams also ROSTER
+// backups (a starter, a super-flex starter, and a bye/injury backup ≈ 2.5/team), and
+// projected QB scoring falls off a cliff after ~QB30 — so the QB you can actually get
+// for $1 sits well below QB24. We therefore set the QB floor at the last *rostered*
+// QB, ≈ 2.5/team → QB30, which correctly makes elite QBs premium in superflex without
+// fitting to market prices. RB/WR/TE stay on the last-starter formula (their depth is
+// already captured by the FLEX split, and they have a long, genuinely replaceable
+// tail). Tunable — raise it to value QBs higher still, lower it back toward 2.0 for
+// the textbook last-starter result. See [D-19] in the decision log.
+export const QB_REPLACEMENT_PER_TEAM = 2.5;
 export const N_TEAMS = 12;
 export const TEAM_BUDGET = 500;
 // Rosterable spots per team that owe a $1 minimum. The constitution allows 10
@@ -50,10 +62,12 @@ export function replacementBaselines({
   nTeams = N_TEAMS,
   lineup = LINEUP,
   flexSplit = FLEX_SPLIT,
+  qbReplacementPerTeam = QB_REPLACEMENT_PER_TEAM,
 } = {}) {
   const flexSlots = lineup.FLEX; // per team
   const out = {};
-  out.QB = roundHalfUp(nTeams * (lineup.QB + lineup.SFLEX)); // SFLEX → 100% QB
+  // QB: last *rostered* QB in superflex (~2.5/team), not last starter (D-19).
+  out.QB = roundHalfUp(nTeams * qbReplacementPerTeam);
   out.RB = roundHalfUp(nTeams * (lineup.RB + flexSlots * flexSplit.RB));
   out.WR = roundHalfUp(nTeams * (lineup.WR + flexSlots * flexSplit.WR));
   out.TE = roundHalfUp(nTeams * (lineup.TE + flexSlots * flexSplit.TE));

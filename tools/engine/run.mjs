@@ -37,6 +37,7 @@ import {
   N_TEAMS,
   TEAM_BUDGET,
   ROSTER_SPOTS_PER_TEAM,
+  QB_REPLACEMENT_PER_TEAM,
 } from "./valuation.mjs";
 
 const RATE_SEASONS = [2024, 2025]; // owner, 2026-08-26: pool both for stable rates
@@ -126,13 +127,18 @@ export function computeValuation(db, pullId, scored, ranks) {
   const rosterRepl = roster.length ? rosterReplacementPoints(roster) : {};
 
   // 4. Market price curves (two bases). Missing tables/rows → empty curve → null.
-  const inSeasonSalaries = db
+  const inSeasonSalaryRows = db
     .prepare(
-      `SELECT pl.pos AS pos, c.salary AS salary FROM contract c
+      `SELECT pl.pos AS pos, c.cbs_player_id AS id, c.salary AS salary FROM contract c
          JOIN player pl ON pl.cbs_player_id = c.cbs_player_id
-        WHERE c.pull_id = ? AND c.row_type = 'player' AND c.salary IS NOT NULL`
+        WHERE c.pull_id = ? AND c.row_type = 'player' AND c.salary IS NOT NULL AND c.salary > 0`
     )
     .all(pullId);
+  const inSeasonSalaries = inSeasonSalaryRows.map((r) => ({ pos: r.pos, salary: r.salary }));
+  // Per-player actual salary. "Market (Now)" shows a rostered player's OWN current
+  // salary (their true market price today); free agents — who have no salary — fall
+  // back to the rank-based price curve below (owner, 2026-08-26; see D-17 addendum).
+  const salaryByPlayer = new Map(inSeasonSalaryRows.map((r) => [r.id, r.salary]));
   const preAuctionSalaries = tableExists(db, "contract_history")
     ? db
         .prepare(
@@ -153,6 +159,11 @@ export function computeValuation(db, pullId, scored, ranks) {
       ? rosterValue(p.kerfPoints, p.pos, rosterRepl, replPoints, dpp.dollarsPerPoint)
       : { rosterReplPoints: null, parRoster: null, value: null };
     const posRank = ranks.get(p.cbsId)?.posRank ?? null;
+    // Market (Now): a rostered player's actual current salary; a free agent's
+    // rank-based curve price. Market (Auction) stays the pre-auction curve for all.
+    const actualSalary = salaryByPlayer.get(p.cbsId) ?? null;
+    const marketInSeason =
+      actualSalary != null ? actualSalary : priceFromCurve(curveInSeason, p.pos, posRank);
     return {
       cbsId: p.cbsId,
       pos: p.pos,
@@ -163,7 +174,7 @@ export function computeValuation(db, pullId, scored, ranks) {
       rosterReplPoints: rv.rosterReplPoints,
       parRoster: rv.parRoster,
       rosterValue: rv.value,
-      marketInSeason: priceFromCurve(curveInSeason, p.pos, posRank),
+      marketInSeason,
       marketPreAuction: priceFromCurve(curvePreAuction, p.pos, posRank),
       posRankUsed: posRank,
     };
@@ -273,6 +284,7 @@ export function runEngine(db, { log = () => {} } = {}) {
         fpTierCounts: fp,
         valuation: {
           baselines: val.baselines,
+          qbReplacementPerTeam: QB_REPLACEMENT_PER_TEAM, // superflex QB depth (D-19)
           nTeams: N_TEAMS,
           budget: TEAM_BUDGET,
           rosterSpotsPerTeam: ROSTER_SPOTS_PER_TEAM,

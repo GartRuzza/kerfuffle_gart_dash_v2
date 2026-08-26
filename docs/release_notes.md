@@ -41,6 +41,18 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-26 — Valuation tune-up: real salaries in "Market (Now)", and elite QBs priced right
+
+*(Refines the same-day dollars release below, after an owner review — before merge.)*
+
+**Improved**
+- **Elite quarterbacks are now valued as the premium assets they are in superflex.** Previously the model priced Josh Allen (our #1 overall player) at only $130 — below five running backs — because it compared every QB to the "last starter" (QB24). But you're forced to start two QBs and carry backups, and QB scoring falls off a cliff after about the 30th-best QB. So we now measure QBs against the **last rostered QB (~QB30)**. The result: **Josh Allen ~$151 (right alongside the top RBs), and six QBs now clear $100.** Running backs eased down accordingly; the prices still add up to the cap. (You can tune how aggressive this is if you ever want QBs clearly above RBs.)
+
+**Fixed**
+- **"Market (Now)" showed the wrong number for players you can see on a roster.** It was estimating a price from a curve, so Lamar Jackson — actually signed for $201 — displayed as **$77**, and his Edge even showed **green (a "bargain")** when he's in fact one of the most overpaid players in the league. Now **Market (Now) shows a rostered player's real salary** ($201 for Lamar), so **Edge correctly reads red −$84** for him and green for genuine bargains (e.g. Jayden Daniels, held at $40 but worth far more). Free agents — who have no salary — still show a curve-based estimate, and **Market (Auction)** is unchanged.
+
+---
+
 ## 2026-08-26 — The dollars are here: what a player's worth, what he costs, and the gap
 
 **New**

@@ -53,6 +53,35 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-26 — Post-#20 owner review: Market (Now) = real salary (D-18) + superflex QB floor (D-19)
+
+**Ticket / Issue:** #20 (refinements) · **Branch:** feat/issue-20-valuation-engine · **Deviated from plan:** Yes — two owner-driven corrections after the first build
+
+**Original intent**
+Ship #20's dollar columns as built: Kerf Value, Roster Value, Market (Now)/(Auction) as price curves read by Kerf positional rank, and Edge.
+
+**What was actually built (this cycle)**
+Two fixes the owner caught reviewing the live board:
+1. **Market (Now)** now shows a **rostered player's actual current salary** (free agents still use the price curve); Market (Auction) unchanged. One behavior change in `tools/engine/run.mjs`.
+2. **QB replacement floor** moved from last-starter (QB24) to **last rostered QB ≈ QB30** (`QB_REPLACEMENT_PER_TEAM=2.5` in `valuation.mjs`), reflecting superflex 2-QB demand + the QB scoring cliff. RB/WR/TE unchanged; prices still sum to the cap.
+
+**Deviations**
+Both diverge from the as-built #20. Neither changes the schema or the VORP framework — they change *what Market (Now) means* and *where the QB floor sits*.
+
+**Why we deviated**
+Real data exposed two things the plan didn't anticipate. (1) A curve read by *rank* mislabels the market number for rostered players whose salary you can see — Lamar (rostered $201) showed $77 and a green (bargain) Edge while being badly overpaid. (2) Last-starter replacement (QB24) sits *above* the QB scoring cliff, so VORP crushed elite-QB value in a superflex league (Allen #1 overall but only $130, below five RBs). Both are exactly the kind of "the model is technically doing what we specified, but the specification was wrong for this league" surprise this log exists to record.
+
+**Product implications**
+- The board now tells the truth for rostered players: Market (Now) = their salary, and Edge is a real overpay/underpay signal (Lamar Edge −$84 red; Daniels, held $40, green bargain).
+- Elite QBs are now premium: Allen $151 (co-top with Gibbs $152), 6 QBs ≥$100 (was 1). RBs eased. This makes the whole board read sensibly for a superflex owner and is the shape the market agrees with — without fitting to market (Edge stays independent).
+- **Roster Value was reviewed and deliberately left as-is.** The owner asked whether it reflects an elite QB's week-to-week boost; it does, as a *marginal* number — modest for the QB-rich Raccoons (already starting Shough 301 + Mayfield 289), larger for a QB-needy team. That is the replace-your-starter column working as designed, not a bug. Flagged here so it isn't "fixed" later by mistake.
+
+**Technical tradeoffs and debt**
+The QB floor now uses a rostered-depth rule (2.5/team) while RB/WR/TE use last-starter — one position off the common formula. It's a single documented, tunable constant (2.0 reverts to textbook). No schema change. The QB30 depth and the FLEX split remain assumptions to revisit against real auction results.
+
+**Follow-up decisions for the owner**
+None open — D-18 and D-19 both decided in-review. The QB depth knob (2.5) can be retuned later if QBs should sit clearly above RBs.
+
 ### 2026-08-26 — Valuation engine: VORP dollars, ceilings, price curves, Edge (#20)
 
 **Ticket / Issue:** [#20](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/20) · **Branch:** feat/issue-19-backtest-gate · **Deviated from plan:** Mostly no — four sub-decisions the issue left open were resolved by the owner up front ([D-17](../decision_log.md)).
