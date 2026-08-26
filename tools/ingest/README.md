@@ -37,3 +37,28 @@ npm run dev              # 3. the table renders the latest pull
 
 The database is **disposable by design**: deleting `data/gart-dash.sqlite` and
 re-running `npm run ingest` rebuilds it entirely from the raw archive.
+
+## Historical data — a separate path (issue #17)
+
+`npm run ingest:historical` loads the owner's **manual CSV exports** from
+`data/historical/` (git-ignored) into three tables — `player_season_stats`
+(2024/25 CBS stat lines incl. first downs), `contract_history` (KERFUFFLE 2025
+salaries), and `auction_result` (TRUFFLE 2026, reference-only, read by nothing).
+
+These are name-keyed CSVs, not fetched HTML, so they are **not** part of the
+`data/raw/` archive walk above and belong to no `pull`. Run **`npm run ingest`
+first** — the name→`cbs_player_id` matcher resolves against the player universe.
+
+```bash
+npm run ingest:historical -- --dry-run   # parse + match report, no writes
+npm run ingest:historical                # load the three tables (idempotent)
+```
+
+- The 3-row grouped CBS stat headers are mapped by **anchored column index**
+  (verified against Josh Allen 177/46 and Chase 73 first downs) with a per-player
+  **FPTS-Total agreement** check between the advanced+standard files — drift fails loudly.
+- Unmatched rows are **named and kept with a null id**, never dropped.
+- The **scoring cross-check** (`scoring-crosscheck.mjs`, unit-tested) recomputes
+  KERFUFFLE points from components and confirms they match CBS's FPTS Total.
+- See [`data/historical/README.md`](../../data/historical/README.md) for provenance
+  and [`docs/data_model.md`](../../docs/data_model.md) for the table shapes.
