@@ -8,13 +8,15 @@
 >
 > **Why this doc exists:** features get built as isolated screens, and isolated screens do not add up to a product a person can actually use. A flow is the unit that matters — if the flow does not complete, the feature does not count, however finished it looks.
 
-**Last updated:** 2026-08-19
+**Last updated:** 2026-08-27
 
 ---
 
 ## One view, many filters — read this before building any flow
 
-Every flow below runs through the **same player table**: one data display with KERFUFFLE-adjusted value, market consensus (ECR), tier, salary, contract, and the league price curve. The flows differ only in **how that table is filtered** (free agents, another team's roster, my roster) and **which decision is being made**. Do not build a dedicated view per flow — a "waiver screen" or "trade screen" that duplicates the table is exactly the drift this section exists to prevent. A flow may add a small decision-specific element (e.g., the editable ceiling column in auction prep, a side-by-side comparison for trades), but the data display underneath is shared.
+Flows 1–5 below run through the **same player table**: one data display with KERFUFFLE-adjusted value, market consensus (ECR), tier, salary, contract, and the league price curve. Those flows differ only in **how that table is filtered** (free agents, another team's roster, my roster) and **which decision is being made**. Do not build a dedicated view per flow — a "waiver screen" or "trade screen" that duplicates the table is exactly the drift this section exists to prevent. A flow may add a small decision-specific element (e.g., the editable ceiling column in auction prep, a side-by-side comparison for trades), but the data display underneath is shared.
+
+**The one deliberate exception is flow 6 (League power rankings).** Its unit is the *team*, not the player — a 12-row rollup of the player table's own numbers — so it earns a dedicated screen rather than a filter. It is a **spin-off**, not a sixth lens on the shared table.
 
 ## The critical flow
 
@@ -131,6 +133,28 @@ Every flow below runs through the **same player table**: one data display with K
 | What goes wrong | What the user sees | What they can do about it |
 | --- | --- | --- |
 | Stale data on a short week (TNF) | The data timestamp | Refresh Wednesday, not just Sunday |
+
+### 6. League power rankings / scouting (spin-off)
+
+**User:** the owner · **Trigger:** he wants to know where the Raccoons stand and where every rival is soft — most often when a trade is on his mind, or at a season checkpoint · **Success:** he can see, at a glance, which teams are strong or weak *and at which positions*, and turn that into a trade angle
+
+**Why this exists:** the valuation engine already values every player the KERFUFFLE way; a team's strength is just its players' Kerf values added up correctly. Surfacing that as a league-wide ranking answers a question the player table cannot: *not "what is this player worth" but "who is built to win, and who is desperate where."* Its named decision is **trade** — the positional grid is a target-finder — with a secondary "where do I stand" read. It is a **standalone spin-off**, not a sixth filter of the shared table.
+
+**The happy path**
+
+1. He refreshes data → the same pipeline; the engine runs (`npm run engine`) so Kerf points are current.
+2. He opens the **Power Rankings** screen → all 12 teams ranked by **Starter Strength** (their best possible superflex lineup, in Kerf projected points), with **Total Roster** (depth included) beside it, and a **tier** (contender / middle / rebuilder).
+3. He reads the **positional grid** → each team's startable strength at QB / RB / WR / TE → spots who is stacked at a position and thin at another.
+4. He turns a gap into a trade angle → jumps to the shared player table filtered to that rival's roster (flow 4) to build the offer. The rankings *point*; the trade flow *executes*.
+
+**Deliberately narrow for v1 — do not "improve" beyond this.** No real win/loss or actual-scoring blend (that needs current-season actuals — a later upgrade); no dynasty toggle yet (the engine has no KERFUFFLE-scored multi-year projection — only dynasty ECR); no auto-generated trade suggestions (it surfaces the grid, it does not negotiate); offense only (defenses are unscored). It is a **read**, like start/sit — it informs the trade decision, it does not make it.
+
+**Where it goes wrong**
+
+| What goes wrong | What the user sees | What they can do about it |
+| --- | --- | --- |
+| Engine not re-run after a data refresh | The data-freshness date on the screen is stale | Re-run `npm run engine`; the board is only as fresh as the last engine run |
+| A rival holds players the engine can't project (e.g. defenses, unranked FAs) | Those players contribute 0 to totals | Read it as "offense, projected players only" — the intended scope |
 
 ---
 
