@@ -271,8 +271,8 @@ export function runEngine(db, { log = () => {} } = {}) {
   const run = db
     .prepare(
       `INSERT INTO engine_run
-         (created_at, projection_pull_id, scoring_pull_id, rate_seasons, fd_method, params_json, notes)
-       VALUES (@created_at, @pull, @pull, @rate_seasons, @fd_method, @params, @notes)
+         (created_at, projection_pull_id, scoring_pull_id, rate_seasons, fd_method, horizon, params_json, notes)
+       VALUES (@created_at, @pull, @pull, @rate_seasons, @fd_method, @horizon, @params, @notes)
        RETURNING engine_run_id`
     )
     .get({
@@ -280,6 +280,9 @@ export function runEngine(db, { log = () => {} } = {}) {
       pull: latest,
       rate_seasons: JSON.stringify(RATE_SEASONS),
       fd_method: FD_METHOD,
+      // The rest-of-season lens (issue #28, Option A): this run scores the refreshed
+      // full-season projection (week 0). The weekly lens (#29) will stamp 'weekly'.
+      horizon: "ros",
       params: JSON.stringify({
         shrinkage: SHRINKAGE,
         fdPolicy: FD_POLICY,

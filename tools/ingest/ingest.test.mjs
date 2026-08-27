@@ -349,6 +349,35 @@ describe("ingest end-to-end (synthetic archive)", () => {
     expect(weeks).toEqual([0, 2]);
   });
 
+  it("board view prefers ROS ECR over draft when a real ROS board is present (#28)", () => {
+    // In-season, the market ECR columns read the ROS board; the draft board is the
+    // preseason fallback. Give 'Rostered Star' and 'Available Guy' different ranks
+    // on a real ROS/STD/OP board and confirm the board view surfaces the ROS ones.
+    const rosBoard = fpEnvelope({
+      ranking_type_name: "ros", type: "Rest of Season", scoring: "STD", position_id: "OP",
+      players: [
+        fpPlayer(9001, 111, "Rostered Star", "QB", 7, "QB2", 2), // draft had ecr 1 / QB1 / tier 1
+        fpPlayer(9002, 555, "Available Guy", "WR", 9, "WR3", 3), // draft had ecr 2 / WR1 / tier 1
+      ],
+    });
+    writeFixtureRun(root, "2026-09-16T12-00-00Z", { extraFp: [["ecr-ros-std-op", rosBoard]] });
+    ingest("2026-09-16T12-00-00Z");
+
+    const star = db.prepare("SELECT ecr, ecr_pos_rank, ecr_tier FROM board WHERE name='Rostered Star'").get();
+    expect(star).toMatchObject({ ecr: 7, ecr_pos_rank: "QB2", ecr_tier: 2 }); // ROS, not draft's 1/QB1/1
+    const fa = db.prepare("SELECT ecr, ecr_pos_rank FROM board WHERE name='Available Guy'").get();
+    expect(fa).toMatchObject({ ecr: 9, ecr_pos_rank: "WR3" }); // ROS preferred on the FA branch too
+  });
+
+  it("board view falls back to draft ECR when NO ROS board exists (preseason, #28)", () => {
+    // The default fixture has no ROS board — the market ECR must still be the draft
+    // board, exactly as before, so preseason display never regresses.
+    writeFixtureRun(root, "2026-08-25T12-00-00Z");
+    ingest("2026-08-25T12-00-00Z");
+    const star = db.prepare("SELECT ecr, ecr_pos_rank, ecr_tier FROM board WHERE name='Rostered Star'").get();
+    expect(star).toMatchObject({ ecr: 1, ecr_pos_rank: "QB1", ecr_tier: 1 }); // the draft board
+  });
+
   it("REJECTS a run missing a required page (no partial ingest)", () => {
     writeFixtureRun(root, "2026-08-25T12-00-00Z");
     rmSync(join(root, "2026-08-25T12-00-00Z", "cbs", "roster-report-t7.html"));

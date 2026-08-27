@@ -47,6 +47,31 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-21 · 2026-08-27 · In-season ROS value = Option A now (full-season projection as the proxy), Option B later (net out actuals)
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Product + method (how the in-season rest-of-season dollar value is computed) |
+| **Decided by** | Product owner, 2026-08-27 (roadmap open decision #14), built in [#28](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/28); Option B is [#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30) |
+
+**The question**
+In-season, how do we compute a player's rest-of-season (ROS) value? **(A)** re-run the existing engine on FantasyPros' **refreshed full-season projection** each week (a proxy — it still counts games already played), or **(B)** compute **true remaining value** by subtracting each player's season-to-date actual KERFUFFLE points from the refreshed projection.
+
+**What we decided**
+**Option A now, Option B later.** The ROS lens (#28) re-scores the refreshed full-season (`week=0`) projection every weekly pull — no new math, just the existing engine (#18/#20) on fresher input. Option B ([#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30)) is queued to the roadmap's *Next*, gated on capturing CBS current-season actuals.
+
+**Why**
+A read-only probe (2026-08-27) confirmed **no first-class ROS projection exists** on the FantasyPros API (`week=ros` silently falls back to the current week), so A is the only ROS signal available without building actuals-netting. And A is nearly free: FantasyPros refreshes the full-season projection through the year (injuries, role/depth changes bake in), so re-running the engine on it gives a **correctly-ordered** ROS ranking immediately. The accepted trade-off: because A still counts games already played, the **ranking is right but the remaining-dollar magnitude runs high** as the season progresses — fine for ordering waivers/starts now, corrected by B before deep trade season.
+
+**What we gave up**
+Dollar *magnitude* accuracy in-season (a mid-season trade evaluated on A overstates what's left to acquire) — accepted until B lands. Blending current-season first-down rates is also deferred to B (the engine keeps the 2024/25 historical FD basis per [D-16](#)).
+
+**What would make us reconsider**
+CBS current-season actuals becoming capturable (then build B — [#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30)); or FantasyPros exposing a genuine ROS projection (then A could read it directly instead of the full-season proxy).
+
+---
+
 ### D-20 · 2026-08-27 · League power rankings — a team-strength spin-off (points, starters + depth, win-now, offense-only, own screen)
 
 | | |

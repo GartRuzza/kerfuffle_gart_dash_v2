@@ -41,6 +41,20 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-27 — In-season rankings: the board is now your rest-of-season lens
+
+**New**
+- **The table is now a rest-of-season (ROS) ranking.** Now that the season is underway, every weekly data refresh re-scores the board on FantasyPros' *latest* full-season projection — which quietly bakes in injuries, role changes, and depth-chart moves. So the Kerf ranks, tiers, dollars, and Edge you already know now reflect **value from here on out**, and update each week. A player whose outlook has shifted moves on the board.
+- **The market column now reflects rest-of-season, not the preseason draft board.** In-season, the "Ovr ECR / Pos ECR" columns show FantasyPros' **rest-of-season consensus** (it automatically falls back to the preseason draft board until the season's ROS board is published).
+- **The banner tells you how fresh the rankings are.** It now reads, e.g., *"League data as of Aug 26 · **Rest-of-Season** ranks · updated Aug 26"* — so you can see both when the data was pulled and when the Kerf numbers were last computed.
+
+**Known issues**
+- **The dollar *amounts* run high as the season goes on.** Right now ROS value is based on the full-season projection, which still counts games already played — so the **ranking order is correct**, but the dollar figure overstates what's actually *left* to get from a player. Use the ranks/Edge for ordering now; a follow-up (true remaining value) will correct the magnitudes. Coming next.
+- **The Rest-of-Season / Weekly toggle isn't visible yet.** In-season there's only the ROS lens to see today; the switch between rest-of-season and this-week (start/sit) rankings arrives with the weekly-rankings update.
+
+**Requires action from you**
+- To see updated rankings, run your weekly refresh: `npm run archive` → `npm run ingest` → `npm run engine`. (The engine step is what recomputes the Kerf/ROS numbers.)
+
 ## 2026-08-27 — Post-auction rosters now load
 
 **Fixed**

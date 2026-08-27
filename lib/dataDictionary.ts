@@ -136,9 +136,10 @@ const DOCS: Record<
     placeholder: false,
   },
   ecr: {
-    definition: "Overall expert consensus rank, on a superflex board — lower is better.",
+    definition: "Overall expert consensus rank for the active lens — lower is better.",
     deepDive: [
-      "Source: FantasyPros' draft board — standard scoring, SUPERFLEX — from ~106 experts.",
+      "Source: FantasyPros' superflex (standard-scoring) consensus, from ~106 experts.",
+      "This column reflects the ACTIVE LENS (issue #28): in-season it's the REST-OF-SEASON board — the market's view of value from here on out — and it falls back to the preseason DRAFT board until the season's ROS board differentiates.",
       "Superflex matters enormously here: because KERFUFFLE starts two QBs, quarterbacks fill the top of this board. On an ordinary 1-QB board the same players sit ~20 spots lower.",
       "Shown as a clean 1-2-3 ordering rather than the raw consensus number (which has ties).",
       "No board matches KERFUFFLE exactly — this league scores first downs, not receptions — so treat it as the market's view, not ours.",
@@ -147,9 +148,9 @@ const DOCS: Record<
     placeholder: false,
   },
   posEcr: {
-    definition: "The player's expert consensus rank within his position.",
+    definition: "The player's expert consensus rank within his position, for the active lens.",
     deepDive: [
-      "Source: FantasyPros' superflex draft board (e.g. WR12 = the 12th-ranked receiver).",
+      "Source: FantasyPros' superflex board for the active lens (rest-of-season in-season, draft preseason) — e.g. WR12 = the 12th-ranked receiver.",
       "Team defenses get their DST1/DST2 rank from the 1-QB board, which is the only one that ranks them.",
       "Tier bands on this sort use the overall board's tier numbers, so the first band may not read 'Tier 1'.",
     ],
