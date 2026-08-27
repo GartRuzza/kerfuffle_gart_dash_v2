@@ -6,19 +6,21 @@
 > **This doc contains:** What we are building next, in what order, and why that order.
 > **This doc never contains:** Claims about what is already built. An item sitting in "Now" may not exist yet — [`current_state.md`](current_state.md) is the only doc that says what is real.
 
-**Last updated:** 2026-08-26
+**Last updated:** 2026-08-27
 
 ---
 
 ## Current phase
 
-> ### ▶ AUCTION-READY — walk into the 2026 Free Agent Auction with tool-generated ceilings
-> **We are here.** Everything under **Now** belongs to this phase.
-> **We do not start the next phase until:** the owner has used the tool's ceilings in the real 2026 KERFUFFLE Free Agent Auction.
+> ### ▶ IN-SEASON DECISION SUPPORT — rank players through the season; decide waivers, starts, and trades on the edge
+> **We are here.** The 2026 Free Agent Auction is complete (2026-08-26) and was handled **outside** the tool (open decision #3 — "the calendar won"). The engine now turns to in-season use.
+> **First up:** rest-of-season (ROS) rankings — the in-season value number every other lens reuses — then weekly rankings / start-sit, then the waiver and trade lenses.
 
-The auction date is fixed and weeks away. It is the hard constraint on everything below: scope bends, the date does not.
+The auction is behind us; the season is the horizon now. **ROS value is foundational:** waivers, trades, and start/sit all read from it, so it is built first.
 
 ## MVP scope
+
+> **Note (2026-08-27):** the **auction-ready** MVP below is substantially delivered (live data, valuation engine, shared table). The 2026 auction was run outside the tool, so the **auction-prep lens** is the one unfinished MVP item and is now deferred to *Later* (next auction is ~a year away). Current focus is the **in-season** phase above.
 
 **In scope — the MVP is not done without these** *(from [`product_brief.md`](../product_brief.md))*:
 
@@ -40,7 +42,17 @@ The auction date is fixed and weeks away. It is the hard constraint on everythin
 
 ## Now / Next / Later
 
-### Now — the Auction-Ready phase, in order
+### Now — In-season ranking foundation, in order
+
+| # | Item | Why now | Depends on |
+| --- | --- | --- | --- |
+| 1 | **ROS + weekly data plumbing ([#27](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/27))** | The engine needs in-season inputs: ROS + weekly consensus in the league's **STD/superflex** format, plus **per-week projected stat lines**. The consensus parser already handles ROS/weekly types; this adds the STD/OP variants, the weekly projections pull, and **ROS-fallback-to-draft handling** (preseason ROS returns the draft board). | — |
+| 2 | **ROS engine — Kerf ranks/tiers/dollars, weekly-refreshed ([#28](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/28), Option A)** | **The in-season value number every other lens reuses.** Re-runs the existing engine (#18/#20) on FantasyPros' **refreshed full-season projection** each week → updated Kerf ranks/tiers/dollars/Edge, with **ROS ECR** as the market column. Option A (full-season proxy); true remaining value (Option B) is queued to Next. | #27 |
+| 3 | **Weekly rankings + start/sit lens ([#29](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/29))** | Per-week Kerf re-score **beside** weekly consensus (with matchup opponent + expert start/sit lean), powering the now-**supported** start/sit flow — this **reverses the vision non-goal** (owner, 2026-08-27). | #27 (uses #28 machinery) |
+
+> **Sequencing:** ROS value (#28) is foundational — waivers, trades, and start/sit all read from it — so it is built first, on the plumbing (#27); weekly/start-sit (#29) follows.
+
+### Completed — Auction-Ready phase (shipped; the 2026 auction happened outside the tool, so the auction-prep lens is deferred to *Later*)
 
 | # | Item | Why now | Depends on |
 | --- | --- | --- | --- |
@@ -60,17 +72,19 @@ The auction date is fixed and weeks away. It is the hard constraint on everythin
 
 **The engine is split into four GitHub issues** ([#17](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/17)→[#18](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/18)→[#19](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/19)→[#20](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/20)), staged with the backtest as the gate between the projection core and the dollar layer ([D-13](../decision_log.md)).
 
-### Next — Phase 2: In-season, in order
+### Next — Phase 2: In-season decisions, in order
 
 | # | Item | Why this order | Depends on |
 | --- | --- | --- | --- |
-| 1 | Waiver additions | First real in-season decision (Wednesday FAB runs from ~Week 1). Suggested bid range = engine value through the price curve, with historical FAB wins as comparables, bounded by rivals' cap space. Same table, free-agent filter. | Auction-Ready phase complete |
-| 2 | Trade evaluation + construction | Offers arrive on their own schedule. Side-by-side KERFUFFLE points, roster-aware value, contracts vs. curve, cap-legality check for both teams; cross-roster filtering for target hunting. Same table. | Waiver additions (shares curve work) |
+| 1 | Waiver additions | First real in-season decision (Wednesday FAB runs from ~Week 1). Suggested bid range = **ROS engine value** through the price curve, with historical FAB wins as comparables, bounded by rivals' cap space. Same table, free-agent filter. | ROS engine ([#28](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/28)) |
+| 2 | **True ROS remaining value ([#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30), Option B)** | Nets ROS dollars down to what is actually **left** (refreshed season projection − actuals-to-date). Improves waiver/trade accuracy as the season progresses; needs CBS current-season actuals captured. Ideally lands before deep trade season. | ROS engine ([#28](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/28)) |
+| 3 | Trade evaluation + construction | Offers arrive on their own schedule. Side-by-side KERFUFFLE points, roster-aware value, contracts vs. curve, cap-legality check for both teams; cross-roster filtering for target hunting. Same table. | Waivers; more accurate with true ROS ([#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30)) |
 
 ### Later — real, but not yet scheduled
 
 | Item | Why it is not "Next" | Revisit when |
 | --- | --- | --- |
+| **Auction-prep lens completion** (persisted ceilings saved for auction day + cap-sum check — the former Now #11) | The 2026 auction was handled outside the tool; the next auction is ~a year away, so this is no longer time-critical. The engine's suggested ceilings already render; only persistence + the cap-sum check remain. | Before the next KERFUFFLE Free Agent Auction |
 | Web deployment | Local serves one user fine; deployment adds hosting/auth for zero new decisions served | The owner is regularly blocked by being away from the machine |
 | Drop/dead-cap tool on claims | Valuable but not auction-critical | First time a claim forces a painful manual dead-cap calc |
 | Contract-duration support | Requires real-life NFL contract/depth-chart data (vision non-goal until then) | That data enters scope deliberately |
@@ -92,6 +106,9 @@ The auction date is fixed and weeks away. It is the hard constraint on everythin
 
 | # | Decision needed | What it blocks | Options under consideration | Owner | Status |
 | --- | --- | --- | --- | --- | --- |
+| 15 | **Elevate start/sit to a supported flow?** Weekly rankings make start/sit a real feature — reversing the vision non-goal ("nothing gets built for this flow"). | The weekly issue ([#29](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/29)); the `product_vision.md` + `user_flows.md` §5 edits | (a) Keep start/sit unsupported (reference only) vs (b) elevate it to a supported flow | Owner | **Resolved 2026-08-27 — elevate.** Weekly shows the Kerf re-score + consensus + matchup/expert lean; the pick stays human (no optimizer). Vision non-goal + user_flows §5 updated as part of #29. |
+| 14 | **ROS value method: full-season proxy (A) or true remaining value (B)?** | The ROS engine ([#28](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/28)) and Option B ([#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30)) | (a) Option A — re-rank on FantasyPros' refreshed full-season projection vs (b) Option B — net out season-to-date actuals for true remaining $ | Owner | **Resolved 2026-08-27 — A now, B later.** No first-class ROS projection exists on the FP API (a read-only probe confirmed `week=ros` falls back to the current week); A reuses the engine and ranks correctly; B is queued to *Next* once CBS current-season actuals are captured. |
+| 13 | **How deep do the in-season rankings go — ROS + weekly scope?** | The four in-season ranking issues (#27–#30) | consensus-only vs full KERFUFFLE re-score; dollars on ROS or not; weekly one column or both | Owner | **Resolved 2026-08-27 — full KERFUFFLE re-score for both; ROS carries dollars; weekly shows Kerf + consensus side by side.** ROS built first as the foundational in-season value. Data availability confirmed by a read-only FantasyPros probe (2026-08-27): weekly projections + weekly/ROS consensus exist; no dedicated ROS projection. |
 | 12 | **Does the VORP result match how you want to value the superflex QB premium?** Last-starter VORP prices RBs above QBs and reads elite QBs as *cheaper than the market pays* (Josh Allen Kerf $130 vs Market $201), because ~24 QBs start so even a top QB's points-above-replacement is modest. Correct, transparent VORP — but a real judgment to sanity-check before bidding. | Whether #20's dollars need a QB-scarcity adjustment on top of last-starter VORP | (a) Keep pure last-starter VORP (the Edge *is* the signal — the market overpays QBs) vs (b) add a superflex QB-premium adjustment vs (c) a richer replacement model (man-games) | Owner, informed by the live board + drill-down | **Open (raised by #20, 2026-08-26)** — currently backlog, not a blocker; the dollars ship on pure VORP. |
 | 11 | **Does the backtest's marginal edge clear the gate to build the dollar layer (#20)?** The Kerf re-rank beats ECR only slightly and inconsistently (out-of-sample 2025 ρ 0.78 vs 0.77; trails at TE). | The dollar layer (#20) and everything downstream | (a) Proceed to #20 on the marginal edge vs (b) refine the #18 first-down model first, then re-gate | Owner, informed by [`backtest_results.md`](../backtest_results.md) | **Resolved 2026-08-26 — a blend:** make the cheap, evidence-driven core fix ([D-16](../decision_log.md): receiving-FD player-specific, rushing = position average — the #19 probe showed rushing FD barely persists, ρ≈0.14), which re-gated as do-no-harm, **then proceed to #20**. Value reframed as league-specific dollar valuation + Edge, not a ranking edge (a possible richer FD model is backlog, not a blocker). |
 | 1 | Where does contract-length data actually live? CBS holds salaries, but lengths may only exist in the Commissioner's sheet / TRUFFLEdash | Scope of CBS spike (#2); whether the pipeline needs a second source (sheet import) | CBS custom fields vs. Google Sheet import vs. manual entry | Owner (confirm during #2) | **Resolved 2026-08-20 — contract length IS in CBS** (per-player "Contract" column on roster pages; spike #5 / issue #5). No second source needed for it. See [`../cbs_data_discovery.md`](../cbs_data_discovery.md), [`../decision_log.md`](../decision_log.md) D-08. |
