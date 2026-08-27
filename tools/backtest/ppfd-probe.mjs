@@ -88,7 +88,7 @@ const coef = buildScoringMap(db, scoringPull);
 
 const src25 = db
   .prepare(`SELECT ps.* FROM projection_source ps JOIN pull ON pull.pull_id = ps.pull_id
-            WHERE pull.kind='backtest' AND pull.season=2025 AND ps.cbs_player_id IS NOT NULL
+            WHERE pull.kind='backtest' AND pull.season=2025 AND ps.week = 0 AND ps.cbs_player_id IS NOT NULL
               AND ps.pos IN ('QB','RB','WR','TE')`)
   .all();
 const ecr25 = new Map();

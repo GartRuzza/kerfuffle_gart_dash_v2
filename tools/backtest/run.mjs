@@ -77,6 +77,7 @@ function analyzeSeason(db, season, scoringPullId, statSeasons) {
       `SELECT ps.* FROM projection_source ps
        JOIN pull ON pull.pull_id = ps.pull_id
        WHERE pull.kind = 'backtest' AND pull.season = ?
+         AND ps.week = 0
          AND ps.cbs_player_id IS NOT NULL AND ps.pos IN ('QB','RB','WR','TE')`
     )
     .all(season);

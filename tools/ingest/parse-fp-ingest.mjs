@@ -47,6 +47,12 @@ export function mapFpBoard(json, sourceEndpoint) {
     rankMax: toNum(p.rank_max),
     rankAve: toNum(p.rank_ave),
     rankStd: toNum(p.rank_std),
+    // Weekly-board extras (issue #27) — the matchup + expert start/sit lean the
+    // weekly-consensus payload carries. Absent (→ null) on draft/dynasty/ros boards.
+    playerOpponent: strOrNull(p.player_opponent),
+    note: strOrNull(p.note),
+    tag: strOrNull(p.tag),
+    recommendation: strOrNull(p.recommendation),
   }));
 
   const seenCbsIds = new Map();
@@ -90,4 +96,31 @@ function toNum(v) {
   if (v === null || v === undefined || v === "") return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+// Trim to a non-empty string, or null. Keeps blank expert fields out of the store.
+function strOrNull(v) {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  return s === "" ? null : s;
+}
+
+/**
+ * Is this ROS-requested board actually FantasyPros' DRAFT board in disguise?
+ * (issue #27). Preseason, a `type=ros` request returns the draft board with
+ * `fallback_for:"ROS"` (and declares itself "Draft"/week 0) — ingestion must NOT
+ * store that as a real ROS board. Once the season differentiates ROS, the payload
+ * declares `ros` with no fallback flag and this returns false.
+ *
+ * Guards only ROS-named files (`ecr-ros-*`); returns false for everything else.
+ */
+export function isRosFallback(sourceEndpoint, json) {
+  const name = String(sourceEndpoint || "");
+  if (!/^ecr-ros(-|$)/i.test(name)) return false;
+  // FantasyPros' own fallback flag is the definitive signal.
+  if (json && String(json.fallback_for || "").toUpperCase() === "ROS") return true;
+  // Otherwise: a ROS-named board that declares itself as something other than ROS.
+  const typeRaw = String(json?.ranking_type_name || json?.type || "").toLowerCase();
+  const declared = typeRaw.split(/\s+/)[0];
+  return declared !== "" && declared !== "ros";
 }

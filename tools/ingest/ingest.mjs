@@ -30,7 +30,7 @@ import {
   parseTransactionsPage,
   normalizeTxDate,
 } from "./parse-cbs-ingest.mjs";
-import { mapFpBoard } from "./parse-fp-ingest.mjs";
+import { mapFpBoard, isRosFallback } from "./parse-fp-ingest.mjs";
 import { mapProjections } from "./parse-projections.mjs";
 import { parseScoring } from "../profile/parse-scoring.mjs";
 
@@ -302,11 +302,13 @@ function ingestRunInner(db, runId, { warn, note }, rawRoot) {
     `INSERT INTO market_ranking (pull_id, fp_player_id, cbs_player_id, player_name, player_pos,
                                  player_team, bye_week, ranking_type, scoring_format, position_scope,
                                  week, rank_ecr, pos_rank, tier, rank_min, rank_max, rank_ave,
-                                 rank_std, total_experts, source_endpoint, fetched_at)
+                                 rank_std, total_experts, source_endpoint, fetched_at,
+                                 player_opponent, note, tag, recommendation)
      VALUES (@pull_id, @fp_player_id, @cbs_player_id, @player_name, @player_pos,
              @player_team, @bye_week, @ranking_type, @scoring_format, @position_scope,
              @week, @rank_ecr, @pos_rank, @tier, @rank_min, @rank_max, @rank_ave,
-             @rank_std, @total_experts, @source_endpoint, @fetched_at)`
+             @rank_std, @total_experts, @source_endpoint, @fetched_at,
+             @player_opponent, @note, @tag, @recommendation)`
   );
 
   const boardsSeen = new Set();
@@ -315,7 +317,16 @@ function ingestRunInner(db, runId, { warn, note }, rawRoot) {
   stats.boards = 0;
   for (const [name, resp] of pages) {
     if (resp.source !== "fantasypros" || !/^ecr-/.test(name)) continue;
-    const board = mapFpBoard(JSON.parse(readPage(runDir, resp)), name);
+    const json = JSON.parse(readPage(runDir, resp));
+    // Preseason, FantasyPros serves the DRAFT board for a ROS request
+    // (fallback_for:"ROS"). Detect it explicitly and skip — never let a draft
+    // board masquerade as a real ROS board (issue #27). Once the season
+    // differentiates ROS, this passes through and the board stores normally.
+    if (isRosFallback(name, json)) {
+      warn(`fp/${name}: ROS board is FantasyPros' draft-board fallback (preseason) — not stored as ROS`);
+      continue;
+    }
+    const board = mapFpBoard(json, name);
     const grain = [board.rankingType, board.scoringFormat, board.positionScope, board.week ?? ""].join("|");
     if (boardsSeen.has(grain)) {
       // Byte-identical duplicates are normal today (FP's dynasty STD/PPR files,
@@ -345,6 +356,7 @@ function ingestRunInner(db, runId, { warn, note }, rawRoot) {
         pos_rank: r.posRank, tier: r.tier, rank_min: r.rankMin, rank_max: r.rankMax,
         rank_ave: r.rankAve, rank_std: r.rankStd, total_experts: board.totalExperts,
         source_endpoint: name, fetched_at: resp.fetched_at,
+        player_opponent: r.playerOpponent, note: r.note, tag: r.tag, recommendation: r.recommendation,
       });
       stats.rankingRows++;
     }
@@ -366,17 +378,35 @@ function ingestRunInner(db, runId, { warn, note }, rawRoot) {
     `ranking_type='draft' AND scoring_format='STD' AND position_scope='ALL' AND player_pos='DST'`,
     "draft/STD/ALL (the only board that ranks defenses)"
   );
+
+  // In-season boards (issue #27): the ROS + weekly STD/OP boards the #28/#29
+  // lenses will read. LENIENT — a warn, never a rollback — because preseason
+  // archives legitimately lack them (ROS is a draft fallback then, weekly may be
+  // unpublished), and re-ingesting old runs must not start failing.
+  const expectBoard = (where, label) => {
+    const n = db
+      .prepare(`SELECT COUNT(*) c FROM market_ranking WHERE pull_id = ? AND ${where}`)
+      .get(pullId).c;
+    if (n === 0) warn(`${runId}: no ${label} board in this pull (expected in-season; fine preseason)`);
+  };
+  expectBoard(`ranking_type='ros' AND scoring_format='STD' AND position_scope='OP'`, "ROS/STD/OP (superflex)");
+  expectBoard(`ranking_type='weekly' AND scoring_format='STD' AND position_scope='OP'`, "weekly/STD/OP (superflex)");
+
   if (noCbsId > 0) note(`fp: ${noCbsId} ranking row(s) have no cbs_player_id (unjoinable; kept in market_ranking, excluded from the board view)`);
 
   // ---- FantasyPros PROJECTIONS -> projection_source (the engine's input, #18) ----
   // The projections feed carries fpid, not cbs_player_id, so the join to CBS is
   // bridged through player.fp_player_id (populated from the ECR boards just above).
   // Not required: an older archive run without projections warns rather than fails.
-  const projResp = pages.get("projections-all");
-  if (!projResp) {
-    warn(`${runId}: no projections-all page — projection_source not updated for this pull (engine has no input)`);
+  // The season projection (projections-all → week 0, read by the ROS lens) AND
+  // the current week's projection (projections-week-N → week N, read by the weekly
+  // lens) both live in projection_source, distinguished by `week` (issue #27).
+  const projPages = [...pages.keys()]
+    .filter((n) => n === "projections-all" || /^projections-week-\d+$/.test(n))
+    .sort();
+  if (projPages.length === 0) {
+    warn(`${runId}: no projections page — projection_source not updated for this pull (engine has no input)`);
   } else {
-    const proj = mapProjections(JSON.parse(readPage(runDir, projResp)), `${runId}/projections-all`);
     const cbsIdByFp = new Map(
       db.prepare(`SELECT fp_player_id, cbs_player_id FROM player WHERE fp_player_id IS NOT NULL`)
         .all().map((r) => [r.fp_player_id, r.cbs_player_id])
@@ -391,25 +421,46 @@ function ingestRunInner(db, runId, { warn, note }, rawRoot) {
           @pass_att, @pass_cmp, @pass_yds, @pass_td, @pass_int, @rush_att, @rush_yds, @rush_td,
           @rec_rec, @rec_yds, @rec_td, @fumbles, @two_pt, @fp_points, @source_endpoint, @fetched_at)`
     );
-    let projUnmatched = 0;
-    for (const r of proj.rows) {
-      const cbsId = cbsIdByFp.get(r.fpPlayerId) ?? null;
-      if (cbsId === null) projUnmatched++;
-      insertProjection.run({
-        pull_id: pullId, cbs_player_id: cbsId, fp_player_id: r.fpPlayerId,
-        player_name: r.playerName, pos: r.pos, nfl_team: r.nflTeam,
-        season: r.season, week: r.week,
-        pass_att: r.pass_att, pass_cmp: r.pass_cmp, pass_yds: r.pass_yds,
-        pass_td: r.pass_td, pass_int: r.pass_int, rush_att: r.rush_att,
-        rush_yds: r.rush_yds, rush_td: r.rush_td, rec_rec: r.rec_rec,
-        rec_yds: r.rec_yds, rec_td: r.rec_td, fumbles: r.fumbles, two_pt: r.two_pt,
-        fp_points: r.fpPoints, source_endpoint: "projections-all", fetched_at: projResp.fetched_at,
-      });
+    let totalRows = 0;
+    let totalUnmatched = 0;
+    for (const name of projPages) {
+      const resp = pages.get(name);
+      const proj = mapProjections(JSON.parse(readPage(runDir, resp)), `${runId}/${name}`);
+      // Guard the week↔filename agreement for the per-week file: a projections-week-N
+      // file MUST carry week N. If FantasyPros echoed week 0 (or a different week),
+      // storing it would either collide with the season row or mislabel the week —
+      // skip it loudly rather than corrupt the horizon the weekly lens reads.
+      const m = name.match(/^projections-week-(\d+)$/);
+      if (m) {
+        const expected = Number(m[1]);
+        if (proj.week !== expected) {
+          warn(
+            `projections: ${name} carries week ${proj.week}, expected ${expected} — skipped ` +
+              `(FantasyPros may not have published week ${expected} yet)`
+          );
+          continue;
+        }
+      }
+      for (const r of proj.rows) {
+        const cbsId = cbsIdByFp.get(r.fpPlayerId) ?? null;
+        if (cbsId === null) totalUnmatched++;
+        insertProjection.run({
+          pull_id: pullId, cbs_player_id: cbsId, fp_player_id: r.fpPlayerId,
+          player_name: r.playerName, pos: r.pos, nfl_team: r.nflTeam,
+          season: r.season, week: r.week,
+          pass_att: r.pass_att, pass_cmp: r.pass_cmp, pass_yds: r.pass_yds,
+          pass_td: r.pass_td, pass_int: r.pass_int, rush_att: r.rush_att,
+          rush_yds: r.rush_yds, rush_td: r.rush_td, rec_rec: r.rec_rec,
+          rec_yds: r.rec_yds, rec_td: r.rec_td, fumbles: r.fumbles, two_pt: r.two_pt,
+          fp_points: r.fpPoints, source_endpoint: name, fetched_at: resp.fetched_at,
+        });
+      }
+      totalRows += proj.rows.length;
     }
-    stats.projections = proj.rows.length;
-    if (projUnmatched > 0) {
+    stats.projections = totalRows;
+    if (totalUnmatched > 0) {
       note(
-        `projections: ${projUnmatched}/${proj.rows.length} projected players have no cbs_player_id ` +
+        `projections: ${totalUnmatched} projected row(s) across ${projPages.length} file(s) have no cbs_player_id ` +
           `(FantasyPros projects them but they aren't in our league universe; stored with null id, no Kerf projection)`
       );
     }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mapFpBoard } from "./parse-fp-ingest.mjs";
+import { mapFpBoard, isRosFallback } from "./parse-fp-ingest.mjs";
 import { IngestError } from "./parse-cbs-ingest.mjs";
 
 // This module's whole job is surviving FantasyPros changing shape, so the tests
@@ -88,6 +88,60 @@ describe("unknown stays unknown (null is not zero)", () => {
   it("keeps a non-numeric cbs_player_id as null rather than joining on garbage", () => {
     const b = mapFpBoard(board({ players: [player({ cbs_player_id: "" })] }), "f");
     expect(b.rows[0].cbsPlayerId).toBeNull();
+  });
+});
+
+describe("weekly-board extras (issue #27): opponent + start/sit lean", () => {
+  it("extracts player_opponent / note / tag / recommendation when present", () => {
+    const b = mapFpBoard(
+      board({
+        ranking_type_name: "weekly", scoring: "STD", position_id: "OP", week: "2",
+        players: [player({ player_opponent: "@KC", note: "Trending up", tag: "Must Start", recommendation: "Start" })],
+      }),
+      "ecr-weekly-std-op"
+    );
+    expect(b).toMatchObject({ rankingType: "weekly", week: "2" });
+    expect(b.rows[0]).toMatchObject({
+      playerOpponent: "@KC", note: "Trending up", tag: "Must Start", recommendation: "Start",
+    });
+  });
+
+  it("leaves the extras null on a board that doesn't carry them (draft/dynasty/ros)", () => {
+    const b = mapFpBoard(board(), "ecr-draft-std-op"); // no opponent/tag fields
+    expect(b.rows[0]).toMatchObject({
+      playerOpponent: null, note: null, tag: null, recommendation: null,
+    });
+  });
+
+  it("treats blank/whitespace extras as null, not empty strings", () => {
+    const b = mapFpBoard(
+      board({ players: [player({ player_opponent: "", tag: "   ", note: null })] }),
+      "ecr-weekly-std-op"
+    );
+    expect(b.rows[0]).toMatchObject({ playerOpponent: null, tag: null, note: null });
+  });
+});
+
+describe("ROS-fallback detection (issue #27): a draft board wearing a ROS label", () => {
+  it("flags the preseason fallback via FantasyPros' own fallback_for:'ROS'", () => {
+    // The exact preseason shape: a ros request returns the Draft board, week 0.
+    const json = { ranking_type_name: "draft", type: "Draft", week: "0", fallback_for: "ROS", players: [player()] };
+    expect(isRosFallback("ecr-ros-std-op", json)).toBe(true);
+    expect(isRosFallback("ecr-ros-ppr-all", json)).toBe(true);
+  });
+
+  it("flags a ROS-named file that declares itself something other than ros", () => {
+    expect(isRosFallback("ecr-ros-std-op", { ranking_type_name: "draft", players: [] })).toBe(true);
+  });
+
+  it("passes a REAL ROS board through (declares ros, no fallback flag)", () => {
+    const real = { ranking_type_name: "ros", type: "Rest of Season", week: "0", players: [player()] };
+    expect(isRosFallback("ecr-ros-std-op", real)).toBe(false);
+  });
+
+  it("never touches non-ROS files, even a genuine draft fallback flag elsewhere", () => {
+    expect(isRosFallback("ecr-draft-std-op", { ranking_type_name: "draft", fallback_for: "ROS" })).toBe(false);
+    expect(isRosFallback("ecr-weekly-std-op", { ranking_type_name: "weekly" })).toBe(false);
   });
 });
 

@@ -208,10 +208,13 @@ export function runEngine(db, { log = () => {} } = {}) {
   const latest = db.prepare(`SELECT pull_id FROM latest_pull`).get()?.pull_id;
   if (!latest) throw new Error(`no ingested pull — run "npm run ingest" first`);
 
+  // week = 0 is the full-season projection — the ROS/season lens (Option A, #28).
+  // Since #27, a pull can ALSO hold the current week's projection (week N, read by
+  // the weekly lens #29); this run scores the season line only, exactly as before.
   const src = db
     .prepare(
       `SELECT * FROM projection_source
-       WHERE pull_id = ? AND cbs_player_id IS NOT NULL AND pos IN ('QB','RB','WR','TE')`
+       WHERE pull_id = ? AND week = 0 AND cbs_player_id IS NOT NULL AND pos IN ('QB','RB','WR','TE')`
     )
     .all(latest);
   if (src.length === 0) {

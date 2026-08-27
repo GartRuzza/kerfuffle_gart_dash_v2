@@ -67,4 +67,17 @@ describe("mapProjections", () => {
   it("refuses an empty payload", () => {
     expect(() => mapProjections(payload([]), "x")).toThrow(IngestError);
   });
+
+  it("carries a per-week (week=N) payload through unchanged (issue #27)", () => {
+    // The weekly lens (#29) reads the current week's projection, in the SAME shape
+    // as the season line — mapProjections just reports whichever week FP echoes.
+    const weekly = { season: 2026, week: 2, scoring: "STD", players: [
+      { fpid: 100, name: "Test QB", position_id: "QB", team_id: "BUF",
+        stats: { pass_yds: 260, pass_tds: 2, rush_yds: 20, points: 21.4 } },
+    ] };
+    const { season, week, rows } = mapProjections(weekly, "projections-week-2");
+    expect(season).toBe(2026);
+    expect(week).toBe(2);
+    expect(rows[0]).toMatchObject({ fpPlayerId: 100, pos: "QB", pass_yds: 260, week: 2 });
+  });
 });
