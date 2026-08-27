@@ -41,6 +41,14 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-27 — Post-auction rosters now load
+
+**Fixed**
+- **Your finished auction now shows up in Gart Dash.** After the auction, refreshing the data (`npm run ingest`) was quietly throwing away the whole update, so none of the new manager assignments or salaries appeared. The cause: CBS lists a just-won player with a contract length of **"0"** (a real salary, but no contract term set yet), and the app had been built to accept only 1–4 years and to reject an entire snapshot on anything unexpected. Now a **"0" contract is accepted and shown as an unknown term ("—")** until you set it in CBS; everything else about that player — their manager and salary — loads normally. After the fix the app shows **all 241 rostered players** (up from 170), 40 of whom currently have an unassigned term.
+
+**Known issues**
+- Players you haven't yet given a contract length in CBS will show **"—"** in the Contract column. Assign the term in CBS and re-run `npm run archive` → `npm run ingest` and the real number appears. (Re-run `npm run engine` afterward to refresh the Kerf/dollar numbers off the new rosters.)
+
 ## 2026-08-26 — Valuation tune-up: real salaries in "Market (Now)", and elite QBs priced right
 
 *(Refines the same-day dollars release below, after an owner review — before merge.)*

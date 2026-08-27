@@ -60,9 +60,10 @@ describe("deliberate coercion", () => {
     expect(() => coerceSalary("12.50", "c")).toThrowError(IngestError);
     expect(() => coerceSalary("abc", "c")).toThrowError(IngestError);
   });
-  it("contract years: 1-4 pass, outside the domain fails loudly", () => {
+  it("contract years: 1-4 pass, 0 = unassigned -> null, outside the domain fails loudly", () => {
     expect(coerceContractYears("3", "c")).toBe(3);
-    expect(() => coerceContractYears("0", "c")).toThrowError(/domain/);
+    // "0" is a just-assigned player whose term isn't set yet (post-auction) — unknown, not a failure
+    expect(coerceContractYears("0", "c")).toBeNull();
     expect(() => coerceContractYears("5", "c")).toThrowError(/domain/);
     expect(() => coerceContractYears("", "c")).toThrowError(IngestError);
     expect(coerceContractYears("", "c", { allowBlank: true })).toBeNull();

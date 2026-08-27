@@ -7,7 +7,9 @@
 //     (observed: players awaiting salary assignment) -> null + a warning.
 //     A non-integer salary is a loud failure — the league deals in whole dollars,
 //     so a decimal means CBS changed something we need to look at.
-//   * contract "1".."4" -> int. Anything else on a player row is a loud failure
+//   * contract "1".."4" -> int. "0" -> null (a just-assigned player whose term
+//     isn't set yet — observed post-auction on former free agents; stored as
+//     unknown + a warning). Anything else on a player row is a loud failure
 //     (the constitution's contract-year domain).
 
 import { createHash } from "node:crypto";
@@ -53,6 +55,10 @@ export function coerceContractYears(raw, context, { allowBlank = false } = {}) {
     throw new IngestError(`${context}: contract years is blank on a player row`);
   }
   const n = Number(s);
+  // "0" = a just-assigned player whose contract term hasn't been set on CBS yet
+  // (observed post-auction on former free agents). Store as unknown, not a
+  // failure — the null passes the schema's `contract_years IS NULL OR 1..4` CHECK.
+  if (n === 0) return null;
   if (!Number.isInteger(n) || n < 1 || n > 4) {
     throw new IngestError(`${context}: contract years "${raw}" outside the league domain {1,2,3,4}`);
   }
@@ -114,6 +120,10 @@ export function parseRosterForIngest(html, teamId) {
     const rowCtx = `${ctx} ${name}`;
     const salary = coerceSalary(cells[h.get("Salary")], rowCtx);
     if (salary === null) warnings.push(`${rowCtx}: blank salary on a roster row (stored as unknown, counted $0)`);
+    // Blank contract on a player row still throws, so a null here means CBS showed
+    // "0" — a just-assigned player whose term isn't set yet. Warn, don't fail.
+    const contractYears = coerceContractYears(cells[h.get("Contract")], rowCtx);
+    if (contractYears === null) warnings.push(`${rowCtx}: contract length "0" on CBS (term not yet assigned; stored as unknown)`);
     return {
       cbsPlayerId: Number(id),
       name,
@@ -123,7 +133,7 @@ export function parseRosterForIngest(html, teamId) {
       rosterStatus: section,
       rosterSlot: clean(cells[h.get("Pos")]) || null, // the lineup SLOT, not the position
       salary,
-      contractYears: coerceContractYears(cells[h.get("Contract")], rowCtx),
+      contractYears,
       projPoints: coerceNumberOrNull(cells[h.get("Proj")]),
     };
   });

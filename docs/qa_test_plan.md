@@ -143,7 +143,8 @@
 | 1 | Run `npm run ingest` | On first run: "migration applied: 001…", then one **`✔`** line per archive run — `teams:12 players:~170 … rules:24 boards:9 rankings:~3800` — and a closing **"Board view: N players (N rostered, N free agents)"**. | ☐ |
 | 2 | Run `npm run ingest` **again** | "to ingest: 0" — already-ingested runs are skipped; the board summary is **unchanged**. | ☐ |
 | 3 | Run `npm run ingest -- --all` | Every run re-ingests and the board summary is **still identical** — re-running never duplicates anything. | ☐ |
-| 4 | Read the `⚠` warnings on a run | Currently expected: **three t7 players with blank salaries on CBS itself** (stored as unknown, counted $0). Warnings are informational; a **`✘ ROLLED BACK`** line is a real failure — read its reason. | ☐ |
+| 4 | Read the `⚠` warnings on a run | Currently expected: **blank salaries on CBS itself** (stored as unknown, counted $0) and, post-auction, **`contract length "0"` warnings** for just-won players whose term isn't set yet (stored as unknown → Contract shows "—"). Warnings are informational; a **`✘ ROLLED BACK`** line is a real failure — read its reason. | ☐ |
+| 4b | (Post-auction) Confirm the finished auction loaded | The closing "Board view:" line shows the **full rostered count** (e.g. **241**, not 170); a just-won player (e.g. Sam Darnold) shows his **manager and salary** in the table with Contract **"—"**. A contract value **outside {0,1,2,3,4}** — or a genuinely **blank** contract cell — must still roll the run back loudly. | ☐ |
 | 5 | Look in `data/` | `gart-dash.sqlite` exists; `git status` shows **nothing under `data/`** (git-ignored). | ☐ |
 | 6 | (Optional, destructive-safe) Delete `data/gart-dash.sqlite`, run `npm run ingest` | The database rebuilds completely from the raw archive — the DB is disposable; the archive is the history. | ☐ |
 

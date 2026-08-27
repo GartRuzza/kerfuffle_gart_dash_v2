@@ -53,6 +53,25 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-27 — Post-auction ingest fix: contract length "0" no longer rolls back the run
+
+**Ticket / Issue:** none (owner troubleshooting) · **Branch:** feat/issue-20-valuation-engine · **Deviated from plan:** No
+
+**Original intent**
+After the CBS auction completed, the owner ran `npm run archive` then `npm run ingest` to load the finished rosters. The new manager assignments and salaries did not appear in Gart Dash.
+
+**What was actually built**
+A one-line-behavior parser change in `tools/ingest/parse-cbs-ingest.mjs`: a CBS **Contract** value of **"0"** on a player row now coerces to `null` (stored as "term unknown") plus a per-player warning, instead of throwing. Anything else outside {1,2,3,4}, and a genuinely blank contract cell, still fail loudly. No schema/migration change was needed — the `contract` table's CHECK already permits `NULL`. Updated the matching unit test; added a QA check.
+
+**Deviations**
+None. The guardrail behaved exactly as designed — it just guarded against an assumption ("a rostered player's contract is always 1–4 years") that stopped being true post-auction.
+
+**Product implications**
+Root cause: ingest is deliberately all-or-nothing per snapshot, so a single out-of-domain value threw the **entire** run away — which is why *none* of the new assignments or salaries populated. Post-auction, CBS shows just-assigned former free agents with Contract = "0" (salary set, term not yet chosen). After the fix, the post-auction snapshot ingests cleanly: **241 rostered players** (was 170), with **40** carrying a "0"/unknown contract that displays as "—" until a term is assigned in CBS. Salaries and manager assignments are all present. The two earlier post-auction runs that "rolled back" both failed on this identical cause (`t7 Sam Darnold` contract "0"); the one that appeared to fail *silently* in the terminal actually threw the same message — verified by reproduction — and the missing line was a copy/display artifact of two identical adjacent error lines, not a second bug.
+
+**Technical tradeoffs and debt**
+None of note. A "0" contract is stored as unknown, not as a real term; if the owner later assigns terms in CBS and re-archives/re-ingests, the real numbers replace the unknowns automatically. Re-running `npm run engine` is still the manual step to refresh Kerf numbers off the new rosters.
+
 ### 2026-08-26 — Post-#20 owner review: Market (Now) = real salary (D-18) + superflex QB floor (D-19)
 
 **Ticket / Issue:** #20 (refinements) · **Branch:** feat/issue-20-valuation-engine · **Deviated from plan:** Yes — two owner-driven corrections after the first build
