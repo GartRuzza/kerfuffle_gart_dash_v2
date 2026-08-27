@@ -27,6 +27,7 @@
 | 2026-08-19 | **Drill-into-inputs** ("why did RB18 become RB11") — expose the inputs behind each KERF value/rank. Named in Issue #1 as the *next* prototype iteration; needs the real engine (roadmap #6). | Owner review of the Issue #1 prototype |
 | 2026-08-24 | **Wire the generated source profile into `lib/dataDictionary.ts`** — the source-profiling spike (#11) emits a committed field profile (type / example / null-rate per column, no league values). Feed it into the data-dictionary column definitions so today's placeholder content becomes source-backed, and source drift shows up as a git diff. Follows the storage/profiling work (roadmap Now #5–6). | PM handoff 2026-08-24 (storage & source-profiling planning) |
 | 2026-08-26 | **Bidding-dynamics modelling from auction bid histories** — the TRUFFLE 2026 auction file (stored inert, [D-15](decision_log.md)) carries full bid-by-bid histories (nomination order, every bid, winner). Could model *how* prices form (escalation curves, positional runs, nomination-order effects) to sharpen "expected price" beyond the flat price curve. **Gated on:** obtaining TRUFFLE *full rosters* (not just the auction pool) and an explicit owner decision to use TRUFFLE data at all (currently a non-goal held in practice). Our own future auction exports would feed this natively without the non-goal question. | Valuation planning 2026-08-26 |
+| 2026-08-27 | **League power rankings — team-strength spin-off** — a dedicated screen ranking all 12 KERFUFFLE teams by roster strength, aggregating the engine's per-player Kerf projected points into **Starter Strength** (optimal superflex lineup) + **Total Roster** (depth) + a per-position (QB/RB/WR/TE) grid + team tiers. Reuses the valuation engine's optimal-lineup builder; win-now/ROS for v1; offense-only; dynasty toggle deferred. Primary use = trade scouting (who's stacked/thin). **Promoted same day** → roadmap Next / [#32](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/32). | Owner PM conversation 2026-08-27 |
 
 > These five were surfaced when the owner reviewed the auction-focused prototype and asked where the fields for the *other* flows live. Two general shared-table fields he asked for — **Projected KERFUFFLE points** and **KERF Rank** (positional) — were added to the prototype immediately (mock); the five above are per-lens or engine-dependent and wait for their flows.
 
@@ -48,6 +49,7 @@
 | --- | --- | --- |
 | [name] | [YYYY-MM-DD] | [roadmap: Now / Next] · [Issue #NN] |
 | Automated snapshot scheduler | 2026-08-24 | [roadmap: Later](pm/roadmap.md) — revisit after the auction prep lens (Now #10); manual runs are tied to the CBS cookie refresh, so a scheduler before cookie-lifetime is solved silently collects nothing |
+| League power rankings (team-strength spin-off) | 2026-08-27 | [roadmap: Next](pm/roadmap.md) · [Issue #32](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/32) — depends on the ROS engine (#28); win-now v1, offense-only, dedicated screen |
 
 ## Declined
 

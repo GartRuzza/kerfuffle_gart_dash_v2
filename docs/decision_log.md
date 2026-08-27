@@ -47,6 +47,36 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-20 · 2026-08-27 · League power rankings — a team-strength spin-off (points, starters + depth, win-now, offense-only, own screen)
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Product (a new spin-off view + how it is scoped) |
+| **Decided by** | Product owner, 2026-08-27, in the PM conversation that opened [#32](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/32) |
+
+**The question**
+The owner asked for a **spin-off** that ranks all 12 KERFUFFLE teams by strength. Six things were open: (1) what a team's strength is measured in, (2) starters-only vs whole-roster vs both, (3) win-now vs dynasty horizon, (4) where it lives, (5) how defenses are handled, and (6) how a league-wide ranking squares with the vision's Principle 1 ("every view serves one of bid/claim/start/trade").
+
+**What we decided**
+1. **Currency = Kerf projected points** (primary). Team strength is the engine's existing per-player Kerf points **aggregated** to the team — not a new model. Dollars are a possible later secondary column, not v1.
+2. **Show both** **Starter Strength** (the team's optimal superflex lineup, reusing the lineup builder in `tools/engine/valuation.mjs`) **and Total Roster** (all projected offensive players, depth included).
+3. **Win-now / ROS only for v1.** A dynasty toggle is **deferred** — the engine produces no KERFUFFLE-scored multi-year projection (only FantasyPros dynasty ECR exists), so the dynasty basis is an unresolved sub-question parked to a follow-up.
+4. **A dedicated new screen/route** — teams, not players, are the unit; this is the **one deliberate exception** to "one shared table, many filters" ([`user_flows.md`](../user_flows.md) flow 6).
+5. **Offense only.** DST has no Kerf points (the engine can't score defense from the offensive feed), so defenses are excluded from lineup + totals, **with no UI note** (owner's call — one-person tool, the owner knows defense isn't scored). The exclusion is recorded in the docs, not surfaced on screen.
+6. **Framed as a standalone spin-off whose named service is trades/scouting** — the positional grid finds who is stacked/thin, i.e. who to trade with and for what. Accepted as adjacent to the four core decisions rather than a strict member of them.
+
+**Why**
+It is a cheap, high-value reuse of already-validated numbers: aggregation, not new modelling, so it inherits the glass-box trust of #18/#20. Points (not dollars) is the currency the owner wanted to read team scoring in. Both starter and total are shown because they rank teams differently (top-heavy vs deep) and the gap is itself informative. Win-now-only keeps v1 honest — we do not have a dynasty KERFUFFLE projection, so a dynasty ranking would be an ECR proxy we chose not to rush. Offense-only matches every other Kerf number today. Building it after the ROS engine (#28) means it reads the weekly-refreshed value for free.
+
+**What we gave up**
+The clean "every view is one of the four core decisions" story (accepted: trades is the real service, and a spin-off is what the owner asked for). The dynasty view, deferred. Dollar-denominated team value, deferred. A defense-inclusive ranking, until DST is scored. The "one shared table" purity, for this one screen.
+
+**What would make us reconsider**
+The owner wanting the dynasty toggle (then decide its basis — dynasty-ECR proxy vs a real KERFUFFLE dynasty model); wanting dollars as the currency; current-season actuals landing (#30), which would let a real win/loss-blended power ranking replace the pure roster-strength one; or DST becoming scorable (then defenses join the totals).
+
+---
+
 ### D-19 · 2026-08-26 · QB replacement = last ROSTERED QB (superflex depth), not last starter (refines D-13)
 
 | | |
