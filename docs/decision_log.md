@@ -47,6 +47,88 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-19 · 2026-08-26 · QB replacement = last ROSTERED QB (superflex depth), not last starter (refines D-13)
+
+| | |
+| --- | --- |
+| **Status** | Active (refines [D-13](#d-13--2026-08-26--valuation-method-vorp-last-starter-replacement); does not change the VORP framework) |
+| **Type** | Product / modelling (where the QB replacement floor sits) |
+| **Decided by** | Product owner, 2026-08-26, on reviewing the built #20 values before merge |
+
+**The question**
+On the first built board (#20), **Josh Allen — Kerf overall #1 — valued only $130, below five running backs** (Gibbs $201, Bijan $194…), and **no other QB cleared $100**. The owner flagged this as wrong for a superflex league where elite QBs are scarce and the market pays top dollar. Diagnosis confirmed the cause: VORP measures value above a replacement floor, and D-13 set the QB floor at the **last starter = QB24** (12 teams × [1 QB + 1 SFLEX]). But projected QB scoring **falls off a cliff after ~QB30** (QB24≈269 pts, QB30≈198, QB34≈85), **25 QBs are already rostered**, and superflex forces every team to field two QB-capable slots *plus* carry backups — so the QB you can actually get for $1 sits well below QB24. The floor was set above the cliff, compressing every QB's value.
+
+**What we decided**
+Set the QB replacement floor at the **last *rostered* QB ≈ 2.5/team → QB30** (constant `QB_REPLACEMENT_PER_TEAM = 2.5` in `tools/engine/valuation.mjs`). RB/WR/TE stay on the last-starter formula (their depth is already captured by the FLEX split, and they have a long, genuinely replaceable tail). Because prices sum to the cap, lifting QBs pulls the inflated RB values down — the intended rebalance. The knob is tunable: 2.0 reverts to the textbook last-starter (QB24); higher values price QBs even more aggressively.
+
+**Result (live `npm run engine`):** Josh Allen $130→**$151** (now co-top with Gibbs $152); Daniels $118, Jackson $117, Hurts $114 all clear $100; **6 QBs ≥ $100** (was 1). RBs ease (Gibbs $201→$152). Prices still sum to the cap; QB1 still overall #1. This is a modelling choice grounded in roster depth + the scoring cliff, **not** a fit to market prices — so Edge stays a genuine independent signal.
+
+**Why**
+"Replacement" should be *what you can actually get for the minimum bid*. In superflex that QB is deep — past the last starter and past the cliff — so elite QBs carry large, real value-over-replacement. The owner chose the **Balanced (QB30)** option (QB1≈RB1) over both the status quo (RBs dominate) and a QB-forward QB33 (elite QBs clearly on top).
+
+**What we gave up**
+The clean "one formula for every position" story — QB now uses a rostered-depth rule while RB/WR/TE use last-starter. And the textbook single-season VORP result (kept available via the 2.0 knob).
+
+**What would make us reconsider**
+The owner wanting QBs clearly *above* RBs (raise the constant toward QB33), or back to pure last-starter (2.0); or real auction results showing the QB30 floor mis-prices the position.
+
+**Note — roster value is unchanged and behaves correctly.** The owner also asked whether **Roster Value** reflects an elite QB's week-to-week boost. It does — as a *marginal* number: the Raccoons already start two solid QBs (Shough 301, Mayfield 289 in the SFLEX slot), so adding Allen only upgrades their weaker QB slot (289→403 ≈ $84 to them), versus his $151 league-generic value to a QB-needy team. That gap is the roster-aware column working as designed (replace-your-starter, [D-17](#d-17--2026-08-26--valuation-build-20--the-four-params-d-13-left-open) #2), not a defect.
+
+---
+
+### D-18 · 2026-08-26 · "Market (Now)" = a rostered player's actual salary (refines D-17 #3)
+
+| | |
+| --- | --- |
+| **Status** | Active (refines [D-17](#d-17--2026-08-26--valuation-build-20--the-four-params-d-13-left-open) #3; does not reverse it) |
+| **Type** | Product (what the market column means) |
+| **Decided by** | Product owner, 2026-08-26, on reviewing the built board before merge |
+
+**The question**
+On the first built board (#20), **Market (Now)** was a *price curve read by Kerf positional rank* for **every** player — "what the Nth-best player at this position costs." The owner caught the consequence: **Lamar Jackson, rostered at $201, displayed Market (Now) = $77** — because the model ranks him QB3 and the 3rd-priciest QB salary is $77. His own $201 (the top QB knot) was effectively shown against Josh Allen (Kerf QB1) instead. Worse, **Edge went green (+$9)** for a player who is in fact badly *overpaid* relative to our value ($86). The curve, read by rank, mislabels — and mis-signals Edge for — exactly the mispriced rostered players the product exists to flag. Is that intended?
+
+**What we decided**
+**Market (Now) now shows a rostered player's OWN current KERFUFFLE salary.** Free agents — who have no salary — still fall back to the rank-based curve ("what a player of this Kerf rank would cost"). Market (Auction) is unchanged (the pre-auction curve for everyone). Edge (= Kerf Value − Market Now) auto-follows, so Lamar now reads Market $201 / Edge −$115 (red, correctly overpaid).
+
+**Why**
+"Market (Now)" should mean *what this player costs right now*. For a rostered player that is an observable fact — his salary — not a rank-inferred estimate, and a board that contradicts a number the owner can see reads as broken. The curve is still the right tool where there is no salary to show (free agents) and for the auction reference. This makes Edge a truthful overpay/underpay-on-contract signal for the whole rostered league.
+
+**What we gave up**
+A single, uniform definition of the column (it is now "salary if rostered, else curve"). The apples-to-apples "everyone priced by the same curve" view — which survives, unchanged, as Market (Auction).
+
+**What would make us reconsider**
+The owner wanting one uniform curve-based market number after all, or wanting a *separate* actual-salary column so the curve estimate stays visible for rostered players too (the "show both" option, declined here for a less-cluttered board).
+
+---
+
+### D-17 · 2026-08-26 · Valuation build (#20) — the four params D-13 left open
+
+| | |
+| --- | --- |
+| **Status** | Active (implements [D-13](#); does not reverse it) |
+| **Type** | Product (how the dollars appear + a modelling knob) |
+| **Decided by** | Product owner, 2026-08-26, in the pre-build Q&A for issue #20 |
+
+**The question**
+D-13 locked the valuation *method* (VORP, last-starter replacement, two ceilings, single-season). But four choices were left to the build: (1) the **sign of Edge**, (2) **how roster-aware value appears**, (3) **which market snapshot** the table shows, (4) **how many roster spots** owe a $1 minimum in the dollar conversion. The issue text itself flagged 2–4 as "decide/parameterize."
+
+**What we decided**
+1. **Edge = Kerf Value − Market (Now)** (a bargain is positive/green), **not** the issue's literal "market − ceiling." The existing table already computed it this way and the owner kept the intuitive UX.
+2. **Roster Value is its own column** (replace-your-starter, Raccoons-specific), sitting beside the league-generic **Kerf Value** — not folded into one number. The owner's **Ceiling** stays *his* editable value (seeded from Kerf Value), **session-only** — so no `owner_ceiling_override` table this issue (that's the auction-prep lens).
+3. **Both market snapshots shown**, as two columns: **Market (Now)** from current roster salaries and **Market (Auction)** from the 2025 salaries.
+4. **19 roster spots per team** owe a $1 minimum (10 starters + 9 bench; IR excluded — an in-season designation, not an auction buy). A tunable constant; the choice moves the dollar scale ~2%.
+
+**Why**
+Each is the owner's call on presentation or a low-stakes knob, not a change to the method. The Edge sign is the only genuine conflict with the written issue; green-means-bargain matches how the owner reads the board and the vision's "the gap is the game." Two ceiling columns keep both the auction-generic and roster-specific numbers visible (vision principle 2). Two market columns serve the now-in-season use *and* the auction reference. 19 spots is the natural active-roster size.
+
+**What we gave up**
+The literal issue wording for Edge (documented here so a future agent doesn't "correct" the sign back). A single, less-cluttered market column. A persisted ceiling (deferred to roadmap #10, deliberately).
+
+**What would make us reconsider**
+The owner wanting Edge flipped, one market column, or ceilings persisted before the auction-prep lens; or evidence that the roster-size assumption materially distorts prices (it shouldn't at ~2%).
+
+---
+
 ### D-16 · 2026-08-26 · First-down estimation is player-specific for RECEIVING only; rushing uses the position average
 
 | | |

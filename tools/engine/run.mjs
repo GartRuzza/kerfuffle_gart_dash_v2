@@ -23,6 +23,22 @@ import {
   assignRanks,
   assignTiers,
 } from "./core.mjs";
+import {
+  replacementBaselines,
+  replacementPoints,
+  par,
+  dollarsPerPoint,
+  leagueValue,
+  rosterReplacementPoints,
+  rosterValue,
+  buildPriceCurve,
+  priceFromCurve,
+  PRICED_POSITIONS,
+  N_TEAMS,
+  TEAM_BUDGET,
+  ROSTER_SPOTS_PER_TEAM,
+  QB_REPLACEMENT_PER_TEAM,
+} from "./valuation.mjs";
 
 const RATE_SEASONS = [2024, 2025]; // owner, 2026-08-26: pool both for stable rates
 const FD_METHOD = "per_player_eb_shrinkage_rec_only"; // receiving player-specific; rushing = position (D-16)
@@ -37,6 +53,8 @@ const SHRINKAGE = { rushK: 75, recK: 40 };
 // Exported so the backtest scores the SAME model the app ships.
 export const FD_POLICY = { rushPlayerSpecific: false, recPlayerSpecific: true };
 const POSITIONS = ["QB", "RB", "WR", "TE"];
+// The owner's own team — the roster the roster-aware ceiling is computed against.
+const RACCOONS_TEAM = "Rangoon Raccoons";
 
 // Number of distinct FantasyPros tiers on the superflex board — the count we
 // calibrate our Jenks tiers to, so the Kerf board never shows wildly more or
@@ -67,6 +85,123 @@ function fpTierCounts(db, pullId) {
     perPos[row.player_pos] = row.c;
   }
   return { overall: overall || 10, perPos };
+}
+
+// ---------------------------------------------------------------------------
+// Valuation (issue #20, D-13): Kerf points → auction dollars.
+//
+// Reads the salaries + the Raccoons roster from the store, turns each scored
+// player's points into a league-generic ceiling ($), a Raccoons-specific ceiling
+// ($), and two market prices (current-salary + 2025 price curves). All salary/
+// roster inputs are optional — a tiny store with no salaries still values points
+// (market prices just come back null), so the projection tests keep passing.
+// ---------------------------------------------------------------------------
+export function computeValuation(db, pullId, scored, ranks) {
+  const priced = scored.filter((p) => PRICED_POSITIONS.includes(p.pos));
+
+  // 1. Replacement level (last-starter) + the projected points at each baseline.
+  const baselines = replacementBaselines();
+  const replPoints = replacementPoints(
+    scored.map((p) => ({ pos: p.pos, kerfPoints: p.kerfPoints })),
+    baselines
+  );
+
+  // 2. Marginal $/point over the priced pool.
+  const dpp = dollarsPerPoint(
+    priced.map((p) => ({ pos: p.pos, kerfPoints: p.kerfPoints })),
+    replPoints
+  );
+
+  // 3. The Raccoons' own worst-eligible-starter replacement level.
+  const rosterRows = db
+    .prepare(
+      `SELECT c.cbs_player_id FROM contract c
+         JOIN fantasy_team t ON t.team_id = c.team_id
+        WHERE c.pull_id = ? AND c.row_type = 'player' AND t.name = ?`
+    )
+    .all(pullId, RACCOONS_TEAM);
+  const rosterIds = new Set(rosterRows.map((r) => r.cbs_player_id));
+  const roster = priced
+    .filter((p) => rosterIds.has(p.cbsId))
+    .map((p) => ({ pos: p.pos, kerfPoints: p.kerfPoints }));
+  const rosterRepl = roster.length ? rosterReplacementPoints(roster) : {};
+
+  // 4. Market price curves (two bases). Missing tables/rows → empty curve → null.
+  const inSeasonSalaryRows = db
+    .prepare(
+      `SELECT pl.pos AS pos, c.cbs_player_id AS id, c.salary AS salary FROM contract c
+         JOIN player pl ON pl.cbs_player_id = c.cbs_player_id
+        WHERE c.pull_id = ? AND c.row_type = 'player' AND c.salary IS NOT NULL AND c.salary > 0`
+    )
+    .all(pullId);
+  const inSeasonSalaries = inSeasonSalaryRows.map((r) => ({ pos: r.pos, salary: r.salary }));
+  // Per-player actual salary. "Market (Now)" shows a rostered player's OWN current
+  // salary (their true market price today); free agents — who have no salary — fall
+  // back to the rank-based price curve below (owner, 2026-08-26; see D-17 addendum).
+  const salaryByPlayer = new Map(inSeasonSalaryRows.map((r) => [r.id, r.salary]));
+  const preAuctionSalaries = tableExists(db, "contract_history")
+    ? db
+        .prepare(
+          `SELECT pos, salary FROM contract_history
+            WHERE season = 2025 AND salary IS NOT NULL AND pos IS NOT NULL`
+        )
+        .all()
+    : [];
+  const curveInSeason = buildPriceCurve(inSeasonSalaries);
+  const curvePreAuction = buildPriceCurve(preAuctionSalaries);
+
+  // 5. Per-player valuation rows.
+  const valuations = priced.map((p) => {
+    const repl = replPoints[p.pos];
+    const parLeague = par(p.kerfPoints, repl);
+    const kerfVal = leagueValue(p.kerfPoints, repl, dpp.dollarsPerPoint);
+    const rv = roster.length
+      ? rosterValue(p.kerfPoints, p.pos, rosterRepl, replPoints, dpp.dollarsPerPoint)
+      : { rosterReplPoints: null, parRoster: null, value: null };
+    const posRank = ranks.get(p.cbsId)?.posRank ?? null;
+    // Market (Now): a rostered player's actual current salary; a free agent's
+    // rank-based curve price. Market (Auction) stays the pre-auction curve for all.
+    const actualSalary = salaryByPlayer.get(p.cbsId) ?? null;
+    const marketInSeason =
+      actualSalary != null ? actualSalary : priceFromCurve(curveInSeason, p.pos, posRank);
+    return {
+      cbsId: p.cbsId,
+      pos: p.pos,
+      kerfPoints: p.kerfPoints,
+      replPoints: repl,
+      parLeague,
+      kerfValue: kerfVal,
+      rosterReplPoints: rv.rosterReplPoints,
+      parRoster: rv.parRoster,
+      rosterValue: rv.value,
+      marketInSeason,
+      marketPreAuction: priceFromCurve(curvePreAuction, p.pos, posRank),
+      posRankUsed: posRank,
+    };
+  });
+
+  // Internal-balance check: Σ (kerfValue − 1) over the priced pool must equal the
+  // discretionary money (prices sum to the cap). Trivially true by construction —
+  // it exists to catch a $/point wiring bug, not to be a modelling result.
+  const excess = valuations.reduce((s, v) => s + (v.kerfValue - 1), 0);
+  const capOk = Math.abs(excess - dpp.discretionary) < 1;
+
+  return {
+    baselines,
+    replPoints,
+    dpp,
+    rosterRepl,
+    rosterCount: roster.length,
+    curves: { in_season: curveInSeason, pre_auction: curvePreAuction },
+    valuations,
+    capCheck: { excess, discretionary: dpp.discretionary, ok: capOk },
+  };
+}
+
+function tableExists(db, name) {
+  return !!db
+    .prepare(`SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?`)
+    .get(name);
 }
 
 export function runEngine(db, { log = () => {} } = {}) {
@@ -126,6 +261,9 @@ export function runEngine(db, { log = () => {} } = {}) {
     for (const [cbsId, tier] of assignTiers(list, k)) posTiers.set(cbsId, tier);
   }
 
+  // Valuation (issue #20): turn the scored points into auction dollars.
+  const val = computeValuation(db, latest, scored, ranks);
+
   // ---- write: one engine_run stamp + one projection row per player ----
   const run = db
     .prepare(
@@ -139,8 +277,25 @@ export function runEngine(db, { log = () => {} } = {}) {
       pull: latest,
       rate_seasons: JSON.stringify(RATE_SEASONS),
       fd_method: FD_METHOD,
-      params: JSON.stringify({ shrinkage: SHRINKAGE, fdPolicy: FD_POLICY, tierCalibration: "fantasypros-op-board", fpTierCounts: fp }),
-      notes: `Kerf projection core: ${scored.length} players scored from FantasyPros projections + per-player estimated first downs (shrunk toward position).`,
+      params: JSON.stringify({
+        shrinkage: SHRINKAGE,
+        fdPolicy: FD_POLICY,
+        tierCalibration: "fantasypros-op-board",
+        fpTierCounts: fp,
+        valuation: {
+          baselines: val.baselines,
+          qbReplacementPerTeam: QB_REPLACEMENT_PER_TEAM, // superflex QB depth (D-19)
+          nTeams: N_TEAMS,
+          budget: TEAM_BUDGET,
+          rosterSpotsPerTeam: ROSTER_SPOTS_PER_TEAM,
+          discretionary: val.dpp.discretionary,
+          dollarsPerPoint: val.dpp.dollarsPerPoint,
+          totalPar: val.dpp.totalPar,
+          rosterAwareTeam: RACCOONS_TEAM,
+          rosterAwarePlayers: val.rosterCount,
+        },
+      }),
+      notes: `Kerf projection + valuation: ${scored.length} scored, ${val.valuations.length} priced (VORP $${val.dpp.dollarsPerPoint.toFixed(3)}/pt).`,
     });
   const engineRunId = run.engine_run_id;
 
@@ -171,7 +326,61 @@ export function runEngine(db, { log = () => {} } = {}) {
     });
   }
 
-  return { engineRunId, count: scored.length, fp, ranks, scored };
+  // ---- write the valuation layer (issue #20): replacement level, curves, $ ----
+  const insertRepl = db.prepare(
+    `INSERT INTO replacement_level (engine_run_id, pos, baseline_n, replacement_points, method)
+     VALUES (?, ?, ?, ?, 'last_starter')`
+  );
+  for (const pos of Object.keys(val.baselines)) {
+    insertRepl.run(engineRunId, pos, val.baselines[pos], val.replPoints[pos] ?? null);
+  }
+
+  const insertCurve = db.prepare(
+    `INSERT INTO price_curve (engine_run_id, basis, pos, pos_rank, price) VALUES (?, ?, ?, ?, ?)`
+  );
+  for (const [basis, curve] of Object.entries(val.curves)) {
+    for (const [pos, knots] of Object.entries(curve)) {
+      knots.forEach((price, i) => insertCurve.run(engineRunId, basis, pos, i + 1, price));
+    }
+  }
+
+  const insertVal = db.prepare(
+    `INSERT INTO valuation
+       (engine_run_id, cbs_player_id, pos, kerf_points, replacement_points, par_league, kerf_value,
+        roster_repl_points, par_roster, roster_value, market_in_season, market_pre_auction,
+        pos_rank_used, components_json)
+     VALUES
+       (@engine_run_id, @cbs_player_id, @pos, @kerf_points, @replacement_points, @par_league, @kerf_value,
+        @roster_repl_points, @par_roster, @roster_value, @market_in_season, @market_pre_auction,
+        @pos_rank_used, @components_json)`
+  );
+  const round2 = (x) => (x == null ? null : Math.round(x * 100) / 100);
+  for (const v of val.valuations) {
+    insertVal.run({
+      engine_run_id: engineRunId,
+      cbs_player_id: v.cbsId,
+      pos: v.pos,
+      kerf_points: v.kerfPoints,
+      replacement_points: round2(v.replPoints),
+      par_league: round2(v.parLeague),
+      kerf_value: round2(v.kerfValue),
+      roster_repl_points: round2(v.rosterReplPoints),
+      par_roster: round2(v.parRoster),
+      roster_value: round2(v.rosterValue),
+      market_in_season: round2(v.marketInSeason),
+      market_pre_auction: round2(v.marketPreAuction),
+      pos_rank_used: v.posRankUsed,
+      components_json: JSON.stringify({
+        dollarsPerPoint: val.dpp.dollarsPerPoint,
+        discretionary: val.dpp.discretionary,
+        budget: TEAM_BUDGET,
+        nTeams: N_TEAMS,
+        rosterSpotsPerTeam: ROSTER_SPOTS_PER_TEAM,
+      }),
+    });
+  }
+
+  return { engineRunId, count: scored.length, fp, ranks, scored, val };
 }
 
 // ---------------------------------------------------------------------------
@@ -212,6 +421,36 @@ function main() {
     )
     .get(result.engineRunId).r;
   console.log(`\n  Best QB overall rank: ${topQb} ${topQb <= 5 ? "✔ (QBs correctly premium in superflex)" : "⚠ unexpectedly low — check the pool"}`);
+
+  // ---- valuation (issue #20) ----
+  const v = result.val;
+  console.log(`\n  Valuation (VORP → dollars):`);
+  console.log(
+    `      replacement baselines: ${Object.entries(v.baselines).map(([p, n]) => `${p}${n}`).join(" / ")}`
+  );
+  console.log(
+    `      replacement points:    ${Object.entries(v.replPoints).map(([p, x]) => `${p} ${x == null ? "—" : x.toFixed(0)}`).join(" / ")}`
+  );
+  console.log(
+    `      $/point ${v.dpp.dollarsPerPoint.toFixed(3)} · discretionary $${v.dpp.discretionary} · total PAR ${v.dpp.totalPar.toFixed(0)} · roster-aware players ${v.rosterCount}`
+  );
+  console.log(
+    `      prices-sum-to-cap check: Σ(kerfValue−1)=$${v.capCheck.excess.toFixed(0)} vs discretionary $${v.capCheck.discretionary} — ${v.capCheck.ok ? "✔ balanced" : "⚠ OFF (check $/point)"}`
+  );
+  const topVal = db
+    .prepare(
+      `SELECT pl.name, va.pos, ROUND(va.kerf_value) kv, ROUND(va.roster_value) rv,
+              ROUND(va.market_in_season) mkt
+       FROM valuation va JOIN player pl ON pl.cbs_player_id = va.cbs_player_id
+       WHERE va.engine_run_id = ? ORDER BY va.kerf_value DESC LIMIT 8`
+    )
+    .all(result.engineRunId);
+  console.log(`\n  Top 8 by Kerf Value ($): (Kerf / Roster / Market)`);
+  for (const r of topVal) {
+    console.log(
+      `      ${r.pos.padEnd(3)} ${r.name.padEnd(22)} $${String(r.kv).padStart(3)}  ·  RR $${String(r.rv ?? "—").padStart(3)}  ·  Mkt $${r.mkt ?? "—"}`
+    );
+  }
 
   db.close();
 }

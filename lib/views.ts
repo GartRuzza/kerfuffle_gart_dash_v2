@@ -48,9 +48,11 @@ export const ALL_COLUMN_IDS = [
   "kerfPosRank",
   "projPts",
   "kerfValue",
+  "rosterValue",
   "ceiling",
   "edge",
   "marketPrice",
+  "marketPreAuction",
   "ecr",
   "posEcr",
   "dynastyEcr",
@@ -69,9 +71,11 @@ export const COLUMN_LABELS: Record<string, string> = {
   kerfPosRank: "Kerf Pos Rank",
   projPts: "Proj Points",
   kerfValue: "Kerf Value",
+  rosterValue: "Roster Value",
   ceiling: "Ceiling",
   edge: "Edge",
-  marketPrice: "Market Value",
+  marketPrice: "Market (Now)",
+  marketPreAuction: "Market (Auction)",
   ecr: "Ovr ECR",
   posEcr: "Pos ECR",
   dynastyEcr: "Dyn Ovr ECR",
@@ -117,7 +121,8 @@ export const DEFAULT_VIEWS: SavedView[] = [
     state: makeState(
       [
         "name", "pos", "nflTeam", "kerfOvrRank", "kerfPosRank", "projPts",
-        "kerfValue", "ceiling", "edge", "marketPrice", "ecr", "salary", "contractYears",
+        "kerfValue", "rosterValue", "ceiling", "edge", "marketPrice", "marketPreAuction",
+        "ecr", "salary", "contractYears",
       ],
       { rosterMode: "FA" },
     ),
@@ -141,7 +146,7 @@ export const DEFAULT_VIEWS: SavedView[] = [
     state: makeState(
       [
         "owner", "name", "pos", "nflTeam", "kerfOvrRank", "projPts", "kerfValue",
-        "marketPrice", "ecr", "dynastyEcr", "salary", "contractYears",
+        "rosterValue", "marketPrice", "ecr", "dynastyEcr", "salary", "contractYears",
       ],
       { rosterMode: "ROSTERED" },
     ),
