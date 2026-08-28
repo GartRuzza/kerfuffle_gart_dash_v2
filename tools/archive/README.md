@@ -73,6 +73,25 @@ it in `spikes/cbs-api/.env` and run again. If FantasyPros rows come back at ~520
 `tier: "premium"` in the manifest, the HOF key is unlocking the full board. (Do **not**
 judge by `public_api_limited` — it stays `true` even on HOF; see issue #11.)
 
+## Is my CBS cookie still good? (reading the output)
+
+**An HTTP `200` alone does NOT mean the cookie is valid.** When the cookie is expired,
+CBS often returns `200` while serving a sign-in page — the status code can't tell you.
+The archiver checks the response *body* for login markers, so use these three tells:
+
+1. **No `⚠ LOGIN REDIRECT (cookie expired?)` lines**, and the closing summary shows
+   `CBS: … 0 login-redirect`. A dead cookie flags these loudly.
+2. **The 12 `roster-report-t*` lines are large and vary team to team** (~100 KB+, each a
+   little different). A login page is **small and identical** across every team, so a wall
+   of same-sized ~2 KB pages = expired cookie.
+3. **The definitive backstop is `npm run ingest`:** if the pages were login HTML, ingest
+   fails loudly (`no parseable roster table`) and rolls the run back — nothing bad is
+   stored. A clean ingest with the expected player counts proves the cookie was good.
+
+So: **200s + no LOGIN REDIRECT + large varied rosters + a clean ingest = cookie is fine.**
+A single team failing (`t7: no parseable roster table`) is usually a one-page blip, not an
+expired cookie (expiry fails *all* pages at once) — just re-run `archive` + `ingest`.
+
 ## Deliberately out of scope
 
 Parsing / normalization, any database, and scheduling / automation — those are later
