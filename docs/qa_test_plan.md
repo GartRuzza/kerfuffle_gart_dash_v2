@@ -21,7 +21,8 @@
 | **What they do not cover** | Click/drag interactions in a real browser (drag-to-reorder, show/hide, saving a view to localStorage, applying a view). The *logic* behind them is unit-tested; the DOM wiring is verified by the manual checks below. A live `npm run ingest` against the real archive is its own check below. |
 | **In-season plumbing (17, issue #27)** | The **2026 date→week table** boundaries (Tuesday flip, preseason default, post-season clamp); FantasyPros parser **weekly-field extraction** (opponent/note/tag/recommendation → null on non-weekly boards); the **ROS-fallback detector** on a real `fallback_for:"ROS"` fixture; a **`week=N` projection** payload through `mapProjections`; and an **end-to-end in-season ingest** (weekly board + both projection weeks land; ROS fallback skipped). |
 | **ROS lens (3, issue #28)** | The engine stamps **`horizon='ros'`** and `latest_engine_run` / `latest_engine_run_by_horizon` resolve to it; the **board view prefers ROS ECR** over draft when a ROS/STD/OP board is present, and **falls back to draft** when it isn't (preseason no-regression). |
-| **Currently passing?** | Yes — `npm test` (**217/217**) and `npm run build` pass clean as of 2026-08-27. Note: the issue-#17 **real-data** scoring cross-check + column anchors run at **ingest time** and in the test suite only where the (git-ignored) historical data is present (`describe.skipIf`); on a fresh clone without data they skip, so confirm them locally with `npm run ingest:historical`. The engine unit tests are pure (no data needed); the live 520-player engine run needs the store populated (`npm run engine`). The **live in-season archive+ingest (issue #27)** needs the CBS cookie / FP key — it is the owner's manual check (see the in-season-feeds section below). |
+| **Weekly lens (5, issue #29)** | The engine produces a **separate `horizon='weekly'` run** with projection rows and **NO valuation** while `latest_engine_run` stays ROS and the by-horizon view exposes both; it **skips the weekly run** when only a season projection exists (preseason). `deriveWeekly` fills Kerf fields from the weekly run, ECR from the weekly consensus, the **matchup opponent**, nulls all dollars + weekly-tier fields, and leaves weekly fields null for a player the weekly feeds don't cover. |
+| **Currently passing?** | Yes — `npm test` (**222/222**) and `npm run build` pass clean as of 2026-08-27. Note: the issue-#17 **real-data** scoring cross-check + column anchors run at **ingest time** and in the test suite only where the (git-ignored) historical data is present (`describe.skipIf`); on a fresh clone without data they skip, so confirm them locally with `npm run ingest:historical`. The engine unit tests are pure (no data needed); the live 520-player engine run needs the store populated (`npm run engine`). The **live in-season archive+ingest (issue #27)** needs the CBS cookie / FP key — it is the owner's manual check (see the in-season-feeds section below). |
 
 ## Manual checks — the critical flows
 
@@ -91,6 +92,22 @@
 | 6 | (Known limitation) Note the dollar **magnitude** | Correct **ranking**, but the remaining-$ figure runs high (Option A counts games already played — [D-21](../decision_log.md)); true remaining value is Option B ([#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30)). | ☐ |
 
 **What validation protects you from (proven by unit tests):** the engine stamps `horizon='ros'` and `latest_engine_run` resolves to the latest ROS run (so the app defaults to ROS even after #29 adds weekly runs); the board view **prefers ROS ECR** when a ROS board exists and **falls back to draft** when it doesn't (preseason no-regression). Migration 009 was verified on the live store (board unchanged, all runs labeled `ros`, integrity ok, 0 FK) and a rendered-DOM check confirmed the banner's ROS lens + freshness line.
+
+### The Weekly lens + Start/Sit view (issue #29)
+
+*Weekly rankings + the supported start/sit flow. Needs an **in-season** pull whose current-week board + projections ingested, then `npm run engine` (which produces the weekly run). Preseason, the Weekly toggle is disabled — that's the expected empty state.*
+
+| # | Do this | You should see | Pass? |
+| --- | --- | --- | --- |
+| 1 | Run `npm run engine` in-season, read the tail | A **"Weekly lens (Week N): … players re-scored … (no dollars)"** line. Preseason it instead says "no current-week projection ingested yet — skipped (ROS only)". | ☐ |
+| 2 | Open the app, find the **Lens** toggle (top of the table) | Two segments: **Rest-of-Season** (active) and **Weekly**. In-season Weekly is **enabled** and labeled with the week ("Weekly · Wk N"); preseason it's **greyed out** with a tooltip. | ☐ |
+| 3 | Click **Weekly** | The Kerf columns re-point to **this week's** re-score, the **Ovr/Pos ECR** columns now show the **weekly consensus**, a new **Opp** column shows the matchup (e.g. "@KC"), and the **dollar columns go to "—"** (no weekly value). A "Week N · updated …" freshness note sits by the toggle. | ☐ |
+| 4 | Open the **Start/Sit** saved view | It opens the **Weekly** lens filtered to the **Raccoons**, columns = Player/Pos/Team/Opp/Kerf ranks/Proj/ECR — your roster with this week's numbers beside the consensus. | ☐ |
+| 5 | Find a player where our number and the consensus **disagree** | Both are visible side by side (e.g. our Kerf weekly QB7 next to a consensus QB1) — the tool shows the gap and leaves the call to you. | ☐ |
+| 6 | Sort by **Kerf Ovr Rank** in the Weekly lens | Tier bands appear from **our Kerf weekly tiers** (weekly consensus has none), so close calls group visibly. | ☐ |
+| 7 | Confirm what's NOT there | No lineup optimizer, no auto start/sit pick, no "Start/Sit" verdict column — numbers + matchup only. | ☐ |
+
+**What validation protects you from (proven by unit tests):** the engine writes a **separate `weekly` run** (projection rows, no valuation) while `latest_engine_run` stays ROS; it **skips** the weekly run preseason; `deriveWeekly` maps this-week Kerf + weekly consensus + opponent, nulls dollars and weekly-tier fields, and leaves weekly fields null for an uncovered player. The full pipeline was validated **end-to-end on the real Week-1 data** (586 players re-scored; the Lens toggle went live; a rendered check confirmed the enabled "Weekly · Wk 1" toggle and no errors).
 
 ### The backtest — the decision gate (issue #19)
 

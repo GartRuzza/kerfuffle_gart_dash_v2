@@ -46,12 +46,14 @@ import {
   nextCustomViewId,
   saveCustomViews,
   visibilityFromHidden,
+  type Horizon,
   type RosterMode,
   type SavedView,
   type ViewState,
 } from "@/lib/views";
 import { columns, CONTRACT_COLUMNS, GART_COLUMNS, MARKET_COLUMNS } from "./columns";
 import FilterBar from "./FilterBar";
+import HorizonToggle from "./HorizonToggle";
 import ColumnPicker from "./ColumnPicker";
 import ViewBar from "./ViewBar";
 import DataDictionary from "./DataDictionary";
@@ -141,16 +143,41 @@ const FULL_VIEW = DEFAULT_VIEWS.find((v) => v.id === DEFAULT_VIEW_ID)!;
 interface Props {
   /** Real league data from the data-access module (lib/data/board.ts). */
   players: Player[];
+  /** The WEEKLY-lens dataset (issue #29); null when there's no weekly run yet. */
+  weeklyPlayers?: Player[] | null;
+  /** The NFL week the weekly lens covers, and the two lenses' freshness dates. */
+  weeklyWeek?: number | null;
+  rosRunAt?: string | null;
+  weeklyRunAt?: string | null;
   /** The fantasy team names for the Manager filter (owner's team first). */
   teams: string[];
 }
 
-export default function PlayerTable({ players, teams }: Props) {
+export default function PlayerTable({
+  players,
+  weeklyPlayers = null,
+  weeklyWeek = null,
+  rosRunAt = null,
+  weeklyRunAt = null,
+  teams,
+}: Props) {
   const [data, setData] = useState<PlayerRow[]>(() =>
     // Ceiling seeds from the Kerf model's league-generic value, rounded to a whole
     // dollar (you bid whole dollars); null (blank) for players the engine can't price.
     players.map((p) => ({ ...p, ceiling: p.kerfValue == null ? null : Math.round(p.kerfValue) })),
   );
+  // The weekly lens is read-only (no dollars, no ceiling) — a plain projection of
+  // the weekly dataset into rows. Empty when there's no weekly run.
+  const weeklyData = useMemo<PlayerRow[]>(
+    () => (weeklyPlayers ?? []).map((p) => ({ ...p, ceiling: null })),
+    [weeklyPlayers],
+  );
+  const weeklyAvailable = (weeklyPlayers?.length ?? 0) > 0;
+
+  const [horizon, setHorizon] = useState<Horizon>(FULL_VIEW.state.horizon);
+  // Coerce to ROS if weekly is somehow requested with no weekly data (preseason).
+  const effectiveHorizon: Horizon = horizon === "weekly" && weeklyAvailable ? "weekly" : "ros";
+  const tableData = effectiveHorizon === "weekly" ? weeklyData : data;
 
   const [sorting, setSorting] = useState<SortingState>(FULL_VIEW.state.sorting);
   const [manager, setManager] = useState<string>(FULL_VIEW.state.manager);
@@ -177,6 +204,7 @@ export default function PlayerTable({ players, teams }: Props) {
     manager,
     rosterMode,
     position: positionFilter,
+    horizon,
     sorting,
     columnOrder,
     hiddenColumns: ALL_COLUMN_IDS.filter((id) => columnVisibility[id] === false),
@@ -188,6 +216,8 @@ export default function PlayerTable({ players, teams }: Props) {
     setManager(view.state.manager);
     setRosterMode(view.state.rosterMode);
     setPositionFilter(view.state.position);
+    // A view can carry an older shape without `horizon` — default it to ROS.
+    setHorizon(view.state.horizon ?? "ros");
     setSorting(view.state.sorting);
     setColumnOrder(view.state.columnOrder);
     setColumnVisibility(visibilityFromHidden(view.state.hiddenColumns));
@@ -240,7 +270,7 @@ export default function PlayerTable({ players, teams }: Props) {
   };
 
   const table = useReactTable({
-    data,
+    data: tableData,
     columns,
     state: { sorting, columnFilters, columnVisibility, columnOrder },
     onSortingChange: handleSortingChange,
@@ -336,19 +366,29 @@ export default function PlayerTable({ players, teams }: Props) {
   return (
     <section>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <ViewBar
-          views={allViews}
-          activeId={activeViewId}
-          activeIsCustom={!activeView.builtIn}
-          dirty={dirty}
-          onSelect={(id) => {
-            const v = allViews.find((x) => x.id === id);
-            if (v) applyView(v);
-          }}
-          onSaveNew={saveNewView}
-          onUpdate={updateView}
-          onDelete={deleteView}
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <ViewBar
+            views={allViews}
+            activeId={activeViewId}
+            activeIsCustom={!activeView.builtIn}
+            dirty={dirty}
+            onSelect={(id) => {
+              const v = allViews.find((x) => x.id === id);
+              if (v) applyView(v);
+            }}
+            onSaveNew={saveNewView}
+            onUpdate={updateView}
+            onDelete={deleteView}
+          />
+          <HorizonToggle
+            horizon={effectiveHorizon}
+            onChange={setHorizon}
+            weeklyAvailable={weeklyAvailable}
+            weeklyWeek={weeklyWeek}
+            rosRunAt={rosRunAt}
+            weeklyRunAt={weeklyRunAt}
+          />
+        </div>
         <ColumnPicker
           order={columnOrder}
           visibility={columnVisibility}
@@ -366,7 +406,7 @@ export default function PlayerTable({ players, teams }: Props) {
           positionFilter={positionFilter}
           onPositionChange={handlePositionChange}
           shown={rows.length}
-          total={data.length}
+          total={tableData.length}
         />
       </div>
 

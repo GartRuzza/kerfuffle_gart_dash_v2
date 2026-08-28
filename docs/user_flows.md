@@ -116,23 +116,27 @@ Flows 1–5 below run through the **same player table**: one data display with K
 | Offer includes a player traded/dropped since last refresh | Data timestamp on the table | Refresh before deciding |
 | Cap math disagrees with TRUFFLEdash | Both numbers exist; CBS + constitution rules are the arbiter | Flag to the commissioner if the tool is right |
 
-### 5. Start/sit (weekly read, not a feature)
+### 5. Start/sit (weekly lens — a supported flow)
 
 **User:** the owner · **Trigger:** setting the lineup before games lock · **Success:** a lineup he's confident in, set on CBS
 
+> **Reversed 2026-08-27 ([D-22](decision_log.md), roadmap decision #15).** This was previously "a weekly read, not a feature." Weekly rankings ([#29](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/29)) elevate it to a **supported flow**: the tool now re-scores the current week and shows our number beside the market's. It is still the shared table — one lens, filtered — not a new screen, and it still **never makes the call.**
+
 **The happy path**
 
-1. He filters the same player table to the Raccoons' roster → reads tiers, KERFUFFLE values, and matchup-relevant data.
-2. Close calls are visibly close (tiers, not decimal ranks) → he uses his judgment.
-3. He sets the lineup on CBS.
+1. He switches the **Lens** toggle to **Weekly** (or opens the **Start/Sit** saved view, which does it for him) → the table's Kerf ranks/tiers re-point to **this week's** re-score, and the market columns show the **weekly consensus**.
+2. Filtered to the Raccoons' roster, each player shows: **our Kerf weekly rank + tier**, the **weekly consensus rank** beside it, and the **matchup opponent** — the numbers a start/sit call rests on, both shown so the gap is visible (vision principle 2).
+3. Close calls are visibly close (Kerf weekly **tiers**, not decimal ranks) → he uses his judgment. Where our number and the consensus **disagree** (e.g. we have a QB at weekly QB7 the market has at QB1), that gap is the signal worth a second look.
+4. He sets the lineup on CBS.
 
-**Nothing gets built for this flow.** No lineup optimizer, no start/sit recommendations, no dedicated view — the shared roster-filtered table with its existing columns is the entire support. This is a documented read of existing functionality, recorded so the decision is visible.
+**What is deliberately NOT built:** no lineup optimizer, no auto start/sit pick, no Gart Dash "Start"/"Sit" verdict. The tool surfaces the numbers + matchup; the decision stays the owner's ("glass box, human decides"). No **weekly dollars** either — a weekly auction doesn't exist, so weekly value is points/ranks, not cap money.
 
 **Where it goes wrong**
 
 | What goes wrong | What the user sees | What they can do about it |
 | --- | --- | --- |
-| Stale data on a short week (TNF) | The data timestamp | Refresh Wednesday, not just Sunday |
+| Stale data on a short week (TNF) | The weekly freshness ("Week N · updated …") beside the Lens toggle | Refresh Wednesday, not just Sunday |
+| No weekly data yet (preseason / not pulled) | The **Weekly** toggle is disabled | Run `archive → ingest → engine` in-season; the current week's board + projection must be captured |
 
 ### 6. League power rankings / scouting (spin-off)
 

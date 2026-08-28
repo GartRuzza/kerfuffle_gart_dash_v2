@@ -128,3 +128,19 @@ Proven against the live HOF key (2026-08-26) and built into the archiver/ingest 
 **Which week to request:** FantasyPros publishes the *upcoming* week ahead of kickoff (observed: `week=1` live on 2026-08-26, before the Wed 2026-09-09 opener). The archiver picks the week from a hardcoded **2026 date→week table** (`tools/archive/nfl-week.mjs`) and records both the requested week and the week FantasyPros **echoes back** in the run manifest, warning on any mismatch.
 
 **Unchanged and still true:** the STD/superflex (`OP`) format is the league's display board (D-12); the CBS join is still a direct `cbs_player_id` match; weekly boards still carry no `tier`.
+
+---
+
+## 10. Update — 2026-08-27 (issue #29: what the weekly board's fields actually contain)
+
+Inspected a real captured **weekly STD/OP board** (`ecr-weekly-std-op.json`, **Week 1, 698 players**) while building the weekly/start-sit lens, to decide what's worth surfacing.
+
+**The expert "start/sit lean" fields are present but EMPTY.** Every weekly player row carries `note`, `tag`, and `recommendation` keys — but on this board **0 of 698** had any value in them. FantasyPros does **not** populate the expert start/sit lean on the consensus-rankings endpoint (at least not this early in the week; it may fill in nearer kickoff, or live only on their dedicated start/sit tool). So there is currently **nothing to surface** even if we wanted to — which is why #29's weekly lens ships as **numbers + matchup only**, with `note`/`tag`/`recommendation` stored (migration 008) but read by nothing. Revisit if they're ever observed populated and tidy enough to map to a clean value set.
+
+**`player_opponent` is clean and well-populated** (689/698): values like `"vs. TB"`, `"at HOU"` — used directly as the weekly **Opp** column.
+
+**Bonus fields worth remembering** (present + populated on the weekly board, not yet used):
+- `player_ecr_delta` — the player's weekly consensus-rank movement.
+- `player_owned_avg` / `player_owned_espn` / `player_owned_yahoo` — roster/ownership %. Both are candidates for the **waiver** lens (roadmap Next).
+
+**Also confirmed:** the weekly board declares `ranking_type_name:"weekly"`, `week:"1"`, `scoring:"STD"`, `position_id:"OP"`, and carries `rank_ecr` + `pos_rank` per player (the weekly consensus the lens shows). As with all weekly boards, **no `tier`** — weekly tier bands come from our own Kerf weekly tiers.

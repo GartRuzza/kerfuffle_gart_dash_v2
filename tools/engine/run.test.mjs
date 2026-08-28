@@ -171,4 +171,44 @@ describe("runEngine (DB integration)", () => {
       .all();
     expect(byHorizon).toEqual([{ horizon: "ros", engine_run_id: res.engineRunId }]);
   });
+
+  it("also produces a WEEKLY run (horizon='weekly', no dollars) when a week-N projection exists (#29)", () => {
+    // Add a current-week (week 1) projection for the same players — smaller lines
+    // than the season, but the SAME engine scores them.
+    const wproj = db.prepare(
+      `INSERT INTO projection_source
+         (pull_id, cbs_player_id, fp_player_id, player_name, pos, season, week,
+          pass_yds, pass_td, pass_int, rush_att, rush_yds, rush_td, rec_rec, rec_yds, rec_td, fumbles, two_pt, fetched_at)
+       VALUES (1, ?, ?, ?, ?, 2026, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '2026-09-10T00:00:00Z')`
+    );
+    wproj.run(10, 910, "Star QB", "QB", 250, 2, 1, 6, 30, 0, 0, 0, 0, 0); // QB week line
+    wproj.run(20, 920, "Star WR", "WR", 0, 0, 0, 0, 0, 0, 6, 80, 1, 0);   // WR week line
+
+    const res = runEngine(db);
+    expect(res.weeklyWeek).toBe(1);
+    expect(res.weekly).not.toBeNull();
+    expect(res.weekly.engineRunId).not.toBe(res.ros.engineRunId); // a SEPARATE run
+
+    // The weekly run is horizon='weekly' with its own projection rows...
+    const wrun = db.prepare(`SELECT horizon FROM engine_run WHERE engine_run_id=?`).get(res.weekly.engineRunId);
+    expect(wrun.horizon).toBe("weekly");
+    expect(db.prepare(`SELECT COUNT(*) c FROM projection WHERE engine_run_id=?`).get(res.weekly.engineRunId).c).toBe(2);
+    // ...and NO dollars (weekly cap value is meaningless).
+    expect(db.prepare(`SELECT COUNT(*) c FROM valuation WHERE engine_run_id=?`).get(res.weekly.engineRunId).c).toBe(0);
+    // The ROS run is separate and DID get valuation.
+    expect(db.prepare(`SELECT COUNT(*) c FROM valuation WHERE engine_run_id=?`).get(res.ros.engineRunId).c).toBeGreaterThan(0);
+
+    // latest_engine_run stays ROS; the by-horizon view now exposes BOTH lenses.
+    expect(db.prepare(`SELECT engine_run_id FROM latest_engine_run`).get().engine_run_id).toBe(res.ros.engineRunId);
+    const byH = db.prepare(`SELECT horizon, engine_run_id FROM latest_engine_run_by_horizon ORDER BY horizon`).all();
+    expect(byH.map((r) => r.horizon)).toEqual(["ros", "weekly"]);
+  });
+
+  it("skips the weekly run when only a season projection exists (preseason)", () => {
+    const res = runEngine(db); // seed has only week-0 projections
+    expect(res.weeklyWeek).toBeNull();
+    expect(res.weekly).toBeNull();
+    const horizons = db.prepare(`SELECT DISTINCT horizon FROM engine_run`).all().map((r) => r.horizon);
+    expect(horizons).toEqual(["ros"]);
+  });
 });

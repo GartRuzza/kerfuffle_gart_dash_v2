@@ -52,6 +52,15 @@ const DOCS: Record<
     deepDive: ["Source: CBS for rostered players, FantasyPros for free agents."],
     placeholder: false,
   },
+  opponent: {
+    definition: "This week's matchup opponent — shown only in the Weekly lens.",
+    deepDive: [
+      "Source: FantasyPros' weekly consensus board (e.g. 'vs. TB', 'at HOU').",
+      "Appears only when the Lens toggle is set to Weekly; the Rest-of-Season lens shows '—' (a season-long view has no single opponent).",
+      "It's matchup context for a start/sit call — Gart Dash surfaces it beside our weekly Kerf rank and the weekly consensus; the call stays yours.",
+    ],
+    placeholder: false,
+  },
   kerfOvrRank: {
     definition: "Our overall rank by projected KERFUFFLE points — one pool, all offense.",
     deepDive: [

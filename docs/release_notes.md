@@ -41,6 +41,23 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-27 — Weekly rankings + a real Start/Sit view
+
+**New**
+- **A "Lens" toggle: Rest-of-Season ↔ Weekly.** A new switch at the top of the table flips every ranking between season-long value and **this week**. Flip it to **Weekly** and the Kerf ranks/tiers re-point to a fresh re-score of the current week's projection, and the market column shows FantasyPros' **weekly** consensus.
+- **A Start/Sit view that actually helps you set a lineup.** The "Start/Sit" saved view now opens the Weekly lens filtered to your roster. For each player you see **our weekly rank + tier**, the **weekly consensus rank** right beside it, and the **matchup opponent** — the numbers behind a start/sit call, both shown so you can see where we and the market disagree (that gap is the interesting part). Tiers keep close calls looking close.
+
+**Improved**
+- **Freshness is per-lens.** Next to the toggle you'll see how fresh the active lens is — e.g. "Week 1 · updated Sep 24" on Weekly.
+
+**Known issues / by design**
+- **Gart Dash still won't tell you to start or sit.** No optimizer, no auto-pick, no "Start/Sit" verdict — on purpose. It shows the numbers and the matchup; the call is yours.
+- **No dollars in the Weekly lens.** Weekly value is points/ranks, not cap money (there's no weekly auction), so the dollar columns show "—" in Weekly mode.
+- **The Weekly toggle is greyed out until you've pulled a week in-season.** It needs the current week's board + projections captured (`archive → ingest → engine`). Heads-up: if any of your 12 CBS roster pages fails to load during an archive, that whole snapshot is skipped — so make sure your CBS cookie is fresh before a weekly pull.
+
+**Requires action from you**
+- To use the Weekly lens, run your weekly refresh in-season: `npm run archive` → `npm run ingest` → `npm run engine`.
+
 ## 2026-08-27 — In-season rankings: the board is now your rest-of-season lens
 
 **New**

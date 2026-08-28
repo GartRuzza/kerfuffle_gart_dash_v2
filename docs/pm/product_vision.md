@@ -37,7 +37,7 @@ He no longer adjusts rankings in his head, keeps salary math in spreadsheets, or
 
 ## Product principles
 
-1. **Every view serves a named decision.** Bid, claim, start, trade. A screen that doesn't sharpen one of those four decisions doesn't get built, however interesting the data is. This costs us fun exploratory features; it keeps a one-person tool small enough to actually maintain.
+1. **Every view serves a named decision.** Bid, claim, start, trade. A screen that doesn't sharpen one of those four decisions doesn't get built, however interesting the data is. This costs us fun exploratory features; it keeps a one-person tool small enough to actually maintain. *(**Start/sit is now a supported flow**, not just an implied read — 2026-08-27, [D-22](../decision_log.md): the Weekly lens re-scores the current week and shows our number beside the market's. Still the shared table, one lens filtered — and it never makes the call.)*
 
 2. **Always both numbers: the market's and mine.** Value is never shown without price, and KERFUFFLE-adjusted numbers are never shown without the standard consensus they diverge from. The edge lives in the *gap* between those pairs — a view that shows only one side hides the edge. This costs us screen simplicity and we accept it.
 
