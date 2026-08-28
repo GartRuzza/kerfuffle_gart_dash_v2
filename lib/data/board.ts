@@ -30,6 +30,14 @@ export interface BoardMeta {
   runId: string;
   /** When that data was fetched from CBS/FantasyPros (ISO). */
   capturedAt: string;
+  /**
+   * The active engine lens (issue #28). `horizon` is 'ros' in-season (the
+   * rest-of-season re-score) — the Kerf ranks/tiers/dollars reflect it; null
+   * before the engine has ever run. `engineRunAt` is when that run was computed
+   * (how fresh the Kerf numbers are, distinct from when the data was fetched).
+   */
+  horizon: string | null;
+  engineRunAt: string | null;
 }
 
 export interface BoardData {
@@ -99,6 +107,15 @@ function readBoard(): BoardData {
       .all() as (ValuationRow & { cbs_player_id: number })[];
     for (const v of valRows) valById.set(v.cbs_player_id, v);
 
+    // The active engine lens + its freshness (issue #28): the latest ROS run.
+    // Null when the engine has never run — the Kerf columns then render "—".
+    const engineRun = db
+      .prepare(
+        `SELECT horizon, created_at FROM engine_run
+         WHERE engine_run_id = (SELECT engine_run_id FROM latest_engine_run)`
+      )
+      .get() as { horizon: string; created_at: string } | undefined;
+
     const teamRows = db
       .prepare(`SELECT name FROM fantasy_team ORDER BY name`)
       .all() as { name: string }[];
@@ -110,7 +127,12 @@ function readBoard(): BoardData {
     return {
       players: deriveBoard(rows, projById, valById),
       teams,
-      meta: { runId: pull.run_id, capturedAt: pull.captured_at },
+      meta: {
+        runId: pull.run_id,
+        capturedAt: pull.captured_at,
+        horizon: engineRun?.horizon ?? null,
+        engineRunAt: engineRun?.created_at ?? null,
+      },
     };
   } finally {
     db.close();

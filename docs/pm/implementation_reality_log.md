@@ -53,6 +53,37 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-27 — ROS lens: in-season rest-of-season rankings, horizon-labeled (issue #28, Option A)
+
+**Ticket / Issue:** [#28](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/28) · **Branch:** feat/issue-28-ros-lens (off main) · **Deviated from plan:** Yes (one UI sequencing call)
+
+**Original intent**
+Make the engine's output the in-season rest-of-season lens: continuously-updated Kerf ranks/tiers/dollars/Edge, refreshed each weekly pull, with ROS consensus as the market column, horizon-labeled, surfaced as the in-season default via a horizon toggle. Option A (full-season projection as the ROS proxy); Option B is a separate fast-follow.
+
+**What was actually built**
+Migration 009: `engine_run.horizon` (default `'ros'`), `latest_engine_run` re-scoped to the latest ROS run, a `latest_engine_run_by_horizon` view, and the board view recreated to prefer the ROS/STD/OP consensus for the market ECR columns (falling back to draft preseason). The engine stamps `horizon='ros'`. The banner shows the active lens + engine-run freshness. No changes to the Kerf/dollar math — Option A is literally the existing engine on the refreshed `week=0` projection.
+
+**Deviations**
+The **visible ROS↔Weekly toggle** was deferred to #29. #28 ships a lens *label* (in the banner) + the horizon machinery instead of an interactive toggle.
+
+**Why we deviated**
+A toggle needs two horizons to switch between, and the weekly horizon doesn't exist until #29. Building a one-option (or disabled) toggle in #28 would be throwaway UI. So #28 lays the horizon-labeling groundwork and shows the ROS lens plainly; #29 introduces the weekly run and turns the label into a real toggle. The owner was told this at the #28 checkpoint. Net effect on the user is nil this issue — in-season there is only one lens to see.
+
+**Product implications**
+The biggest thing to know: **once the owner runs a weekly `archive → ingest → engine` in-season, the table already becomes the ROS lens** — the same Kerf ranks/tiers/dollars/Edge, now refreshed weekly and reading ROS consensus as the market, with a visible "Rest-of-Season ranks · updated \<date\>" freshness line. **Accepted limitation (Option A, [D-21](../decision_log.md)):** the dollar *magnitudes* run high because they still count games already played — the ranking is correct, but a mid-season trade evaluated on these dollars overstates remaining value. **Option B ([#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30))** fixes the magnitude and is queued to *Next*, gated on capturing CBS current-season actuals.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| ROS dollar magnitudes run high (full-season proxy) | Option A ships now; no ROS projection exists on the FP API, and actuals aren't captured yet | A mid/late-season trade or waiver evaluated on the dollar *amount* (not the rank) overstates what's left | Option B ([#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30)): capture CBS actuals, subtract from the refreshed projection |
+| Draft-board ECR is no longer separately shown in-season (ROS replaces it in the ECR columns) | The owner chose horizon-aware ECR columns; the draft board stays in the store | Can't see draft ECR beside ROS in-season | A future "Preseason" horizon (deferred) would surface it |
+
+**Follow-up decisions needed from the product owner**
+None new. The visible toggle + weekly columns are #29's scope, already decided (horizon toggle, horizon-aware ECR).
+
+---
+
 ### 2026-08-27 — In-season data plumbing: ROS + weekly feeds and per-week projections (issue #27)
 
 **Ticket / Issue:** [#27](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/27) · **Branch:** docs/power-rankings-spinoff (working here; not yet pushed) · **Deviated from plan:** Minor (one small in-scope guard the issue flagged as out of scope)

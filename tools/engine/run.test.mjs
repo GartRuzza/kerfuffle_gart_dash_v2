@@ -151,10 +151,24 @@ describe("runEngine (DB integration)", () => {
     expect(JSON.parse(stamp.params_json).shrinkage).toEqual({ rushK: 75, recK: 40 });
     expect(JSON.parse(stamp.params_json).fdPolicy).toEqual({ rushPlayerSpecific: false, recPlayerSpecific: true });
     expect(stamp.projection_pull_id).toBe(1);
+    expect(stamp.horizon).toBe("ros"); // the rest-of-season lens (issue #28, Option A)
 
     const second = runEngine(db);
     expect(second.engineRunId).toBeGreaterThan(first.engineRunId);
     const latest = db.prepare(`SELECT engine_run_id FROM latest_engine_run`).get().engine_run_id;
     expect(latest).toBe(second.engineRunId);
+  });
+
+  it("labels the run 'ros' and latest_engine_run resolves to the latest ROS run (issue #28)", () => {
+    const res = runEngine(db);
+    const run = db.prepare(`SELECT horizon FROM engine_run WHERE engine_run_id=?`).get(res.engineRunId);
+    expect(run.horizon).toBe("ros");
+    // latest_engine_run is now scoped to ROS; the by-horizon view exposes each lens.
+    const latestRos = db.prepare(`SELECT engine_run_id FROM latest_engine_run`).get().engine_run_id;
+    expect(latestRos).toBe(res.engineRunId);
+    const byHorizon = db
+      .prepare(`SELECT horizon, engine_run_id FROM latest_engine_run_by_horizon`)
+      .all();
+    expect(byHorizon).toEqual([{ horizon: "ros", engine_run_id: res.engineRunId }]);
   });
 });

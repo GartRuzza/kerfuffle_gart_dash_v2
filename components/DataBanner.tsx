@@ -21,7 +21,21 @@ function formatDate(iso: string): string {
   return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
-export default function DataBanner({ capturedAt }: { capturedAt: string | null }) {
+/** The active engine lens, in words (issue #28). */
+const HORIZON_LABEL: Record<string, string> = {
+  ros: "Rest-of-Season",
+  weekly: "Weekly", // #29
+};
+
+export default function DataBanner({
+  capturedAt,
+  horizon = null,
+  engineRunAt = null,
+}: {
+  capturedAt: string | null;
+  horizon?: string | null;
+  engineRunAt?: string | null;
+}) {
   if (capturedAt === null) {
     return (
       <div
@@ -33,9 +47,19 @@ export default function DataBanner({ capturedAt }: { capturedAt: string | null }
       </div>
     );
   }
+  // The Kerf ranks/tiers/dollars are as fresh as the last engine run, which can be
+  // older than the data pull — so show both when the engine has run (issue #28).
+  const lens = horizon ? HORIZON_LABEL[horizon] ?? horizon : null;
   return (
     <div className="w-full border-b border-line bg-surface px-4 py-1.5 text-center text-xs text-ink-subtle">
       League data as of <span className="font-semibold text-ink-muted">{formatDate(capturedAt)}</span>
+      {lens && engineRunAt && (
+        <>
+          {" · "}
+          <span className="font-semibold text-accent">{lens}</span> ranks · updated{" "}
+          <span className="font-semibold text-ink-muted">{formatDate(engineRunAt)}</span>
+        </>
+      )}
     </div>
   );
 }
