@@ -143,6 +143,8 @@ function writeFixtureRun(root, runId, mutate = {}, capturedAt = "2026-08-25T12:0
   addFp("ecr-dynasty-op", fpDynastySuperflexBoard());
   addFp("ecr-draft-std-all", fpAllBoard());
   addFp("ecr-dynasty-ppr-all", fpDynastyAllBoard());
+  // Optional in-season pages (issue #27): ROS/weekly boards + per-week projections.
+  for (const [page, json] of mutate.extraFp ?? []) addFp(page, json);
 
   writeFileSync(
     join(dir, "manifest.json"),
@@ -293,6 +295,58 @@ describe("ingest end-to-end (synthetic archive)", () => {
     });
     expect(() => ingest("2026-08-25T12-00-00Z")).toThrowError(/appears on TWO rosters/);
     expect(counts().pulls).toBe(0);
+  });
+
+  it("stores in-season feeds (#27): weekly board w/ start-sit lean + both projection weeks; skips ROS fallback", () => {
+    // A real weekly STD/OP board (opponent + expert lean), a ROS board that is
+    // FantasyPros' preseason DRAFT fallback (must NOT be stored as ROS), and the
+    // season (week 0) + current-week (week 2) projections for the same player.
+    const weeklyBoard = fpEnvelope({
+      ranking_type_name: "weekly", type: "Weekly", scoring: "STD", position_id: "OP", week: "2",
+      players: [
+        { ...fpPlayer(9001, 111, "Rostered Star", "QB", 1, "QB1", null),
+          player_opponent: "@KC", note: "Great matchup", tag: "Must Start", recommendation: "Start" },
+      ],
+    });
+    const rosFallback = fpEnvelope({
+      ranking_type_name: "draft", type: "Draft", position_id: "OP", fallback_for: "ROS",
+      players: [fpPlayer(9001, 111, "Rostered Star", "QB", 1, "QB1", 1)],
+    });
+    const projPlayer = (fpid, name, pos) => ({
+      fpid, name, position_id: pos, team_id: "BUF",
+      stats: { pass_yds: 100, pass_tds: 1, rush_yds: 20, rec_rec: 0, points: 15 },
+    });
+    const seasonProj = { season: 2026, week: 0, scoring: "STD", players: [projPlayer(9001, "Rostered Star", "QB")] };
+    const weekProj = { season: 2026, week: 2, scoring: "STD", players: [projPlayer(9001, "Rostered Star", "QB")] };
+
+    const warnings = [];
+    writeFixtureRun(root, "2026-09-16T12-00-00Z", {
+      extraFp: [
+        ["ecr-weekly-std-op", weeklyBoard],
+        ["ecr-ros-std-op", rosFallback],
+        ["projections-all", seasonProj],
+        ["projections-week-2", weekProj],
+      ],
+    });
+    ingestRun(db, "2026-09-16T12-00-00Z", { warn: (m) => warnings.push(m), note: () => {} }, root);
+
+    // The weekly board is stored, carrying the matchup + expert start/sit lean.
+    const weekly = db.prepare(
+      `SELECT player_opponent, tag, recommendation, note FROM market_ranking
+       WHERE ranking_type='weekly' AND scoring_format='STD' AND position_scope='OP' AND cbs_player_id=111`
+    ).get();
+    expect(weekly).toMatchObject({ player_opponent: "@KC", tag: "Must Start", recommendation: "Start", note: "Great matchup" });
+
+    // The ROS fallback is NOT stored as a ros board, and it warned.
+    const rosCount = db.prepare(`SELECT COUNT(*) c FROM market_ranking WHERE ranking_type='ros'`).get().c;
+    expect(rosCount).toBe(0);
+    expect(warnings.some((w) => /ROS board is FantasyPros' draft-board fallback/.test(w))).toBe(true);
+
+    // Both projection weeks coexist for the same player (season 0 + week 2).
+    const weeks = db.prepare(
+      `SELECT week FROM projection_source WHERE cbs_player_id=111 ORDER BY week`
+    ).all().map((r) => r.week);
+    expect(weeks).toEqual([0, 2]);
   });
 
   it("REJECTS a run missing a required page (no partial ingest)", () => {

@@ -53,6 +53,37 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-27 — In-season data plumbing: ROS + weekly feeds and per-week projections (issue #27)
+
+**Ticket / Issue:** [#27](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/27) · **Branch:** docs/power-rankings-spinoff (working here; not yet pushed) · **Deviated from plan:** Minor (one small in-scope guard the issue flagged as out of scope)
+
+**Original intent**
+Teach the archiver + ingest to capture and store the in-season FantasyPros feeds — the STD/superflex ROS and weekly consensus boards and the per-week projected stat lines — so the ROS (#28) and weekly/start-sit (#29) engines have fresh inputs. Data plumbing only; no engine re-score, no UI.
+
+**What was actually built**
+Archiver: STD/OP ROS + weekly probes and a `projections-week-N` pull, with the current NFL week from a hardcoded 2026 date→week table (`tools/archive/nfl-week.mjs`), recorded in the manifest and cross-checked against FantasyPros' echoed week. Ingest: the boards land in `market_ranking` (migration 008 adds four nullable weekly columns — opponent, note, tag, recommendation); both the season (`week=0`) and current-week (`week=N`) projections land in `projection_source` (unique key widened to include `week`); the preseason ROS-fallback board (`fallback_for:"ROS"`) is detected and skipped; expected-in-season-board checks warn rather than fail so old preseason runs still re-ingest.
+
+**Deviations**
+Two worth naming, both small. (1) The issue said engine re-score was **out of scope**, but storing both `week=0` and `week=N` rows meant the engine's projection query would now pick up the same player twice — so I added a one-line **defensive `week = 0` filter** to `tools/engine/run.mjs` (and the two backtest readers) to preserve today's behavior exactly. This is a guard that keeps the engine working, not a re-score. (2) Migration 008 rebuilt the `projection_source` table (SQLite can't alter a table-level UNIQUE in place) rather than a pure `ADD COLUMN` — additive in effect, validated on a copy of the live store (3,439 rows preserved, integrity ok).
+
+**Why we deviated**
+The plan couldn't see that `projection_source`'s existing unique key was `(pull_id, fp_player_id)` — the moment one pull holds two projection weeks, that key collides and the engine double-counts. Both deviations are the minimal, boring fixes for that reality; neither changes what the issue set out to do.
+
+**Product implications**
+Nothing the owner *sees* changes yet — this issue ships no new column, screen, or number. What it changes is that after an in-season `npm run archive` + `npm run ingest`, the store now holds the fresh ROS/weekly boards and per-week projections the next two issues will turn into visible in-season rankings and a real start/sit view. The one manual step is that the **live in-season archive+ingest must be run by the owner** (it needs the CBS cookie / FP key), which is the remaining acceptance item.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| The 2026 date→week table is hardcoded (18 rows) | Owner's choice — dumb + visible beats clever auto-detection; the manual weekly archive routine already has a human in the loop | If the real 2026 schedule shifts a week, the archiver could request the wrong week — but the manifest's echoed-week cross-check surfaces it loudly, and `FP_WEEK` overrides it | Edit one table in `tools/archive/nfl-week.mjs` |
+| The engine still scores only `week=0` (season line) | #27 is plumbing; scoring the weekly line is #29 | None — it's the intended sequencing | #29 adds the weekly scoring pass |
+
+**Follow-up decisions needed from the product owner**
+None new. The horizon-presentation decisions for #28/#29 (the ROS/Weekly toggle, whether the ECR columns become horizon-aware) were taken with the owner up front and will be confirmed at each of those issues' checkpoints.
+
+---
+
 ### 2026-08-27 — Post-auction ingest fix: contract length "0" no longer rolls back the run
 
 **Ticket / Issue:** none (owner troubleshooting) · **Branch:** feat/issue-20-valuation-engine · **Deviated from plan:** No

@@ -25,6 +25,7 @@
 import { writeFileSync, existsSync } from "node:fs";
 import { join, basename } from "node:path";
 import { RAW_ROOT, CBS_ENV_DIR, FP_ENV_DIR, loadEnv, makeRunId, ensureDir } from "./shared.mjs";
+import { currentNflWeek } from "./nfl-week.mjs";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -168,7 +169,10 @@ async function captureCbs(runDir, responses) {
 
 // ---------- FantasyPros: the spike's probe set, run with the (now active) HOF key ----------
 
-function fpProbes(sport, season) {
+// `week` is the current NFL week (issue #27) — the in-season probes below request
+// it explicitly. Preseason it's Week 1 (FantasyPros publishes the upcoming week
+// early); the season projection stays `week=draft` (full-season, ingested as week 0).
+function fpProbes(sport, season, week) {
   return [
     { name: "ecr-draft-ppr-all",   path: `/${sport}/${season}/consensus-rankings`, q: { type: "draft",   scoring: "PPR",  position: "ALL" } },
     { name: "ecr-draft-half-all",  path: `/${sport}/${season}/consensus-rankings`, q: { type: "draft",   scoring: "HALF", position: "ALL" } },
@@ -183,14 +187,31 @@ function fpProbes(sport, season) {
     { name: "ecr-dynasty-ppr-all", path: `/${sport}/${season}/consensus-rankings`, q: { type: "dynasty", scoring: "PPR",  position: "ALL" } },
     { name: "ecr-dynasty-std-all", path: `/${sport}/${season}/consensus-rankings`, q: { type: "dynasty", scoring: "STD",  position: "ALL" } },
     { name: "ecr-dynasty-ppr-qb",  path: `/${sport}/${season}/consensus-rankings`, q: { type: "dynasty", scoring: "PPR",  position: "QB" } },
+    // --- In-season boards in the league's display format (STD / superflex), issue #27 ---
+    // ROS (rest-of-season) consensus. Preseason FantasyPros returns the DRAFT board
+    // here (fallback_for:"ROS"); ingestion detects that and does NOT store it as ROS.
+    { name: "ecr-ros-std-op",      path: `/${sport}/${season}/consensus-rankings`, q: { type: "ros",     scoring: "STD",  position: "OP" } },
+    // Weekly consensus for the current week — carries opponent + expert start/sit lean.
+    { name: "ecr-weekly-std-op",   path: `/${sport}/${season}/consensus-rankings`, q: { type: "weekly",  scoring: "STD",  position: "OP", week: String(week) } },
+    // Kept for continuity/context (PPR/ALL variants), now tracking the current week too.
     { name: "ecr-ros-ppr-all",     path: `/${sport}/${season}/consensus-rankings`, q: { type: "ros",     scoring: "PPR",  position: "ALL" } },
-    { name: "ecr-weekly-ppr-all",  path: `/${sport}/${season}/consensus-rankings`, q: { type: "weekly",  scoring: "PPR",  position: "ALL", week: "1" } },
-    { name: "projections-all",     path: `/${sport}/${season}/projections`,        q: { position: "ALL", week: "draft" } },
-    { name: "projections-qb",      path: `/${sport}/${season}/projections`,        q: { position: "QB",  week: "draft" } },
+    { name: "ecr-weekly-ppr-all",  path: `/${sport}/${season}/consensus-rankings`, q: { type: "weekly",  scoring: "PPR",  position: "ALL", week: String(week) } },
+    // Projections: the full-season line (ingested as week 0 — the ROS lens reads it)
+    // AND the current week's line (ingested as week N — the weekly lens reads it).
+    { name: "projections-all",         path: `/${sport}/${season}/projections`,    q: { position: "ALL", week: "draft" } },
+    { name: "projections-qb",          path: `/${sport}/${season}/projections`,    q: { position: "QB",  week: "draft" } },
+    { name: `projections-week-${week}`, path: `/${sport}/${season}/projections`,   q: { position: "ALL", week: String(week) } },
     { name: "players",             path: `/${sport}/players`,                       q: {} },
     { name: "adp",                 path: `/${sport}/${season}/adp`,                 q: { position: "ALL" } },
     { name: "news",                path: `/${sport}/news`,                          q: {} },
   ];
+}
+
+// The in-season probes whose payload echoes a `week` we can cross-check against
+// the week we requested (issue #27's transparency safety net). Names are matched
+// exactly except the week-suffixed projection, matched by prefix.
+function isWeeklyProbe(name) {
+  return name === "ecr-weekly-std-op" || name === "ecr-weekly-ppr-all" || /^projections-week-\d+$/.test(name);
 }
 
 // Count the player-like array in a FP payload, for an at-a-glance manifest signal
@@ -216,17 +237,27 @@ async function captureFp(runDir, responses) {
   const delayMs = Number(env.FP_REQUEST_DELAY_MS || 1500); // spike spacing; harmless on HOF
   ensureDir(join(runDir, "fantasypros"));
 
+  // Which NFL week to request for the in-season probes (issue #27). Default: the
+  // hardcoded 2026 date→week table (owner's choice). FP_WEEK in the .env is a
+  // documented manual override for the rare case the table is wrong.
+  const envWeek = Number(env.FP_WEEK);
+  const weekOverride = Number.isInteger(envWeek) && envWeek > 0;
+  const week = weekOverride ? envWeek : currentNflWeek(new Date());
+  const weekSource = weekOverride ? "FP_WEEK override" : "2026 date→week table";
+  console.log(`  current NFL week: ${week}  (${weekSource})`);
+
   if (!apiKey) {
     console.log("  (skipped — no FP_API_KEY in spikes/fantasypros-api/.env)");
     responses.push({
       source: "fantasypros", page: null, url: null, file: null,
       fetched_at: new Date().toISOString(), status: null, error: "no FP_API_KEY",
     });
-    return { attempted: false, ok: 0, failed: 0 };
+    return { attempted: false, ok: 0, failed: 0, week, weekSource };
   }
 
   let ok = 0, failed = 0;
-  for (const probe of fpProbes(sport, season)) {
+  const weekEchoes = []; // {page, echoed} — the week FantasyPros reports back
+  for (const probe of fpProbes(sport, season, week)) {
     const qs = new URLSearchParams(probe.q).toString();
     const url = `https://${host}${basePath}${probe.path}${qs ? `?${qs}` : ""}`;
     const fetched_at = new Date().toISOString();
@@ -245,15 +276,25 @@ async function captureFp(runDir, responses) {
       const file = `fantasypros/${probe.name}.${ext}`;
       writeFileSync(join(runDir, file), json ? JSON.stringify(json, null, 2) : text);
       const rows = json ? countRows(json) : null;
+      // The week FantasyPros echoes back — cross-checked against the week we asked
+      // for, so an off-by-one in the date→week table surfaces in the manifest.
+      const echoedWeek =
+        json && typeof json === "object" && json.week != null && String(json.week).match(/^\d+$/)
+          ? Number(json.week)
+          : null;
+      if (isWeeklyProbe(probe.name)) weekEchoes.push({ page: probe.name, echoed: echoedWeek });
       responses.push({
         source: "fantasypros", page: probe.name, url, file, fetched_at,
         status: res.status, bytes: text.length, is_json: !!json, rows,
         public_api_limited: json && typeof json === "object" ? json.public_api_limited ?? null : null,
         tier: json && typeof json === "object" ? json.tier ?? null : null,
+        week_requested: isWeeklyProbe(probe.name) ? week : null,
+        week_echoed: isWeeklyProbe(probe.name) ? echoedWeek : null,
       });
       if (res.ok) ok++; else failed++;
       console.log(
-        `  fantasypros/${probe.name.padEnd(18)} ${String(res.status).padEnd(4)} ${String(text.length).padStart(8)} bytes  rows=${rows ?? "-"}`
+        `  fantasypros/${probe.name.padEnd(18)} ${String(res.status).padEnd(4)} ${String(text.length).padStart(8)} bytes  rows=${rows ?? "-"}` +
+          (isWeeklyProbe(probe.name) ? `  week=${echoedWeek ?? "-"}` : "")
       );
     } catch (err) {
       failed++;
@@ -265,7 +306,31 @@ async function captureFp(runDir, responses) {
     }
     await sleep(delayMs);
   }
-  return { attempted: true, host, sport, season, ok, failed };
+
+  // Transparency check (issue #27): warn if FantasyPros served a different week
+  // than we requested. A real board echoes our week; a mismatch (or a null echo)
+  // means the date→week table is off or the week isn't published yet.
+  const mismatches = weekEchoes.filter((w) => w.echoed !== null && w.echoed !== week);
+  const emptyEchoes = weekEchoes.filter((w) => w.echoed === null);
+  if (mismatches.length > 0) {
+    console.log(
+      `\n  ⚠ requested week ${week} but FantasyPros echoed a different week: ` +
+        mismatches.map((m) => `${m.page}=${m.echoed}`).join(", ") +
+        `\n    Check the 2026 date→week table (tools/archive/nfl-week.mjs) or set FP_WEEK.`
+    );
+  }
+  if (emptyEchoes.length > 0) {
+    console.log(
+      `  ⚠ ${emptyEchoes.length} weekly probe(s) returned no week (empty/unpublished): ` +
+        emptyEchoes.map((m) => m.page).join(", ")
+    );
+  }
+
+  return {
+    attempted: true, host, sport, season, ok, failed,
+    week, weekSource, weekEchoes,
+    weekEchoMismatch: mismatches.length > 0,
+  };
 }
 
 // ---------- Orchestration ----------
@@ -303,7 +368,7 @@ async function main() {
 
   console.log(`\nDone — ${responses.length} responses archived to data/raw/${runFolder}/`);
   console.log(`  CBS:         ${cbs.attempted ? `${cbs.ok} ok, ${cbs.failed} failed${cbs.login_redirects ? `, ${cbs.login_redirects} login-redirect` : ""}` : "skipped (no cookie)"}`);
-  console.log(`  FantasyPros: ${fp.attempted ? `${fp.ok} ok, ${fp.failed} failed` : "skipped (no key)"}`);
+  console.log(`  FantasyPros: ${fp.attempted ? `${fp.ok} ok, ${fp.failed} failed (week ${fp.week}${fp.weekEchoMismatch ? " ⚠ echo mismatch" : ""})` : `skipped (no key)${fp.week ? ` — would use week ${fp.week}` : ""}`}`);
   console.log(`  Manifest:    data/raw/${runFolder}/manifest.json`);
   console.log(`Nothing was overwritten — this is a new dated folder.\n`);
 }

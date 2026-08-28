@@ -23,8 +23,26 @@ data/raw/2026-08-25T14-30-00Z/
     rules.html, draft-results.html, … (the full league page set)
   fantasypros/             ← every FantasyPros response, saved as raw .json
     ecr-draft-ppr-all.json, ecr-dynasty-ppr-all.json, projections-all.json, …
+    ecr-ros-std-op.json, ecr-weekly-std-op.json, projections-week-N.json  (in-season, #27)
   manifest.json            ← index of every response: source, URL, fetched_at, HTTP status
+                             (incl. sources.fantasypros.week + the echoed-week cross-check)
 ```
+
+## In-season feeds (issue #27)
+
+In addition to the preseason boards, each run pulls the **rest-of-season** and **weekly**
+consensus boards in the league's format (**STD / superflex** — `ecr-ros-std-op`,
+`ecr-weekly-std-op`) and the **current week's projections** (`projections-week-N`), alongside
+the full-season `projections-all`. The weekly board carries the matchup **opponent** and the
+experts' **start/sit lean** (the data the #29 start/sit lens shows).
+
+**Which week does it pull?** A deliberately dumb, visible **2026 date→week table** in
+[`nfl-week.mjs`](nfl-week.mjs) decides (Week 1 opens Wed 2026-09-09; the week flips each
+Tuesday). The run prints `current NFL week: N`, records it in the manifest, and **cross-checks
+it against the week FantasyPros echoes back** — a mismatch prints a ⚠ so you can correct the
+table or override it. To force a week, set **`FP_WEEK=N`** in `spikes/fantasypros-api/.env`.
+Preseason, FantasyPros serves its *draft* board for a ROS request; ingestion detects that and
+does **not** store it as ROS — no action needed from you.
 
 **Append-only:** a new timestamped folder each run, so a wrong parser later is fixed
 by re-parsing the archive — never by re-fetching. `data/` is git-ignored; real league

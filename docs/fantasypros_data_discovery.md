@@ -111,3 +111,20 @@ The re-pull promised in §4/§7 is done, profiled from the raw archive (committe
 **Unchanged and still true:** the join to CBS is a direct `cbs_player_id` match (present on every ranking row); weekly rankings carry no `tier`; the key is a credential (local env only, never committed); the license is personal, non-commercial.
 
 Net: the §4 table's cap / `403` / rate-limit constraints were **free-tier only and are lifted** — with the single caveat that `public_api_limited` stays `true` and must be ignored.
+
+---
+
+## 9. Update — 2026-08-26/27 (issue #27: the in-season feeds — ROS, weekly, per-week projections)
+
+Proven against the live HOF key (2026-08-26) and built into the archiver/ingest (issue #27, 2026-08-27). These are the feeds the in-season lenses (#28 ROS, #29 weekly/start-sit) read.
+
+**What exists (and what doesn't):**
+
+- **Weekly projected stat lines are real, in the shape the engine already scores.** `GET /nfl/{season}/projections?position=ALL&week=N` returns full component stat lines (~670 rows) in the **same `stats` shape** `parse-projections.mjs` reads — so a weekly Kerf re-score is just the existing engine on `week=N`. ⚠ **Only the current/imminent week is published:** `week=2` returned 0 rows while `week=1` returned data (2026-08-26). So weekly is captured **week by week, going forward** — no pre-load, no historical back-fill.
+- **No first-class ROS *projection* exists.** `week=ros` / `week=season` silently fall back to the current week. So ROS **value is constructed downstream from the refreshed full-season (`week=0`) projection** (issue #28, Option A), not fetched as its own projection.
+- **Weekly *consensus* is genuinely rich.** `consensus-rankings?type=weekly&scoring=STD&position=OP&week=N` returns a real weekly superflex board carrying `rank_ecr`, `pos_rank`, and — the part that makes start/sit real — **`player_opponent`, `note`, `tag`, `recommendation`** (expert start/sit signals). Weekly boards carry **no `tier`** (so any weekly tier bands must come from *our* Kerf weekly tiers, #29).
+- **ROS *consensus* falls back to the draft board preseason.** `type=ros` returns `type:"Draft"`, `week:"0"`, **`fallback_for:"ROS"`** until the season differentiates it. **Ingestion must not let that fallback masquerade as a real ROS board** — issue #27 detects it (`isRosFallback`, keyed on `fallback_for:"ROS"` or a ROS-named file declaring a non-ROS type) and **skips it with a warning**.
+
+**Which week to request:** FantasyPros publishes the *upcoming* week ahead of kickoff (observed: `week=1` live on 2026-08-26, before the Wed 2026-09-09 opener). The archiver picks the week from a hardcoded **2026 date→week table** (`tools/archive/nfl-week.mjs`) and records both the requested week and the week FantasyPros **echoes back** in the run manifest, warning on any mismatch.
+
+**Unchanged and still true:** the STD/superflex (`OP`) format is the league's display board (D-12); the CBS join is still a direct `cbs_player_id` match; weekly boards still carry no `tier`.
