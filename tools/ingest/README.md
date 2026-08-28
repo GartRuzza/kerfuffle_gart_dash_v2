@@ -35,6 +35,22 @@ npm run dev              # 3. the table renders the latest pull
   stored as unknown rather than guessed.
 - `✘ <run> ROLLED BACK` — a validation failure; the reason follows. Nothing was stored.
 
+**Old failed runs re-appear on every ingest — usually that's fine.** Ingest re-tries every
+`data/raw/` folder it hasn't successfully stored *yet*, so a run that can never ingest keeps
+printing its `✘ ROLLED BACK` line each time. Two common cases, both harmless — **read the
+newest `✔` line at the bottom, not the old `✘` ones above it:**
+
+- **Pre-in-season archives** (before the STD/superflex board was added, issue #27) fail with
+  *"the draft/STD/OP (superflex) FantasyPros board is missing"* — they physically lack a board
+  the app now requires, so they can never ingest.
+- **Incomplete captures** (e.g. one CBS roster page that didn't fetch → *"roster tN: no
+  parseable roster table"*) stay failed until re-captured.
+
+These don't affect your current data — the latest **`✔`** run is what the app reads (see the
+closing `Board view: … latest pull: <run>` line). If the repeated `✘` noise bothers you,
+**deleting those stale `data/raw/<run>/` folders is safe** (the archive is append-only history,
+not the database; the DB is rebuilt from whatever folders remain).
+
 The database is **disposable by design**: deleting `data/gart-dash.sqlite` and
 re-running `npm run ingest` rebuilds it entirely from the raw archive.
 
