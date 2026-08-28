@@ -4,9 +4,11 @@ import Database from "better-sqlite3";
 import { MY_TEAM, type Player } from "../types";
 import {
   deriveBoard,
+  deriveWeekly,
   type BoardViewRow,
   type ProjectionRow,
   type ValuationRow,
+  type WeeklyConsensusRow,
 } from "./derive";
 
 /**
@@ -38,17 +40,30 @@ export interface BoardMeta {
    */
   horizon: string | null;
   engineRunAt: string | null;
+  /**
+   * The weekly lens (issue #29): the NFL week the weekly re-score covers, and when
+   * that weekly run was computed. Both null until a current-week projection has been
+   * ingested and the engine has produced a weekly run (preseason: no weekly lens).
+   */
+  weeklyWeek: number | null;
+  weeklyRunAt: string | null;
 }
 
 export interface BoardData {
   players: Player[];
+  /**
+   * The WEEKLY-lens dataset (issue #29): the same players with this-week Kerf
+   * numbers, weekly consensus, and matchup opponent. null when there is no weekly
+   * run yet — the UI then offers no Weekly lens.
+   */
+  weeklyPlayers: Player[] | null;
   /** The 12 fantasy team names (owner's team first) for the Manager filter. */
   teams: string[];
   /** null = no database / nothing ingested yet. */
   meta: BoardMeta | null;
 }
 
-const EMPTY: BoardData = { players: [], teams: [], meta: null };
+const EMPTY: BoardData = { players: [], weeklyPlayers: null, teams: [], meta: null };
 
 export function getBoard(): BoardData {
   if (!existsSync(DB_PATH)) return EMPTY;
@@ -116,6 +131,59 @@ function readBoard(): BoardData {
       )
       .get() as { horizon: string; created_at: string } | undefined;
 
+    // Weekly lens (issue #29): the latest 'weekly' engine run + the weekly consensus
+    // board. Both absent preseason — weeklyPlayers stays null and the UI offers no
+    // Weekly toggle. The weekly dataset reuses the same board identity rows, with
+    // this-week Kerf numbers, weekly consensus ECR, and the matchup opponent.
+    const weeklyRun = db
+      .prepare(
+        `SELECT engine_run_id, created_at FROM engine_run
+         WHERE engine_run_id = (SELECT engine_run_id FROM latest_engine_run_by_horizon WHERE horizon = 'weekly')`
+      )
+      .get() as { engine_run_id: number; created_at: string } | undefined;
+
+    let weeklyPlayers: Player[] | null = null;
+    let weeklyWeek: number | null = null;
+    let weeklyRunAt: string | null = null;
+    if (weeklyRun) {
+      weeklyRunAt = weeklyRun.created_at;
+      const weeklyProjById = new Map<number, ProjectionRow>();
+      const wProj = db
+        .prepare(
+          `SELECT cbs_player_id, kerf_points, kerf_ovr_rank, kerf_pos_rank, kerf_ovr_tier, kerf_pos_tier
+           FROM projection WHERE engine_run_id = ?`
+        )
+        .all(weeklyRun.engine_run_id) as (ProjectionRow & { cbs_player_id: number })[];
+      for (const p of wProj) weeklyProjById.set(p.cbs_player_id, p);
+
+      const weeklyConsensusById = new Map<number, WeeklyConsensusRow>();
+      const wkRows = db
+        .prepare(
+          `SELECT cbs_player_id, rank_ecr, pos_rank, player_opponent, week FROM market_ranking
+           WHERE pull_id = (SELECT pull_id FROM latest_pull)
+             AND ranking_type = 'weekly' AND scoring_format = 'STD' AND position_scope = 'OP'
+             AND cbs_player_id IS NOT NULL`
+        )
+        .all() as {
+        cbs_player_id: number;
+        rank_ecr: number | null;
+        pos_rank: string | null;
+        player_opponent: string | null;
+        week: string | null;
+      }[];
+      for (const w of wkRows) {
+        weeklyConsensusById.set(w.cbs_player_id, {
+          rank_ecr: w.rank_ecr,
+          pos_rank: w.pos_rank,
+          opponent: w.player_opponent,
+        });
+        if (weeklyWeek === null && w.week != null && /^\d+$/.test(String(w.week))) {
+          weeklyWeek = Number(w.week);
+        }
+      }
+      weeklyPlayers = deriveWeekly(rows, weeklyProjById, weeklyConsensusById);
+    }
+
     const teamRows = db
       .prepare(`SELECT name FROM fantasy_team ORDER BY name`)
       .all() as { name: string }[];
@@ -126,12 +194,15 @@ function readBoard(): BoardData {
 
     return {
       players: deriveBoard(rows, projById, valById),
+      weeklyPlayers,
       teams,
       meta: {
         runId: pull.run_id,
         capturedAt: pull.captured_at,
         horizon: engineRun?.horizon ?? null,
         engineRunAt: engineRun?.created_at ?? null,
+        weeklyWeek,
+        weeklyRunAt,
       },
     };
   } finally {

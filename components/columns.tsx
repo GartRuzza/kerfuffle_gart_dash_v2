@@ -99,6 +99,18 @@ export const columns: ColumnDef<PlayerRow>[] = [
     cell: (info) => <PositionBadge pos={info.getValue<string>()} />,
   },
   { accessorKey: "nflTeam", header: "Team" },
+  // Weekly matchup opponent (issue #29) — populated only in the Weekly lens; "—"
+  // in the ROS lens. Text, so not sortable.
+  {
+    id: "opponent",
+    accessorKey: "opponent",
+    header: "Opp",
+    enableSorting: false,
+    cell: (info) => {
+      const v = info.getValue<string | null>();
+      return v == null ? dash : <span className="text-ink-muted">{v}</span>;
+    },
+  },
 
   // --- GartStats (engine outputs — blank until the valuation engine exists) ---
   { id: "kerfOvrRank", accessorFn: (r) => r.kerfOvrRank ?? undefined, sortUndefined: "last", header: "Kerf Ovr Rank", cell: num },

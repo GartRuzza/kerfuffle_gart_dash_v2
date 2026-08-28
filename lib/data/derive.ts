@@ -100,6 +100,85 @@ function uniqueRanks(
   return map;
 }
 
+/**
+ * One player's weekly consensus (from the FantasyPros weekly STD/OP board, keyed
+ * by cbs_player_id). Weekly boards carry no `tier` — weekly tier bands come from
+ * our own Kerf weekly tiers instead (issue #29).
+ */
+export interface WeeklyConsensusRow {
+  rank_ecr: number | null;
+  pos_rank: string | null; // "WR12"
+  opponent: string | null; // "vs. TB" / "at HOU"
+}
+
+/**
+ * The WEEKLY-lens dataset (issue #29): the same players as the board, but every
+ * value points at THIS WEEK. The `kerf*` fields carry the weekly engine run's
+ * Kerf points/ranks/tiers; the `ecr*` fields carry the weekly consensus (its
+ * overall rank made unique+contiguous like the ROS lens; its tiers are null —
+ * weekly consensus has none, so a weekly tier sort uses the Kerf tiers); `opponent`
+ * is the matchup. Dollar fields are null (no weekly auction). Identity, roster,
+ * salary and dynasty come from the shared board rows unchanged.
+ *
+ * Returns null when there is no weekly engine run yet (preseason) — the caller
+ * then simply offers no Weekly lens.
+ */
+export function deriveWeekly(
+  rows: BoardViewRow[],
+  weeklyProjById: Map<number, ProjectionRow>,
+  weeklyConsensusById: Map<number, WeeklyConsensusRow>
+): Player[] {
+  // Unique contiguous overall rank over the weekly consensus ECR (ties broken by
+  // name), so weekly tier/sort behaves like the ROS lens.
+  const weeklyOvr = new Map<number, number>();
+  rows
+    .map((r) => ({ id: r.cbs_player_id, name: r.name, ecr: weeklyConsensusById.get(r.cbs_player_id)?.rank_ecr ?? null }))
+    .filter((r) => r.ecr !== null)
+    .sort((a, b) => a.ecr! - b.ecr! || a.name.localeCompare(b.name))
+    .forEach((r, i) => weeklyOvr.set(r.id, i + 1));
+  const dynRank = uniqueRanks(rows, (r) => r.dynasty_ecr);
+
+  return rows.map((r) => {
+    const proj = weeklyProjById.get(r.cbs_player_id) ?? null;
+    const wk = weeklyConsensusById.get(r.cbs_player_id) ?? null;
+    return {
+      id: String(r.cbs_player_id),
+      name: r.name,
+      pos: assertPosition(r.pos, r.name),
+      nflTeam: r.nfl_team ?? "",
+      owner: r.owner,
+
+      // Weekly has no dollars (no weekly auction — issue #29 out of scope).
+      kerfValue: null,
+      rosterValue: null,
+      marketPrice: null,
+      marketPreAuction: null,
+      // Kerf fields = THIS WEEK's re-score.
+      kerfOvrRank: proj?.kerf_ovr_rank ?? null,
+      kerfPosRank: proj?.kerf_pos_rank ?? null,
+      kerfOvrTier: proj?.kerf_ovr_tier ?? null,
+      kerfPosTier: proj?.kerf_pos_tier ?? null,
+
+      salary: r.salary,
+      contractYears: r.contract_years,
+      projPts: proj ? Math.round(proj.kerf_points * 10) / 10 : null,
+      opponent: wk?.opponent ?? null,
+
+      // ECR fields = the WEEKLY consensus (no weekly tiers → null).
+      ecr: wk?.rank_ecr ?? null,
+      dynastyEcr: r.dynasty_ecr,
+      ovrEcrRank: weeklyOvr.get(r.cbs_player_id) ?? null,
+      posEcr: posRankNumber(wk?.pos_rank ?? null),
+      dynOvrRank: dynRank.get(r.cbs_player_id) ?? null,
+      dynPosEcr: posRankNumber(r.dynasty_pos_rank),
+      ovrEcrTier: null,
+      posEcrTier: null,
+      dynOvrTier: r.dynasty_tier,
+      dynPosTier: r.dynasty_tier,
+    };
+  });
+}
+
 export function deriveBoard(
   rows: BoardViewRow[],
   projById: Map<number, ProjectionRow> = new Map(),
@@ -132,6 +211,7 @@ export function deriveBoard(
     // The engine's KERFUFFLE-scored projection for offense (incl. free agents);
     // CBS's own number for defenses / unprojected players.
     projPts: proj ? Math.round(proj.kerf_points * 10) / 10 : r.proj_points,
+    opponent: null, // ROS lens has no per-week matchup (issue #29 fills this weekly)
 
     ecr: r.ecr,
     dynastyEcr: r.dynasty_ecr,

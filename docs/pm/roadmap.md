@@ -38,7 +38,7 @@ The auction is behind us; the season is the horizon now. **ROS value is foundati
 | Drop candidates + dead-cap cost on waiver claims | Deferred from user_flows v1; strong future candidate, not auction-critical. In [`feature_backlog.md`](../feature_backlog.md). |
 | Contract-duration recommendations | Gated on real-life NFL contract/depth-chart data — a vision non-goal until that changes. |
 | Live auction tracking / dynamic re-ranking | Auction day is deliberately a static reference. Building this is an owner decision, never an enhancement. |
-| Start/sit as a feature | The roster-filtered table is the entire support; documented in [`user_flows.md`](../user_flows.md) flow 5. |
+| ~~Start/sit as a feature~~ | **No longer deferred — BUILT 2026-08-27 ([#29](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/29), [D-22](../decision_log.md)):** the Weekly lens re-scores the current week beside the consensus. The non-goal was reversed. |
 
 ## Now / Next / Later
 
@@ -48,7 +48,7 @@ The auction is behind us; the season is the horizon now. **ROS value is foundati
 | --- | --- | --- | --- |
 | 1 | **ROS + weekly data plumbing ([#27](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/27))** | The engine needs in-season inputs: ROS + weekly consensus in the league's **STD/superflex** format, plus **per-week projected stat lines**. The consensus parser already handles ROS/weekly types; this adds the STD/OP variants, the weekly projections pull, and **ROS-fallback-to-draft handling** (preseason ROS returns the draft board). | — |
 | 2 | **ROS engine — Kerf ranks/tiers/dollars, weekly-refreshed ([#28](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/28), Option A)** | **BUILT (2026-08-27).** Re-runs the existing engine (#18/#20) on FantasyPros' refreshed full-season projection each week → Kerf ranks/tiers/dollars/Edge, horizon-labeled `ros` (migration 009), with **ROS ECR** as the in-season market column (draft fallback preseason) and engine-run freshness on the banner. Option A ([D-21](../decision_log.md)); true remaining value (Option B, [#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30)) queued to Next. The visible ROS↔Weekly toggle lands with #29. Status: [`current_state.md`](current_state.md). | #27 ✓ |
-| 3 | **Weekly rankings + start/sit lens ([#29](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/29))** | Per-week Kerf re-score **beside** weekly consensus (with matchup opponent + expert start/sit lean), powering the now-**supported** start/sit flow — this **reverses the vision non-goal** (owner, 2026-08-27). | #27 (uses #28 machinery) |
+| 3 | **Weekly rankings + start/sit lens ([#29](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/29))** | **BUILT (2026-08-27).** Per-week Kerf re-score (a second engine run, `horizon='weekly'`) **beside** the weekly consensus, with the matchup opponent, behind a ROS↔Weekly **Lens toggle**; the **Start/Sit** saved view opens it Raccoons-filtered. This **reversed the start/sit non-goal** ([D-22](../decision_log.md)): `user_flows.md` §5 + `product_vision.md` principle 1 updated. No weekly dollars, no optimizer, no auto-pick; FantasyPros' expert "lean" left out (empty on the live board — owner). Status: [`current_state.md`](current_state.md). | #27, #28 ✓ |
 
 > **Sequencing:** ROS value (#28) is foundational — waivers, trades, and start/sit all read from it — so it is built first, on the plumbing (#27); weekly/start-sit (#29) follows.
 

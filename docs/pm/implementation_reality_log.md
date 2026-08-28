@@ -53,6 +53,37 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-27 — Weekly lens + Start/Sit flow: per-week re-score beside consensus (issue #29)
+
+**Ticket / Issue:** [#29](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/29) · **Branch:** feat/issue-29-weekly-startsit (off main) · **Deviated from plan:** Yes (dropped the expert-lean column, mid-build owner steer)
+
+**Original intent**
+Add weekly rankings — a per-week Kerf re-score shown beside the FantasyPros weekly consensus, with matchup opponent and the expert start/sit "lean" — and turn them into a real, supported Start/Sit flow, reversing the start/sit non-goal. No optimizer / no auto-pick.
+
+**What was actually built**
+A second engine run (`horizon='weekly'`, no dollars) re-scoring the current week's projection; a ROS↔Weekly Lens toggle that swaps the table between the two lenses; an Opp (matchup) column; the Start/Sit saved view opening the Weekly lens Raccoons-filtered; and the non-goal reversed in `product_vision.md` + `user_flows.md` §5. No new migration (reused #28's horizon column + #27's weekly board columns).
+
+**Deviations**
+The **expert start/sit "lean" column was dropped.** The issue's scope listed surfacing FantasyPros' `tag`/`recommendation`/`note`. On review the owner pushed back — Gart Dash should provide *data that supports* a start/sit call, not a column that "reports out start/sit directly." Investigating the live Week-1 board then made it moot: those three fields are present in the payload but **empty for all 698 players**. So the weekly lens ships as **numbers + matchup only**; the fields stay stored (from #27), unread, to revisit if they ever populate.
+
+**Why we deviated**
+Two reasons, aligned: (1) the owner's instinct is the vision's principle 3 ("glass box, human decides") — a surfaced expert verdict edges toward the tool making the call; (2) the data isn't there anyway. Better to omit a hollow/verdict-flavored column than ship it for completeness.
+
+**Product implications**
+Start/sit is now a supported flow: switch the Lens to Weekly (or open the Start/Sit view) and read, per Raccoon, our Kerf weekly rank+tier beside the weekly consensus rank and the opponent — the numbers behind the call, both shown, the decision still the owner's. The value shows immediately on real data: our model and consensus **disagree** on real players (Joe Burrow: our weekly QB7 vs consensus QB1), and that gap is the point. **No weekly dollars** (weekly cap value is meaningless). One operational caveat surfaced: the archive run that carried the live weekly feeds rolled back on ingest over an unrelated broken CBS roster page — so a clean weekly pull depends on all 12 CBS roster pages fetching.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| The weekly board reuses the ROS/draft board's roster+FA universe for identity | Avoids a second board view / migration | A player ranked weekly but absent from the draft board wouldn't appear as an FA in the weekly lens (rare — the draft board is broad) | Union the weekly board into the FA universe in `board.ts` |
+| Expert lean fields stored but unread | Empty on the live board + owner declined surfacing | None today | Map + surface them if FantasyPros ever populates them |
+
+**Follow-up decisions needed from the product owner**
+None. (If the expert note/tag fields start populating later in a game week, whether to surface them is a small future call — noted in the discovery doc.)
+
+---
+
 ### 2026-08-27 — ROS lens: in-season rest-of-season rankings, horizon-labeled (issue #28, Option A)
 
 **Ticket / Issue:** [#28](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/28) · **Branch:** feat/issue-28-ros-lens (off main) · **Deviated from plan:** Yes (one UI sequencing call)

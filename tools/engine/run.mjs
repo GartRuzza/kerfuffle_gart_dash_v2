@@ -204,70 +204,11 @@ function tableExists(db, name) {
     .get(name);
 }
 
-export function runEngine(db, { log = () => {} } = {}) {
-  const latest = db.prepare(`SELECT pull_id FROM latest_pull`).get()?.pull_id;
-  if (!latest) throw new Error(`no ingested pull — run "npm run ingest" first`);
-
-  // week = 0 is the full-season projection — the ROS/season lens (Option A, #28).
-  // Since #27, a pull can ALSO hold the current week's projection (week N, read by
-  // the weekly lens #29); this run scores the season line only, exactly as before.
-  const src = db
-    .prepare(
-      `SELECT * FROM projection_source
-       WHERE pull_id = ? AND week = 0 AND cbs_player_id IS NOT NULL AND pos IN ('QB','RB','WR','TE')`
-    )
-    .all(latest);
-  if (src.length === 0) {
-    throw new Error(
-      `no projection_source rows for the latest pull — run "npm run ingest" ` +
-        `(the projections feed must be archived and ingested first)`
-    );
-  }
-
-  const statRows = db
-    .prepare(
-      `SELECT cbs_player_id, pos, rush_att, rush_yds, rush_first_downs, rec_rec, rec_yds, rec_first_downs
-       FROM player_season_stats WHERE season IN (${RATE_SEASONS.map(() => "?").join(",")})`
-    )
-    .all(...RATE_SEASONS);
-  if (statRows.length === 0) {
-    throw new Error(
-      `no player_season_stats for seasons ${RATE_SEASONS.join("/")} — run "npm run ingest:historical" ` +
-        `(the first-down rates come from league history)`
-    );
-  }
-
-  const positionRates = deriveFirstDownRates(statRows);
-  const playerRates = derivePlayerRates(statRows, positionRates, SHRINKAGE);
-  const coef = buildScoringMap(db, latest);
-
-  // Score every projected player with HIS OWN shrunk first-down rate (falling
-  // back to the position rate when he has no league history — rookies, etc.).
-  const scored = src.map((s) => {
-    const r = scoreProjection(s, positionRates, coef, playerRates.get(s.cbs_player_id) ?? null, FD_POLICY);
-    return { src: s, ...r, cbsId: s.cbs_player_id, pos: s.pos };
-  });
-
-  // Ranks over the whole pool (one pool → superflex elevates QBs correctly).
-  const ranks = assignRanks(scored.map((p) => ({ cbsId: p.cbsId, pos: p.pos, kerfPoints: p.kerfPoints })));
-
-  // Tiers: overall pool + each position, each Jenks-banded to FP's own count.
-  const fp = fpTierCounts(db, latest);
-  const ovrTiers = assignTiers(
-    scored.map((p) => ({ cbsId: p.cbsId, kerfPoints: p.kerfPoints })),
-    fp.overall
-  );
-  const posTiers = new Map();
-  for (const pos of POSITIONS) {
-    const list = scored.filter((p) => p.pos === pos).map((p) => ({ cbsId: p.cbsId, kerfPoints: p.kerfPoints }));
-    const k = fp.perPos[pos] || 6;
-    for (const [cbsId, tier] of assignTiers(list, k)) posTiers.set(cbsId, tier);
-  }
-
-  // Valuation (issue #20): turn the scored points into auction dollars.
-  const val = computeValuation(db, latest, scored, ranks);
-
-  // ---- write: one engine_run stamp + one projection row per player ----
+// Write one engine_run (stamped with its `horizon`) + its projection rows, and —
+// only when `val` is supplied (the ROS lens) — the valuation layer. Weekly runs
+// (#29) pass val=null: Kerf weekly points/ranks/tiers, NO dollars (a weekly
+// auction doesn't exist). Returns the new engine_run_id.
+function writeRun(db, latest, { horizon, week, scored, ranks, ovrTiers, posTiers, fp, val }) {
   const run = db
     .prepare(
       `INSERT INTO engine_run
@@ -280,28 +221,31 @@ export function runEngine(db, { log = () => {} } = {}) {
       pull: latest,
       rate_seasons: JSON.stringify(RATE_SEASONS),
       fd_method: FD_METHOD,
-      // The rest-of-season lens (issue #28, Option A): this run scores the refreshed
-      // full-season projection (week 0). The weekly lens (#29) will stamp 'weekly'.
-      horizon: "ros",
+      horizon,
       params: JSON.stringify({
+        week,
         shrinkage: SHRINKAGE,
         fdPolicy: FD_POLICY,
         tierCalibration: "fantasypros-op-board",
         fpTierCounts: fp,
-        valuation: {
-          baselines: val.baselines,
-          qbReplacementPerTeam: QB_REPLACEMENT_PER_TEAM, // superflex QB depth (D-19)
-          nTeams: N_TEAMS,
-          budget: TEAM_BUDGET,
-          rosterSpotsPerTeam: ROSTER_SPOTS_PER_TEAM,
-          discretionary: val.dpp.discretionary,
-          dollarsPerPoint: val.dpp.dollarsPerPoint,
-          totalPar: val.dpp.totalPar,
-          rosterAwareTeam: RACCOONS_TEAM,
-          rosterAwarePlayers: val.rosterCount,
-        },
+        valuation: val
+          ? {
+              baselines: val.baselines,
+              qbReplacementPerTeam: QB_REPLACEMENT_PER_TEAM, // superflex QB depth (D-19)
+              nTeams: N_TEAMS,
+              budget: TEAM_BUDGET,
+              rosterSpotsPerTeam: ROSTER_SPOTS_PER_TEAM,
+              discretionary: val.dpp.discretionary,
+              dollarsPerPoint: val.dpp.dollarsPerPoint,
+              totalPar: val.dpp.totalPar,
+              rosterAwareTeam: RACCOONS_TEAM,
+              rosterAwarePlayers: val.rosterCount,
+            }
+          : null,
       }),
-      notes: `Kerf projection + valuation: ${scored.length} scored, ${val.valuations.length} priced (VORP $${val.dpp.dollarsPerPoint.toFixed(3)}/pt).`,
+      notes: val
+        ? `Kerf projection + valuation (ROS, week ${week}): ${scored.length} scored, ${val.valuations.length} priced (VORP $${val.dpp.dollarsPerPoint.toFixed(3)}/pt).`
+        : `Kerf weekly re-score (week ${week}): ${scored.length} scored, no dollars.`,
     });
   const engineRunId = run.engine_run_id;
 
@@ -332,7 +276,8 @@ export function runEngine(db, { log = () => {} } = {}) {
     });
   }
 
-  // ---- write the valuation layer (issue #20): replacement level, curves, $ ----
+  if (!val) return engineRunId; // weekly: no dollars
+
   const insertRepl = db.prepare(
     `INSERT INTO replacement_level (engine_run_id, pos, baseline_n, replacement_points, method)
      VALUES (?, ?, ?, ?, 'last_starter')`
@@ -340,7 +285,6 @@ export function runEngine(db, { log = () => {} } = {}) {
   for (const pos of Object.keys(val.baselines)) {
     insertRepl.run(engineRunId, pos, val.baselines[pos], val.replPoints[pos] ?? null);
   }
-
   const insertCurve = db.prepare(
     `INSERT INTO price_curve (engine_run_id, basis, pos, pos_rank, price) VALUES (?, ?, ?, ?, ?)`
   );
@@ -349,7 +293,6 @@ export function runEngine(db, { log = () => {} } = {}) {
       knots.forEach((price, i) => insertCurve.run(engineRunId, basis, pos, i + 1, price));
     }
   }
-
   const insertVal = db.prepare(
     `INSERT INTO valuation
        (engine_run_id, cbs_player_id, pos, kerf_points, replacement_points, par_league, kerf_value,
@@ -385,8 +328,97 @@ export function runEngine(db, { log = () => {} } = {}) {
       }),
     });
   }
+  return engineRunId;
+}
 
-  return { engineRunId, count: scored.length, fp, ranks, scored, val };
+// Score one horizon's projection week (rank + tier), reusing shared rate/scoring
+// inputs so every horizon scores the identical model. Returns null if that week
+// has no projection rows. Writes via writeRun.
+function scoreHorizon(db, { latest, week, horizon, positionRates, playerRates, coef, fp, withValuation }) {
+  const src = db
+    .prepare(
+      `SELECT * FROM projection_source
+       WHERE pull_id = ? AND week = ? AND cbs_player_id IS NOT NULL AND pos IN ('QB','RB','WR','TE')`
+    )
+    .all(latest, week);
+  if (src.length === 0) return null;
+
+  const scored = src.map((s) => {
+    const r = scoreProjection(s, positionRates, coef, playerRates.get(s.cbs_player_id) ?? null, FD_POLICY);
+    return { src: s, ...r, cbsId: s.cbs_player_id, pos: s.pos };
+  });
+  const ranks = assignRanks(scored.map((p) => ({ cbsId: p.cbsId, pos: p.pos, kerfPoints: p.kerfPoints })));
+  const ovrTiers = assignTiers(scored.map((p) => ({ cbsId: p.cbsId, kerfPoints: p.kerfPoints })), fp.overall);
+  const posTiers = new Map();
+  for (const pos of POSITIONS) {
+    const list = scored.filter((p) => p.pos === pos).map((p) => ({ cbsId: p.cbsId, kerfPoints: p.kerfPoints }));
+    const k = fp.perPos[pos] || 6;
+    for (const [cbsId, tier] of assignTiers(list, k)) posTiers.set(cbsId, tier);
+  }
+  const val = withValuation ? computeValuation(db, latest, scored, ranks) : null;
+  const engineRunId = writeRun(db, latest, { horizon, week, scored, ranks, ovrTiers, posTiers, fp, val });
+  return { engineRunId, count: scored.length, scored, ranks, val, week, horizon };
+}
+
+export function runEngine(db, { log = () => {} } = {}) {
+  const latest = db.prepare(`SELECT pull_id FROM latest_pull`).get()?.pull_id;
+  if (!latest) throw new Error(`no ingested pull — run "npm run ingest" first`);
+
+  // Shared inputs — computed once so EVERY horizon scores the identical model
+  // (same first-down rates, same scoring config, same tier-band counts).
+  const statRows = db
+    .prepare(
+      `SELECT cbs_player_id, pos, rush_att, rush_yds, rush_first_downs, rec_rec, rec_yds, rec_first_downs
+       FROM player_season_stats WHERE season IN (${RATE_SEASONS.map(() => "?").join(",")})`
+    )
+    .all(...RATE_SEASONS);
+  if (statRows.length === 0) {
+    throw new Error(
+      `no player_season_stats for seasons ${RATE_SEASONS.join("/")} — run "npm run ingest:historical" ` +
+        `(the first-down rates come from league history)`
+    );
+  }
+  const positionRates = deriveFirstDownRates(statRows);
+  const playerRates = derivePlayerRates(statRows, positionRates, SHRINKAGE);
+  const coef = buildScoringMap(db, latest);
+  const fp = fpTierCounts(db, latest);
+
+  // ROS lens (Option A, #28): score the refreshed full-season projection (week 0),
+  // WITH the dollar valuation. This run is required.
+  const ros = scoreHorizon(db, {
+    latest, week: 0, horizon: "ros",
+    positionRates, playerRates, coef, fp, withValuation: true,
+  });
+  if (!ros) {
+    throw new Error(
+      `no week-0 projection_source rows for the latest pull — run "npm run ingest" ` +
+        `(the projections feed must be archived and ingested first)`
+    );
+  }
+
+  // Weekly lens (#29): if the current week's projection was ingested (week N > 0),
+  // score it as a SEPARATE 'weekly' run — Kerf weekly points/ranks/tiers, NO dollars
+  // (a weekly auction doesn't exist). Optional: preseason there is no week N yet.
+  const weeklyWeek =
+    db.prepare(
+      `SELECT MAX(week) w FROM projection_source
+       WHERE pull_id = ? AND week > 0 AND cbs_player_id IS NOT NULL`
+    ).get(latest)?.w ?? null;
+  const weekly =
+    weeklyWeek != null
+      ? scoreHorizon(db, {
+          latest, week: weeklyWeek, horizon: "weekly",
+          positionRates, playerRates, coef, fp, withValuation: false,
+        })
+      : null;
+
+  // Back-compat: the ROS run's fields stay at the top level (existing callers/tests
+  // read engineRunId/count/val/scored/ranks); the weekly run is additive.
+  return {
+    engineRunId: ros.engineRunId, count: ros.count, fp,
+    ranks: ros.ranks, scored: ros.scored, val: ros.val,
+    ros, weekly, weeklyWeek,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -456,6 +488,16 @@ function main() {
     console.log(
       `      ${r.pos.padEnd(3)} ${r.name.padEnd(22)} $${String(r.kv).padStart(3)}  ·  RR $${String(r.rv ?? "—").padStart(3)}  ·  Mkt $${r.mkt ?? "—"}`
     );
+  }
+
+  // ---- weekly lens (issue #29) ----
+  if (result.weekly) {
+    console.log(
+      `\n  Weekly lens (Week ${result.weeklyWeek}): engine_run #${result.weekly.engineRunId}, ` +
+        `${result.weekly.count} players re-scored on the current-week projection (no dollars).`
+    );
+  } else {
+    console.log(`\n  Weekly lens: no current-week projection ingested yet — skipped (ROS only).`);
   }
 
   db.close();

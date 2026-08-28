@@ -7,7 +7,7 @@ import { getBoard } from "@/lib/data/board";
 export const dynamic = "force-dynamic";
 
 export default function Home() {
-  const { players, teams, meta } = getBoard();
+  const { players, weeklyPlayers, teams, meta } = getBoard();
 
   return (
     <>
@@ -22,7 +22,14 @@ export default function Home() {
             Gart Dash
           </h1>
         </header>
-        <PlayerTable players={players} teams={teams} />
+        <PlayerTable
+          players={players}
+          weeklyPlayers={weeklyPlayers}
+          weeklyWeek={meta?.weeklyWeek ?? null}
+          rosRunAt={meta?.engineRunAt ?? null}
+          weeklyRunAt={meta?.weeklyRunAt ?? null}
+          teams={teams}
+        />
       </main>
     </>
   );

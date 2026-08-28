@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveBoard, posRankNumber, type BoardViewRow } from "./derive";
+import { deriveBoard, deriveWeekly, posRankNumber, type BoardViewRow } from "./derive";
 
 function row(overrides: Partial<BoardViewRow>): BoardViewRow {
   return {
@@ -125,5 +125,55 @@ describe("deriveBoard", () => {
     expect(p.kerfOvrRank).toBeNull();
     expect(p.kerfOvrTier).toBeNull();
     expect(p.projPts).toBe(110); // CBS's number, unchanged
+  });
+
+  it("ROS lens leaves opponent null (no per-week matchup)", () => {
+    const [p] = deriveBoard([row({ cbs_player_id: 7, name: "Guy", ecr: 1 })]);
+    expect(p.opponent).toBeNull();
+  });
+});
+
+describe("deriveWeekly (issue #29)", () => {
+  const rows = [
+    row({ cbs_player_id: 10, name: "Star QB", pos: "QB", owner: "Rangoon Raccoons", salary: 50, contract_years: 2, ecr: 1, dynasty_ecr: 3, dynasty_pos_rank: "QB1", dynasty_tier: 1 }),
+    row({ cbs_player_id: 20, name: "Star WR", pos: "WR", owner: "FA", ecr: 2 }),
+  ];
+
+  it("fills Kerf fields from the WEEKLY run and ECR from the WEEKLY consensus + opponent", () => {
+    const weeklyProj = new Map([
+      [10, { kerf_points: 22.5, kerf_ovr_rank: 2, kerf_pos_rank: 1, kerf_ovr_tier: 1, kerf_pos_tier: 1 }],
+      [20, { kerf_points: 14.1, kerf_ovr_rank: 40, kerf_pos_rank: 18, kerf_ovr_tier: 5, kerf_pos_tier: 4 }],
+    ]);
+    const weeklyCons = new Map([
+      [10, { rank_ecr: 3, pos_rank: "QB2", opponent: "@KC" }],
+      [20, { rank_ecr: 45, pos_rank: "WR20", opponent: "vs. NO" }],
+    ]);
+    const players = deriveWeekly(rows, weeklyProj, weeklyCons);
+    const qb = players.find((p) => p.id === "10")!;
+    expect(qb).toMatchObject({
+      // Kerf = this week's re-score
+      kerfOvrRank: 2, kerfPosRank: 1, kerfOvrTier: 1, kerfPosTier: 1, projPts: 22.5,
+      // ECR = weekly consensus (its overall rank made contiguous: QB is #1 here)
+      ecr: 3, posEcr: 2, ovrEcrRank: 1,
+      // matchup + identity/roster carried through; dollars null (no weekly auction)
+      opponent: "@KC", owner: "Rangoon Raccoons", salary: 50, contractYears: 2,
+      kerfValue: null, rosterValue: null, marketPrice: null, marketPreAuction: null,
+      // weekly consensus has NO tiers — those come from our Kerf tiers instead
+      ovrEcrTier: null, posEcrTier: null,
+      // dynasty context is unchanged from the board
+      dynastyEcr: 3, dynPosEcr: 1,
+    });
+    expect(players.find((p) => p.id === "20")!.ovrEcrRank).toBe(2); // WR after QB
+  });
+
+  it("leaves weekly fields null for a player the weekly feeds don't cover (bye/unranked)", () => {
+    const players = deriveWeekly(rows, new Map(), new Map()); // no weekly proj/consensus
+    const qb = players.find((p) => p.id === "10")!;
+    expect(qb.kerfOvrRank).toBeNull();
+    expect(qb.ecr).toBeNull();
+    expect(qb.opponent).toBeNull();
+    expect(qb.projPts).toBeNull();
+    // identity + roster still present
+    expect(qb).toMatchObject({ owner: "Rangoon Raccoons", salary: 50 });
   });
 });

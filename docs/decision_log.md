@@ -47,6 +47,31 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-22 · 2026-08-27 · Start/sit elevated from "unsupported read" to a supported weekly flow (reverses a non-goal)
+
+| | |
+| --- | --- |
+| **Status** | Active |
+| **Type** | Product (reverses a previously-documented non-goal) |
+| **Decided by** | Product owner, 2026-08-27 (roadmap open decision #15), built in [#29](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/29) |
+
+**The question**
+Weekly rankings make start/sit a genuinely serviceable feature. Do we **elevate** it to a supported flow — reversing the standing position that "nothing gets built for start/sit; the roster-filtered table is the entire support" ([`user_flows.md`](../user_flows.md) flow 5, and the roadmap's deferred list)?
+
+**What we decided**
+**Elevate it.** The Weekly lens (#29) re-scores the current week's projection into Kerf weekly points/ranks/tiers and shows them **beside** the FantasyPros weekly consensus, with the matchup opponent — the numbers a start/sit call rests on. `user_flows.md` §5 is rewritten as a supported flow and `product_vision.md` principle 1 notes the change. **Hard limits kept:** no lineup optimizer, no auto start/sit pick, **no Gart Dash "Start/Sit" verdict** — the tool surfaces numbers + matchup and the human decides (vision principle 3). It stays the **shared table, one lens filtered** — not a new screen. No weekly dollars (no weekly auction).
+
+**Why**
+Weekly is fundamentally a start/sit tool, and the data to do it honestly now exists (weekly projections + weekly consensus, #27). Showing our weekly re-score beside the market's is a direct expression of vision principle 2 ("always both numbers") — and the *gap* between them (e.g. our QB7 vs the market's QB1) is exactly the signal worth surfacing. Elevating it costs almost nothing over the ROS machinery (#28): a second engine run and a lens toggle, no new modelling.
+
+**What we gave up**
+The simplicity of "we don't build for start/sit at all." Accepted: the flow is small and reuses everything. We explicitly did **not** cross into recommendations/optimization — the owner reacted against even surfacing FantasyPros' own optional expert "lean" text, so we left it out (it was also empty on the live Week-1 board); the lens is numbers + matchup only.
+
+**What would make us reconsider**
+Only a decision to add automation (an optimizer / auto-pick) — which would itself be a new owner decision against principle 3, not an enhancement. Surfacing FantasyPros' expert note/tag could be revisited once those fields are observed populated and tidy enough to map.
+
+---
+
 ### D-21 · 2026-08-27 · In-season ROS value = Option A now (full-season projection as the proxy), Option B later (net out actuals)
 
 | | |

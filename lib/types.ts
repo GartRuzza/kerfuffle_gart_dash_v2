@@ -65,6 +65,15 @@ export interface Player {
   contractYears: number | null; // 1–4; null for free agents
   projPts: number | null; // CBS's KERFUFFLE-scored season projection
 
+  // --- Weekly lens (issue #29) ---
+  // The matchup opponent for the current week (e.g. "vs. TB", "at HOU"), from the
+  // FantasyPros weekly consensus board. Null in the ROS lens and for any player the
+  // weekly board doesn't cover (bye week, unranked). In the weekly-lens dataset, the
+  // kerf*/ecr fields above carry the WEEKLY numbers; dollar fields are null (no
+  // weekly auction). No expert start/sit "verdict" is stored — Gart Dash surfaces
+  // the numbers + matchup and the call stays the owner's.
+  opponent: string | null;
+
   // --- FantasyPros (draft STD board + dynasty board, latest pull) ---
   ecr: number | null; // raw overall ECR (draft, standard scoring)
   dynastyEcr: number | null; // raw overall dynasty ECR

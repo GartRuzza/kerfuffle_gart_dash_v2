@@ -11,6 +11,12 @@ import { MY_TEAM, type PositionFilter } from "./types";
 export const MANAGER_ALL = "ALL";
 /** Roster-status toggle: everyone / rostered only / free agents only. */
 export type RosterMode = "ALL" | "ROSTERED" | "FA";
+/**
+ * The engine lens (issue #28/#29): 'ros' = rest-of-season (season-long value,
+ * with dollars); 'weekly' = this week's re-score (start/sit support, no dollars).
+ * A view carries the horizon it opens in; the horizon toggle switches it live.
+ */
+export type Horizon = "ros" | "weekly";
 /** Value passed to the owner-column filter. */
 export interface RosterFilterValue {
   manager: string; // MANAGER_ALL | team name
@@ -26,6 +32,7 @@ export interface ViewState {
   manager: string; // MANAGER_ALL | team name
   rosterMode: RosterMode;
   position: PositionFilter;
+  horizon: Horizon; // 'ros' | 'weekly' — which engine lens the view opens in
   sorting: SortSpec[];
   columnOrder: string[]; // full ordering of all column ids
   hiddenColumns: string[]; // column ids that are hidden
@@ -44,6 +51,7 @@ export const ALL_COLUMN_IDS = [
   "name",
   "pos",
   "nflTeam",
+  "opponent",
   "kerfOvrRank",
   "kerfPosRank",
   "projPts",
@@ -67,6 +75,7 @@ export const COLUMN_LABELS: Record<string, string> = {
   name: "Player",
   pos: "Pos",
   nflTeam: "Team",
+  opponent: "Opp",
   kerfOvrRank: "Kerf Ovr Rank",
   kerfPosRank: "Kerf Pos Rank",
   projPts: "Proj Points",
@@ -99,6 +108,7 @@ function makeState(visible: string[], overrides: Partial<ViewState> = {}): ViewS
     manager: MANAGER_ALL,
     rosterMode: "ALL",
     position: "ALL",
+    horizon: "ros", // default lens: rest-of-season (issue #28)
     sorting: DEFAULT_SORT,
     columnOrder: [...ALL_COLUMN_IDS],
     hiddenColumns: ALL_COLUMN_IDS.filter((id) => !visibleSet.has(id)),
@@ -152,12 +162,15 @@ export const DEFAULT_VIEWS: SavedView[] = [
     ),
   },
   {
+    // The weekly start/sit lens (issue #29): the owner's roster, this week's Kerf
+    // re-score BESIDE the weekly consensus, plus the matchup — the numbers that
+    // support a start/sit call. Opens in the WEEKLY horizon; no dollars.
     id: "view-startsit",
     name: "Start/Sit",
     builtIn: true,
     state: makeState(
-      ["name", "pos", "nflTeam", "kerfOvrRank", "kerfPosRank", "projPts", "kerfValue", "ecr"],
-      { manager: MY_TEAM },
+      ["name", "pos", "nflTeam", "opponent", "kerfOvrRank", "kerfPosRank", "projPts", "ecr", "posEcr"],
+      { manager: MY_TEAM, horizon: "weekly", sorting: [{ id: "kerfOvrRank", desc: false }] },
     ),
   },
 ];
