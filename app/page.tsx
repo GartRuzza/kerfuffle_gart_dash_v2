@@ -1,5 +1,6 @@
 import PlayerTable from "@/components/PlayerTable";
 import DataBanner from "@/components/DataBanner";
+import Nav from "@/components/Nav";
 import { getBoard } from "@/lib/data/board";
 
 // Read the store on every request (never bake data in at build time) — the
@@ -17,6 +18,7 @@ export default function Home() {
         engineRunAt={meta?.engineRunAt ?? null}
         actualsAsOfWeek={meta?.actualsAsOfWeek ?? null}
       />
+      <Nav />
       <main className="mx-auto max-w-[1500px] px-4 py-6">
         <header className="mb-4">
           <h1 className="text-center text-2xl font-bold tracking-tight text-ink">

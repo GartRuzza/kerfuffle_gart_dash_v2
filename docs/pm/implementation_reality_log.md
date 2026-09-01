@@ -53,6 +53,53 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-09-01 — Power Rankings: manager perspective dropdown (issue #32 follow-up)
+
+**Ticket / Issue:** [#32](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/32) · **Branch:** feat/issue-30-ros-net-actuals · **Deviated from plan:** No
+
+Added a **"Viewing" manager dropdown** to the Power Rankings controls so the owner can view any of the 12 teams' detail panel from that team's perspective (default **Rangoon Raccoons**, marked "(you)"; owner-first then alphabetical). Confirmed up front there were **no hardcoding barriers** — the detail charts were already fully team-agnostic (driven by the selected team; `MY_TEAM` was only the default + the "your team" highlight), so this is a second control on the same `selected` state the table rows already drive. Also appended the selected team's name to the **Position Strength** and **Starting Lineup** titles (the other two already showed it), so all four detail cards read as one team's view. UI-only: no new logic to unit-test (271 tests unchanged), clean build, dropdown + titles render-checked. Files: `components/PowerRankings.tsx`, `components/powerRankings/{PositionRadar,StartingLineup}.tsx`.
+
+### 2026-09-01 — Power Rankings: value-relative bars, distribution, interactive radar (issue #32 follow-up)
+
+**Ticket / Issue:** [#32](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/32) · **Branch:** feat/issue-30-ros-net-actuals · **Deviated from plan:** No (owner-requested refinement of the shipped screen)
+
+**Original intent**
+On owner review of the first build, four requests: (1) fix bar lengths — ranks were clustered near full because bars scaled to the league *max* with a zero floor; (2) add hover popups; (3) rework the radar — a Starters/Bench pill, a **per-axis league-relative scale** (each axis: league-worst at center → league-best at edge), hoverable points, and a distribution (median + range); (4) bring that point-and-distribution treatment to the bar charts too.
+
+**What was actually built**
+`lib/powerRankings.ts` now computes, per metric, the league distribution (`computeStats` → min/median/max) and a `normalize()` that maps a value to 0–1 across that range. Every bar (Positional Rankings, Starter Rankings, Starting Lineup) is now **value-relative to the league** (worst → empty, best → full) with a **median tick**; the rank stays as the right-hand label, and the actual points/rank/median/range appear on **hover** (a small shared `useTooltip` hook — no library). The radar gained a **Starters / Bench / Both** pill; each axis is independently min-max-scaled to its league distribution (Starters = the lineup's per-group points; **Bench = the team's average bench value per position**, a new `benchAvgByGroup` + `benchRank`); a dashed **league-median** polygon is the reference and every vertex is hoverable. Research (documented in the session) confirmed value-relative scaling is the fix for the clustering and that per-axis radar scales are legitimate for a deliberate "relative-to-league" read (the median reference mitigates the usual cross-axis-comparison caveat).
+
+**Deviations**
+None from the agreed refinement. Owner confirmed four choices up front: hand-rolled SVG (no charting library), value-relative bar length (not rank-spaced even steps), median + full range (no printed numbers on bars — hover instead), and keep all 6 radar axes.
+
+**Product implications**
+The board now shows **actual value relative to the league**, not just rank: a #7 that is genuinely close to #1 now looks close, and a real gap looks like a gap. The radar answers "where does my team fall by position, in real points" with the league median and spread visible, and Starters vs Bench can be isolated. Hover reveals the numbers without cluttering the bars.
+
+**Technical tradeoffs and debt**
+Charts are now interactive client components (a tooltip that follows the cursor); still zero new dependencies. Per-axis radar scaling means the shape is a *relative* read by design — cross-axis magnitude is deliberately not comparable (documented on the chart itself). A team that is league-worst on an axis collapses that vertex to the center (honest, but visually dense); acceptable for a 12-team league. Live verification on real non-zero in-season actuals still awaits the season start (2026-09-09).
+
+### 2026-08-31 — League Power Rankings: team-strength spin-off screen (issue #32)
+
+**Ticket / Issue:** [#32](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/32) · **Branch:** feat/issue-30-ros-net-actuals · **Deviated from plan:** Yes (scope expanded by the owner's attached reference image — agreed up front)
+
+**Original intent**
+A standalone Power Rankings screen ranking all 12 teams by roster strength — Starter Strength (optimal superflex lineup) + Total Roster (depth) + a per-position (QB/RB/WR/TE) strength grid + team tiers — by aggregating the engine's per-player Kerf points. Reuse, not new modelling.
+
+**What was actually built**
+Exactly that, but the owner attached a **FantasyPros power-rankings dashboard** as the visual target, so the screen emulates its **five components** in a master–detail layout: a **Team Rankings** table (rank, team, Starter Strength, Total Roster, a 0–100 score, tier dot; sortable; the Raccoons highlighted and selected by default) on the left, and for the selected team — **Positional Rankings** bars (QB/RB/WR/TE/FLEX/SFLX + Starters/Bench, each with its league rank), **Starter Rankings** bars (per lineup slot), a **Position-Strength radar** (Starters vs Bench), and a **Starting-Lineup** bar chart (per slot, player + rank badge). A **ROS ↔ Weekly lens toggle** (reusing #28/#29's horizon data) with a **greyed, disabled Dynasty** toggle. New route `/power-rankings` + a small top **Nav** linking it to the player table. All aggregation is a new pure module `lib/powerRankings.ts` (offense-only; free agents + DST excluded; Jenks tiering ported from the engine); charts are hand-drawn SVG/CSS — **no new dependency**.
+
+**Deviations**
+The written issue scope was one positional grid; the delivered screen has three positional views + a radar + a lineup chart, per the owner's image. Four scope questions the image raised (which contradicted the locked D-20) were put to the owner before building and all resolved to the conservative default: **dynasty deferred** (greyed toggle — we have no KERFUFFLE dynasty scoring), **DST omitted** from every chart (offense-only), **show both raw Kerf points and a 0–100 score**, **full five-component emulation**.
+
+**Why we deviated**
+The owner's reference image is the real spec; the issue text predated it. Agreed the expansion explicitly up front rather than shipping the leaner written version.
+
+**Product implications**
+A new scouting screen: at a glance, which rivals are stacked or thin by position (the rank labels are the trade-targeting signal), who the contenders/rebuilders are, and how any team's starters vs bench are shaped. It reads the same weekly-refreshed ROS/Weekly numbers as the rest of the app, so it moves with the season on the next `npm run engine`. **Not** an auto-negotiator — it surfaces the grid, it does not generate offers. Dynasty is visibly "coming later," not silently missing.
+
+**Technical tradeoffs and debt**
+Charts are bespoke SVG/CSS (kept the dependency list unchanged; the cost is they're less featureful than a chart lib). Practice-squad players count toward Total Roster/Bench depth (we don't expose `roster_status` on the board `Player` type) — acceptable for a depth read, noted as a limitation. The **dynasty toggle** is a stub pending the parked decision on how to score dynasty (ECR proxy vs a real model). Live in-season verification waits on real non-zero actuals (2026 season opens 2026-09-09), same caveat as #28/#30.
+
 ### 2026-08-28 — Option B: true rest-of-season remaining value (issue #30)
 
 **Ticket / Issue:** [#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30) · **Branch:** docs/operator-troubleshooting (build atop) · **Deviated from plan:** Yes — the actuals source

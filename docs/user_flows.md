@@ -138,7 +138,7 @@ Flows 1–5 below run through the **same player table**: one data display with K
 | Stale data on a short week (TNF) | The weekly freshness ("Week N · updated …") beside the Lens toggle | Refresh Wednesday, not just Sunday |
 | No weekly data yet (preseason / not pulled) | The **Weekly** toggle is disabled | Run `archive → ingest → engine` in-season; the current week's board + projection must be captured |
 
-### 6. League power rankings / scouting (spin-off)
+### 6. League power rankings / scouting (spin-off) — **BUILT 2026-08-31 ([#32](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/32))**
 
 **User:** the owner · **Trigger:** he wants to know where the Raccoons stand and where every rival is soft — most often when a trade is on his mind, or at a season checkpoint · **Success:** he can see, at a glance, which teams are strong or weak *and at which positions*, and turn that into a trade angle
 
@@ -147,9 +147,11 @@ Flows 1–5 below run through the **same player table**: one data display with K
 **The happy path**
 
 1. He refreshes data → the same pipeline; the engine runs (`npm run engine`) so Kerf points are current.
-2. He opens the **Power Rankings** screen → all 12 teams ranked by **Starter Strength** (their best possible superflex lineup, in Kerf projected points), with **Total Roster** (depth included) beside it, and a **tier** (contender / middle / rebuilder).
-3. He reads the **positional grid** → each team's startable strength at QB / RB / WR / TE → spots who is stacked at a position and thin at another.
+2. He opens the **Power Rankings** screen (top nav) → the **Team Rankings** table: all 12 teams ranked by **Starter Strength** (their best possible superflex lineup, in Kerf projected points), with **Total Roster** (depth included) beside it, a **0–100 score**, and a **tier** dot (contender / middle / rebuilder). His Raccoons open selected.
+3. He picks a rival — via the **"Viewing" manager dropdown** (default his Raccoons) or by clicking a table row → its detail: **Positional Rankings** (that team's league rank at QB / RB / WR / TE / FLEX / SuperFlex, plus Starters and Bench), **Starter Rankings** (per lineup slot), a **Position-Strength radar** (starters vs bench), and the **Starting-Lineup** chart → spots who is stacked at a position and thin at another.
 4. He turns a gap into a trade angle → jumps to the shared player table filtered to that rival's roster (flow 4) to build the offer. The rankings *point*; the trade flow *executes*.
+
+*(A **Rest-of-Season / Weekly** toggle switches the whole board; **Dynasty** is present but greyed — deferred.)*
 
 **Deliberately narrow for v1 — do not "improve" beyond this.** No real win/loss or actual-scoring blend (that needs current-season actuals — a later upgrade); no dynasty toggle yet (the engine has no KERFUFFLE-scored multi-year projection — only dynasty ECR); no auto-generated trade suggestions (it surfaces the grid, it does not negotiate); offense only (defenses are unscored). It is a **read**, like start/sit — it informs the trade decision, it does not make it.
 

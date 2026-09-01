@@ -14,7 +14,7 @@
 
 ## The shape of it
 
-Gart Dash is a single [Next.js](https://nextjs.org) web app written in TypeScript. Today it is one screen: an interactive player table showing the **real KERFUFFLE league**. Data flows in three offline steps and one read path: `npm run archive` fetches CBS + FantasyPros and saves every response **verbatim** to `data/raw/` (append-only); `npm run ingest` parses the archive into a **normalized SQLite database** (`data/gart-dash.sqlite`, one file, `better-sqlite3`), validating the league's constitution invariants loudly; and the page (a server component, rendered per request) reads the flat **`board`** view through the single data-access module `lib/data/` and hands the table its `Player` rows. **The app never calls CBS or FantasyPros at request time** — it only ever reads the local store. No login. The same app deploys to the web later without rearchitecting (D-01); the file-SQLite store is the one contained exception (below).
+Gart Dash is a single [Next.js](https://nextjs.org) web app written in TypeScript. Today it is **two screens** linked by a small top nav (`components/Nav.tsx`): the interactive **player table** (`/`) and a standalone **League Power Rankings** board (`/power-rankings`, issue #32), both showing the **real KERFUFFLE league**. Data flows in three offline steps and one read path: `npm run archive` fetches CBS + FantasyPros and saves every response **verbatim** to `data/raw/` (append-only); `npm run ingest` parses the archive into a **normalized SQLite database** (`data/gart-dash.sqlite`, one file, `better-sqlite3`), validating the league's constitution invariants loudly; and the page (a server component, rendered per request) reads the flat **`board`** view through the single data-access module `lib/data/` and hands the table its `Player` rows. **The app never calls CBS or FantasyPros at request time** — it only ever reads the local store. No login. The same app deploys to the web later without rearchitecting (D-01); the file-SQLite store is the one contained exception (below).
 
 **Built (issue [#17](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/17)), a fourth offline step:** a **historical-data ingestion path** — `npm run ingest:historical` (`tools/ingest/ingest-historical.mjs`) reads the owner-provided CSVs in `data/historical/` (git-ignored) into three new tables (migration 004), on a path **separate** from the archiver's fetched-HTML walk. It parses the 3-row grouped CBS stat headers by anchored column index, joins the "Advanced"+"Standard" files per player, matches names→`cbs_player_id` against the store's player universe (so it runs *after* `npm run ingest`), and loads idempotently. A scoring cross-check validates that recomputed KERFUFFLE points match CBS's FPTS Total.
 
@@ -76,6 +76,8 @@ later — in that one file, and every current and future component follows.
 | `pos` | Position badge fills | `bg-pos-qb` `bg-pos-rb` `bg-pos-wr` `bg-pos-te` `bg-pos-dst` |
 | `group` | Column-group tints (+ legend swatches) | `bg-group-gart`, `bg-group-market`, `bg-group-contract` |
 | `tier` | Tier separator band | `bg-tier-band`, `text-tier-text` |
+| `rank` | Power-rankings strength bands (top green / mid blue / low red) + bar track | `bg-rank-strong`, `bg-rank-middle`, `bg-rank-weak`, `bg-rank-track` |
+| `radar` | Power-rankings radar series + grid | `fill-radar-starters`, `stroke-radar-bench`, `stroke-radar-grid` |
 | `edge` | The Edge value (plain) | `text-edge` |
 | `warning` | The MOCK-DATA banner | `bg-warning-surface`, `text-warning-text` |
 
@@ -105,6 +107,14 @@ to this behavior goes in that one module — never spread the rules into compone
 1. Filters come from `FilterBar` → PlayerTable turns them into TanStack `columnFilters`; sorting is TanStack's (on header click), which can auto-adjust the position filter via `lib/tierRules.ts`.
 2. Filtering and sorting happen **inside** TanStack, so each row keeps its original data index; editing a Ceiling calls `meta.updateCeiling(row.index, value)` and survives re-sort/re-filter (resets on reload).
 3. A **view** bundles column visibility + order + sort + filters (`lib/views.ts`); applying one sets all that state at once. Custom views persist to `localStorage`.
+
+### Rendering the Power Rankings screen (issue #32)
+
+1. `app/power-rankings/page.tsx` (a server component, `force-dynamic`) calls the same `getBoard()` and passes the raw `players` + `weeklyPlayers` + `meta` to `<PowerRankings>` — it does **no** aggregation server-side.
+2. `components/PowerRankings.tsx` (`"use client"`) picks the active lens's dataset (ROS or Weekly, swapped client-side like the table) and calls **`computeLeague()`** from `lib/powerRankings.ts` — a **pure, dependency-free aggregation module** (no DB, no React): it builds each team's optimal superflex lineup (the valuation engine's fill order), sums Starter Strength / Total Roster, ranks all 12 teams overall + per positional group + per lineup slot, normalizes a 0–100 score, tiers them with a **Jenks classifier ported from `tools/engine/core.mjs`**, and emits the **per-metric league distribution** (`computeStats` → min/median/max) that drives value-relative bar/radar scaling (`normalize`) + the median references. It also derives each team's **average bench value per position** (`benchAvgByGroup`) for the radar's Bench view. Offense-only; free agents and DST excluded.
+3. It renders the league table plus the selected team's charts — `components/powerRankings/{RankBarList,PositionRadar,StartingLineup}.tsx`, all **hand-drawn SVG/CSS (no charting dependency)**, colored by rank band via `components/powerRankings/colors.ts`. The charts are **interactive** (value-relative lengths, a league-median tick/polygon, and cursor-following hover popups via the shared `components/powerRankings/useTooltip.tsx` hook — points/rank/range on hover, no printed numbers); the radar carries a Starters/Bench/Both pill with a per-axis league-relative scale.
+
+**Boundary note:** the Power Rankings screen is pure **derivation over the same `Player` read model** — it introduces no new data source, DB table, or write path. `lib/powerRankings.ts` is analogous to `lib/data/derive.ts`: transforms only, unit-tested in isolation.
 
 ## Environments
 
