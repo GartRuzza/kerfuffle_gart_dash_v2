@@ -47,6 +47,34 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+### D-23 · 2026-08-28 · Option B — true remaining value: net EVERYTHING, using a recompute cross-checked against CBS
+
+| | |
+| --- | --- |
+| **Status** | Active (completes D-21's "Option B later") |
+| **Type** | Product + method (how in-season ROS value is computed and displayed) |
+| **Decided by** | Product owner, 2026-08-28, built in [#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30) |
+
+**The questions**
+Two, both surfaced mid-build:
+1. **How to compute the actual we subtract** — issue #30 said *recompute* actuals from stat components through the scoring config ("not CBS's displayed number"); but [D-14] and the discovery doc say **CBS actuals are authoritative and must never be recomputed**. Which wins?
+2. **What netting changes** — only the dollar columns (ranks/tiers stay on the full-season projection), or the whole lens (ranks + tiers + dollars all flow from remaining points)?
+
+**What we decided**
+1. **Recompute + cross-check, net the recompute.** We capture both stats pages (standard volume + advanced first downs), recompute each player's KERFUFFLE points through the parsed scoring config — the same function that scores the projection, so projection and actual are apples-to-apples — and **validate that recompute against CBS's authoritative FPTS Total**, warning on any gap. Offense-only: return/special-teams points CBS shows are excluded from both sides (the projection can't include them either).
+2. **Net everything.** Remaining points (`max(0, full-season projection − actuals-to-date)`) drive **ranks, tiers, PAR, and all three dollar columns**. The ROS lens becomes a coherent "what's left to acquire" view; a player who has banked most of his season drops in ROS rank, not just in price.
+
+**Why**
+(1) reconciles the issue with D-14 rather than choosing one: CBS's number stays the authority (the cross-check must pass), but the value we net is on our own scoring scale so the subtraction is exact. The stats page hands us both, so it costs nothing. (2) The engine derives everything from one points number per player; netting only the dollars would let a player rank #2 while showing modest remaining dollars — an internal contradiction. "Net everything" keeps the lens self-consistent and is the more useful signal for the mid-season trades/waivers this issue exists to serve.
+
+**What we gave up**
+Full-season *ordering* as the in-season ROS rank (it's kept as a context column, "Full-Season", and in the drill-down). Accepted: rest-of-season value is remaining value, and that's what the lens should rank by. Also deferred (again): the current-season first-down blend — the `advanced` page is captured, so it's available when/if we build it.
+
+**What would make us reconsider**
+If in-season use shows the recompute drifting materially from CBS's FPTS Total for many scoring players (the cross-check would flag it) — that would send us back to the parser or to netting CBS's total directly. Or if the owner finds remaining-value *ranking* less useful than a talent/role ranking in practice, we could split them (rank on full-season, price on remaining) — the data to do either is stored.
+
+---
+
 ### D-22 · 2026-08-27 · Start/sit elevated from "unsupported read" to a supported weekly flow (reverses a non-goal)
 
 | | |

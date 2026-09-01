@@ -204,11 +204,26 @@ function tableExists(db, name) {
     .get(name);
 }
 
+// The current-season actuals the ROS run nets against (issue #30): the freshest
+// week for the latest season, keyed by player, in OUR recomputed KERFUFFLE points.
+// Returns null if none exist (→ no netting → Option A).
+function loadLatestActuals(db) {
+  const rows = db
+    .prepare(`SELECT cbs_player_id, kerf_points, as_of_week FROM latest_player_actuals`)
+    .all();
+  if (rows.length === 0) return null;
+  return {
+    asOfWeek: rows[0].as_of_week,
+    byId: new Map(rows.map((r) => [r.cbs_player_id, r.kerf_points ?? 0])),
+    count: rows.length,
+  };
+}
+
 // Write one engine_run (stamped with its `horizon`) + its projection rows, and —
 // only when `val` is supplied (the ROS lens) — the valuation layer. Weekly runs
 // (#29) pass val=null: Kerf weekly points/ranks/tiers, NO dollars (a weekly
 // auction doesn't exist). Returns the new engine_run_id.
-function writeRun(db, latest, { horizon, week, scored, ranks, ovrTiers, posTiers, fp, val }) {
+function writeRun(db, latest, { horizon, week, scored, ranks, ovrTiers, posTiers, fp, val, net = null }) {
   const run = db
     .prepare(
       `INSERT INTO engine_run
@@ -228,6 +243,8 @@ function writeRun(db, latest, { horizon, week, scored, ranks, ovrTiers, posTiers
         fdPolicy: FD_POLICY,
         tierCalibration: "fantasypros-op-board",
         fpTierCounts: fp,
+        // Option B netting (#30): what actuals were subtracted this run (null = Option A).
+        netActuals: net,
         valuation: val
           ? {
               baselines: val.baselines,
@@ -244,7 +261,10 @@ function writeRun(db, latest, { horizon, week, scored, ranks, ovrTiers, posTiers
           : null,
       }),
       notes: val
-        ? `Kerf projection + valuation (ROS, week ${week}): ${scored.length} scored, ${val.valuations.length} priced (VORP $${val.dpp.dollarsPerPoint.toFixed(3)}/pt).`
+        ? `Kerf projection + valuation (ROS, week ${week}): ${scored.length} scored, ${val.valuations.length} priced (VORP $${val.dpp.dollarsPerPoint.toFixed(3)}/pt).` +
+          (net
+            ? ` Option B: netted actuals-to-date (as-of week ${net.asOfWeek}) from ${net.playersWithActuals} player(s), ${net.pointsSubtracted} pts removed → remaining value.`
+            : ` Option A: full-season value (no actuals to net).`)
         : `Kerf weekly re-score (week ${week}): ${scored.length} scored, no dollars.`,
     });
   const engineRunId = run.engine_run_id;
@@ -252,18 +272,21 @@ function writeRun(db, latest, { horizon, week, scored, ranks, ovrTiers, posTiers
   const insert = db.prepare(
     `INSERT INTO projection
        (engine_run_id, cbs_player_id, pos, kerf_points, est_rush_first_downs, est_rec_first_downs,
-        rush_fd_rate, rec_fd_rate, components_json, kerf_ovr_rank, kerf_pos_rank, kerf_ovr_tier, kerf_pos_tier)
+        rush_fd_rate, rec_fd_rate, components_json, kerf_ovr_rank, kerf_pos_rank, kerf_ovr_tier, kerf_pos_tier,
+        season_points, actuals_points, actuals_as_of_week)
      VALUES
        (@engine_run_id, @cbs_player_id, @pos, @kerf_points, @est_rush_first_downs, @est_rec_first_downs,
-        @rush_fd_rate, @rec_fd_rate, @components_json, @kerf_ovr_rank, @kerf_pos_rank, @kerf_ovr_tier, @kerf_pos_tier)`
+        @rush_fd_rate, @rec_fd_rate, @components_json, @kerf_ovr_rank, @kerf_pos_rank, @kerf_ovr_tier, @kerf_pos_tier,
+        @season_points, @actuals_points, @actuals_as_of_week)`
   );
+  const r2 = (x) => (x == null ? null : Math.round(x * 100) / 100);
   for (const p of scored) {
     const rk = ranks.get(p.cbsId);
     insert.run({
       engine_run_id: engineRunId,
       cbs_player_id: p.cbsId,
       pos: p.pos,
-      kerf_points: p.kerfPoints,
+      kerf_points: p.kerfPoints, // the value ranked + valued (remaining, under Option B)
       est_rush_first_downs: Math.round(p.estRushFD * 100) / 100,
       est_rec_first_downs: Math.round(p.estRecFD * 100) / 100,
       rush_fd_rate: p.rushFdRate,
@@ -273,6 +296,11 @@ function writeRun(db, latest, { horizon, week, scored, ranks, ovrTiers, posTiers
       kerf_pos_rank: rk.posRank,
       kerf_ovr_tier: ovrTiers.get(p.cbsId) ?? null,
       kerf_pos_tier: posTiers.get(p.cbsId) ?? null,
+      // Option B drill-down: full-season projection → minus actuals → remaining (= kerf_points).
+      // NULL for runs that don't net (weekly #29, or before actuals exist).
+      season_points: r2(p.seasonPoints ?? null),
+      actuals_points: r2(p.actualsToDate ?? null),
+      actuals_as_of_week: p.actualsAsOfWeek ?? null,
     });
   }
 
@@ -334,7 +362,7 @@ function writeRun(db, latest, { horizon, week, scored, ranks, ovrTiers, posTiers
 // Score one horizon's projection week (rank + tier), reusing shared rate/scoring
 // inputs so every horizon scores the identical model. Returns null if that week
 // has no projection rows. Writes via writeRun.
-function scoreHorizon(db, { latest, week, horizon, positionRates, playerRates, coef, fp, withValuation }) {
+function scoreHorizon(db, { latest, week, horizon, positionRates, playerRates, coef, fp, withValuation, actuals = null }) {
   const src = db
     .prepare(
       `SELECT * FROM projection_source
@@ -347,6 +375,26 @@ function scoreHorizon(db, { latest, week, horizon, positionRates, playerRates, c
     const r = scoreProjection(s, positionRates, coef, playerRates.get(s.cbs_player_id) ?? null, FD_POLICY);
     return { src: s, ...r, cbsId: s.cbs_player_id, pos: s.pos };
   });
+
+  // Option B netting (#30): subtract each player's actuals-to-date from his full-season
+  // projection and value the REMAINING points. "Net everything" (owner, 2026-08-28): the
+  // netted points drive ranks, tiers, AND dollars — so this runs BEFORE ranking/valuation.
+  // Floored at 0: a player who has already outscored his projection nets to 0 remaining,
+  // never negative. season_points/actuals_points are carried for the drill-down.
+  let netSummary = null;
+  if (actuals) {
+    let netted = 0;
+    let subtracted = 0;
+    for (const p of scored) {
+      p.seasonPoints = p.kerfPoints;
+      p.actualsToDate = actuals.byId.get(p.cbsId) ?? 0;
+      p.actualsAsOfWeek = actuals.asOfWeek;
+      p.kerfPoints = Math.max(0, p.seasonPoints - p.actualsToDate);
+      if (p.actualsToDate > 0) { netted++; subtracted += p.actualsToDate; }
+    }
+    netSummary = { asOfWeek: actuals.asOfWeek, playersWithActuals: netted, pointsSubtracted: Math.round(subtracted * 10) / 10 };
+  }
+
   const ranks = assignRanks(scored.map((p) => ({ cbsId: p.cbsId, pos: p.pos, kerfPoints: p.kerfPoints })));
   const ovrTiers = assignTiers(scored.map((p) => ({ cbsId: p.cbsId, kerfPoints: p.kerfPoints })), fp.overall);
   const posTiers = new Map();
@@ -356,8 +404,8 @@ function scoreHorizon(db, { latest, week, horizon, positionRates, playerRates, c
     for (const [cbsId, tier] of assignTiers(list, k)) posTiers.set(cbsId, tier);
   }
   const val = withValuation ? computeValuation(db, latest, scored, ranks) : null;
-  const engineRunId = writeRun(db, latest, { horizon, week, scored, ranks, ovrTiers, posTiers, fp, val });
-  return { engineRunId, count: scored.length, scored, ranks, val, week, horizon };
+  const engineRunId = writeRun(db, latest, { horizon, week, scored, ranks, ovrTiers, posTiers, fp, val, net: netSummary });
+  return { engineRunId, count: scored.length, scored, ranks, val, week, horizon, net: netSummary };
 }
 
 export function runEngine(db, { log = () => {} } = {}) {
@@ -383,11 +431,18 @@ export function runEngine(db, { log = () => {} } = {}) {
   const coef = buildScoringMap(db, latest);
   const fp = fpTierCounts(db, latest);
 
-  // ROS lens (Option A, #28): score the refreshed full-season projection (week 0),
-  // WITH the dollar valuation. This run is required.
+  // Option B (#30): the current-season actuals the ROS run nets against — the freshest
+  // week for the latest season (latest_player_actuals view). We net using OUR recompute
+  // (kerf_points), keeping projection and actual on the identical scoring function
+  // (owner ruling, #30). Absent (no actuals ingested) → null → the engine falls back to
+  // Option A (no netting). Preseason the rows exist but read 0, so remaining == full-season.
+  const actuals = tableExists(db, "player_actuals") ? loadLatestActuals(db) : null;
+
+  // ROS lens (Option B, #30 / #28): score the refreshed full-season projection (week 0),
+  // NET the actuals-to-date, and value the REMAINING points. This run is required.
   const ros = scoreHorizon(db, {
     latest, week: 0, horizon: "ros",
-    positionRates, playerRates, coef, fp, withValuation: true,
+    positionRates, playerRates, coef, fp, withValuation: true, actuals,
   });
   if (!ros) {
     throw new Error(
@@ -438,6 +493,16 @@ function main() {
   }
 
   console.log(`  ✔ engine_run #${result.engineRunId}: ${result.count} players scored`);
+  const net = result.ros?.net;
+  if (net) {
+    console.log(
+      `      Option B (remaining value): netted actuals-to-date as-of week ${net.asOfWeek} — ` +
+        `${net.playersWithActuals} player(s) with actuals, ${net.pointsSubtracted} Kerf pts removed from the pool.` +
+        (net.playersWithActuals === 0 ? "  (preseason: 0 games played → remaining == full-season)" : "")
+    );
+  } else {
+    console.log(`      Option A (full-season value): no current-season actuals ingested — nothing netted.`);
+  }
   console.log(
     `      tier calibration (from FantasyPros superflex board): overall ${result.fp.overall} tiers · ` +
       `by position ${JSON.stringify(result.fp.perPos)}`

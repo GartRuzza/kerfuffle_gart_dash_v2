@@ -53,6 +53,41 @@
 
 <!-- Newest entry goes here, directly below this line. -->
 
+### 2026-08-28 — Option B: true rest-of-season remaining value (issue #30)
+
+**Ticket / Issue:** [#30](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/30) · **Branch:** docs/operator-troubleshooting (build atop) · **Deviated from plan:** Yes — the actuals source
+
+**Original intent**
+Net the ROS lens down to true remaining value: `remaining = refreshed full-season projection − actual KERFUFFLE points to date`, by capturing CBS current-season actuals each week. The issue flagged `/scoring/live` as the likely capture page and warned it might be JS-rendered.
+
+**What was actually built**
+The full pipeline, source through screen: (1) the archiver captures the CBS **stats table** year-to-date (standard + advanced) as the actuals source; (2) `npm run ingest` parses both, recomputes each player's KERFUFFLE points through the scoring config, cross-checks against CBS's FPTS Total, and stores them in a new `player_actuals` table keyed by season + as-of week (migration 010); (3) `npm run engine` subtracts actuals-to-date from the full-season projection, floors at 0, and re-scores the **whole ROS lens** — ranks, tiers, and all dollars — on the remaining value (migration 011 carries the drill-down); (4) the app shows the remaining number in Proj Points (with a hover breakdown and a Full-Season context column), the dollars automatically reflect remaining value, and the banner reads "remaining value through Week N."
+
+**Deviations**
+The capture source. The plan assumed `/scoring/live`; it turned out to be a **JavaScript shell** (no data readable without a browser), and it was the wrong shape anyway (a live per-matchup scoreboard, not season-to-date totals). A timeboxed discovery probe instead solved the **stats page** (`/stats/stats-main`), which serves real server-rendered rows and whose every filter (timeframe, category, year) is a plain URL segment — so year-to-date actuals with first downs are capturable read-only and **auto-update every week**, better than the manual CSV export the plan floated as a fallback.
+
+**Why we deviated**
+`/scoring/live` was a dead end on inspection (all its `<table>`s live inside client-side JavaScript). Rather than force it, we ran a one-off read-only probe of two owner-suggested URLs; the stats page came back as parseable rows with the CBS player id embedded and a discoverable URL grammar. That made the automated weekly capture in Scope #1 real.
+
+**Product implications**
+Mid- and late-season, the ROS lens now shows what a player has **left to give**, not his whole-season line — so a trade or waiver evaluated on Gart Dash dollars is finally correct in magnitude, not just order. Because the owner chose "net everything," the ranks and tiers move too: a star who has already banked most of his season drops in the ROS ranking, which is the right signal for "who's worth acquiring now." Preseason and the first weeks, remaining ≈ full-season, so nothing looks different until real points accrue — and the transition is automatic once the weekly stats pull carries non-zero actuals.
+
+**Two product decisions taken with the owner (mid-build):**
+- **Recompute + cross-check, net the recompute.** Issue #30 said recompute actuals from components; the established D-14 principle says never recompute CBS actuals. Reconciled: we net using our recompute (keeping projection and actual on the identical scoring function) *and* validate it against CBS's authoritative FPTS Total, warning on any gap. Offense-only return/special-teams points CBS shows are intentionally excluded from both sides.
+- **Net everything, not just dollars.** The whole ROS lens (ranks, tiers, PAR, dollars) flows from the remaining points — the owner's call over "re-price but keep full-season ranks," for a coherent "what's left" view.
+
+**Technical tradeoffs and debt**
+
+| What we took on | Why | Cost of leaving it | Cost of fixing it |
+| --- | --- | --- | --- |
+| Live in-season validation deferred | The season hasn't started (Week 1 opens 2026-09-09) — every actual is currently 0 | The netting is proven on fixtures + a simulated in-season case + the historical scoring cross-check, but not yet on real non-zero league actuals | One weekly `archive → ingest → engine` once games are played; spot-check a known player's recompute vs CBS |
+| Preseason stats pagination is incomplete | With all actuals tied at 0, CBS's sort is unstable across pages, so page windows overlap and some players don't appear in both categories | None in practice — a missing actuals row nets 0 (Option-A behavior for that player); non-zero players sort stably in-season and are captured | Nothing needed; revisit only if in-season coverage looks low (ingest logs the join counts) |
+
+**Follow-up decisions needed from the product owner**
+None. Optional current-season first-down blend was explicitly deferred (owner) — the `advanced` stats page is already captured, so it's available if we ever build it.
+
+---
+
 ### 2026-08-27 — Weekly lens + Start/Sit flow: per-week re-score beside consensus (issue #29)
 
 **Ticket / Issue:** [#29](https://github.com/GartRuzza/kerfuffle_gart_dash_v2/issues/29) · **Branch:** feat/issue-29-weekly-startsit (off main) · **Deviated from plan:** Yes (dropped the expert-lean column, mid-build owner steer)

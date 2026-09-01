@@ -31,10 +31,13 @@ export default function DataBanner({
   capturedAt,
   horizon = null,
   engineRunAt = null,
+  actualsAsOfWeek = null,
 }: {
   capturedAt: string | null;
   horizon?: string | null;
   engineRunAt?: string | null;
+  /** Option B (issue #30): completed weeks the ROS lens nets actuals through; >0 = true remaining value. */
+  actualsAsOfWeek?: number | null;
 }) {
   if (capturedAt === null) {
     return (
@@ -50,13 +53,26 @@ export default function DataBanner({
   // The Kerf ranks/tiers/dollars are as fresh as the last engine run, which can be
   // older than the data pull — so show both when the engine has run (issue #28).
   const lens = horizon ? HORIZON_LABEL[horizon] ?? horizon : null;
+  // Option B (issue #30): once games are played, the ROS lens shows TRUE remaining
+  // value (projection minus actuals-to-date), so say so — and through which week.
+  const netted = horizon === "ros" && actualsAsOfWeek != null && actualsAsOfWeek > 0;
   return (
     <div className="w-full border-b border-line bg-surface px-4 py-1.5 text-center text-xs text-ink-subtle">
       League data as of <span className="font-semibold text-ink-muted">{formatDate(capturedAt)}</span>
       {lens && engineRunAt && (
         <>
           {" · "}
-          <span className="font-semibold text-accent">{lens}</span> ranks · updated{" "}
+          <span className="font-semibold text-accent">{lens}</span>
+          {netted ? (
+            <>
+              {" "}
+              <span className="text-ink-subtle">remaining value through</span>{" "}
+              <span className="font-semibold text-ink-muted">Week {actualsAsOfWeek}</span>
+            </>
+          ) : (
+            " ranks"
+          )}
+          {" · updated "}
           <span className="font-semibold text-ink-muted">{formatDate(engineRunAt)}</span>
         </>
       )}

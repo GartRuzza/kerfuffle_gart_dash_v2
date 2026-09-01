@@ -80,11 +80,22 @@ const DOCS: Record<
     placeholder: false,
   },
   projPts: {
-    definition: "Projected KERFUFFLE points for the season — our engine's number.",
+    definition: "Rest-of-season projected KERFUFFLE points — remaining value, in-season.",
     deepDive: [
-      "Source: our projection engine — FantasyPros' projected stat line, plus estimated rushing/receiving first downs (from each player's own history, blended toward his position when the sample is thin), scored with KERFUFFLE settings. This is the number the Kerf ranks and tiers are built from.",
+      "Source: our projection engine — FantasyPros' projected stat line, plus estimated rushing/receiving first downs (from each player's own history, blended toward his position when the sample is thin), scored with KERFUFFLE settings. This is the number the Kerf ranks, tiers, and dollars are built from.",
+      "In-season this is REMAINING value (Option B): the refreshed full-season projection MINUS the KERFUFFLE points the player has already scored this year. A player who's banked half his season shows about half his full-season number here — because that's what's left to acquire. Hover the cell to see the breakdown (full-season − scored through Week N = remaining); the * marks a netted number, and the Full-Season column shows the pre-net figure.",
+      "Preseason (no games played) there's nothing to subtract, so it equals the full-season projection.",
       "Now filled for every projected offensive player, including free agents (it used to show CBS's own number for rostered players and blank for free agents).",
       'Team defenses aren\'t projected by our engine: a rostered defense still shows CBS\'s own projected points here, and a free-agent defense shows "—".',
+    ],
+    placeholder: false,
+  },
+  seasonProjPts: {
+    definition: "Full-season projected KERFUFFLE points, before netting out actuals.",
+    deepDive: [
+      "Source: our projection engine's refreshed FULL-SEASON projection — the same number Proj Points showed before Option B (issue #30).",
+      "It's kept as context beside Proj Points: in-season Proj Points is the REMAINING value (full-season minus what's already scored), and this column is the full-season total. The gap between them is roughly the value the player has already spent this year.",
+      "Preseason the two match (nothing scored yet). Hidden in the focused views — add it from the column picker.",
     ],
     placeholder: false,
   },
@@ -92,6 +103,7 @@ const DOCS: Record<
     definition: "The player's league-generic dollar ceiling — worth to a typical team.",
     deepDive: [
       "Source: our valuation engine (VORP). It converts projected KERFUFFLE points ABOVE positional replacement into dollars against the $500 cap.",
+      "In-season it prices REMAINING value (Option B, issue #30): the dollars are built from the rest-of-season points in Proj Points (full-season minus what's already scored), so a mid-season trade is valued on what's LEFT to acquire, not the whole season. Preseason it's the full-season value.",
       "Replacement = the freely-available player at each position: RB~34, WR~34, TE~17 (the 'last starter'), and QB~30 — set at the last ROSTERED QB, because superflex forces two QB slots plus backups and QB scoring cliffs after ~QB30, so elite QBs are correctly premium.",
       "Dollars: the league's spendable money ($500 × 12, minus a $1 minimum per roster spot) is split across everyone's points-above-replacement — so prices sum to the cap and the top of each position commands the most.",
       'Team defenses show "—" (their scoring isn\'t projected from the offensive feed).',

@@ -55,6 +55,7 @@ export const ALL_COLUMN_IDS = [
   "kerfOvrRank",
   "kerfPosRank",
   "projPts",
+  "seasonProjPts",
   "kerfValue",
   "rosterValue",
   "ceiling",
@@ -79,6 +80,7 @@ export const COLUMN_LABELS: Record<string, string> = {
   kerfOvrRank: "Kerf Ovr Rank",
   kerfPosRank: "Kerf Pos Rank",
   projPts: "Proj Points",
+  seasonProjPts: "Full-Season",
   kerfValue: "Kerf Value",
   rosterValue: "Roster Value",
   ceiling: "Ceiling",
@@ -155,7 +157,7 @@ export const DEFAULT_VIEWS: SavedView[] = [
     builtIn: true,
     state: makeState(
       [
-        "owner", "name", "pos", "nflTeam", "kerfOvrRank", "projPts", "kerfValue",
+        "owner", "name", "pos", "nflTeam", "kerfOvrRank", "projPts", "seasonProjPts", "kerfValue",
         "rosterValue", "marketPrice", "ecr", "dynastyEcr", "salary", "contractYears",
       ],
       { rosterMode: "ROSTERED" },

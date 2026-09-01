@@ -33,6 +33,9 @@ import {
 import { mapFpBoard, isRosFallback } from "./parse-fp-ingest.mjs";
 import { mapProjections } from "./parse-projections.mjs";
 import { parseScoring } from "../profile/parse-scoring.mjs";
+import { parseStatsActualsPages, joinActuals } from "./parse-cbs-actuals.mjs";
+import { buildScoringMap, recomputeKerfPoints } from "./scoring-crosscheck.mjs";
+import { actualsAsOfWeek } from "../archive/stats-actuals.mjs";
 
 // Overridable so tests can point ingestion at a synthetic fixture archive.
 const RAW_ROOT = process.env.GART_RAW_ROOT || join(process.cwd(), "data", "raw");
@@ -466,6 +469,105 @@ function ingestRunInner(db, runId, { warn, note }, rawRoot) {
     }
   }
 
+  // ---- Current-season actuals-to-date -> player_actuals (Option B input, #30) ----
+  // The CBS stats pages (standard = volume + FPTS Total; advanced = first downs),
+  // captured ytd by the archiver. LENIENT — a warn, never a rollback — because
+  // preseason and older archives legitimately lack these pages, and re-ingesting old
+  // runs must not start failing. Stored keyed by (season, as_of_week): the latest
+  // ingested pull for a given week replaces it wholesale (idempotent).
+  const stdPages = [...pages.keys()].filter((n) => /^stats-actuals-standard(-r\d+)?$/.test(n)).sort();
+  const advPages = [...pages.keys()].filter((n) => /^stats-actuals-advanced(-r\d+)?$/.test(n)).sort();
+  if (stdPages.length === 0 && advPages.length === 0) {
+    warn(`${runId}: no current-season actuals pages in this run (expected in-season; fine for older archives) — player_actuals not updated`);
+  } else if (stdPages.length === 0 || advPages.length === 0) {
+    warn(`${runId}: actuals capture is one-sided (standard:${stdPages.length} advanced:${advPages.length}) — need both to recompute + cross-check; skipping player_actuals`);
+  } else {
+    // Season + as-of week from the run manifest (the archiver records both). Fall
+    // back to deriving the week from the capture date if an older manifest lacks it.
+    const season = Number(manifest.sources?.fantasypros?.season) ||
+      new Date(manifest.started_at).getUTCFullYear();
+    const asOfWeek = Number.isInteger(manifest.sources?.cbs?.actuals_as_of_week)
+      ? manifest.sources.cbs.actuals_as_of_week
+      : actualsAsOfWeek(manifest.started_at);
+
+    const { standard, advanced } = parseStatsActualsPages({
+      standardPages: stdPages.map((n) => readPage(runDir, pages.get(n))),
+      advancedPages: advPages.map((n) => readPage(runDir, pages.get(n))),
+      context: `${runId}/actuals`,
+    });
+    const { joined, onlyStandard, onlyAdvanced } = joinActuals({ standard, advanced, context: `${runId}/actuals` });
+
+    // Only players in OUR universe (present in `player`) — the stats pages carry the
+    // whole NFL; the rest can't be stored (FK) and aren't ours to net.
+    const universe = new Set(db.prepare(`SELECT cbs_player_id FROM player`).all().map((r) => r.cbs_player_id));
+    const mine = joined.filter((j) => universe.has(j.cbsPlayerId));
+
+    // Recompute each actual through the parsed scoring config (owner ruling, #30):
+    // the netted value is OUR recompute, cross-checked against CBS's FPTS Total.
+    const coef = buildScoringMap(db);
+    let crosscheckOff = 0;
+    const worst = [];
+    for (const j of mine) {
+      j.kerf_points = recomputeKerfPoints(j, coef);
+      if (j.fpts_total != null) {
+        const diff = Math.round((j.kerf_points - j.fpts_total) * 100) / 100;
+        // Residuals are expected for points the offensive stat page omits (return
+        // TDs, etc.), so only NON-trivial gaps on scoring players are worth flagging.
+        if (Math.abs(diff) > 1 && j.fpts_total > 0) {
+          crosscheckOff++;
+          worst.push({ name: j.name, actual: j.fpts_total, computed: j.kerf_points, diff });
+        }
+      }
+    }
+
+    // Latest pull for a given (season, as_of_week) replaces it wholesale.
+    db.prepare(`DELETE FROM player_actuals WHERE season = ? AND as_of_week = ?`).run(season, asOfWeek);
+    const insertActual = db.prepare(
+      `INSERT INTO player_actuals
+         (season, as_of_week, cbs_player_id, cbs_name_raw, pos, nfl_team, bye_week,
+          pass_att, pass_cmp, pass_yds, pass_td, pass_int, pass_2pt, pass_first_downs,
+          rush_att, rush_yds, rush_td, rush_2pt, rush_first_downs,
+          rec_tar, rec_rec, rec_yds, rec_td, rec_2pt, rec_first_downs,
+          fumbles_lost, fpts_total, fpts_avg, kerf_points, pull_id, fetched_at, imported_at)
+       VALUES
+         (@season, @as_of_week, @cbs_player_id, @cbs_name_raw, @pos, @nfl_team, @bye_week,
+          @pass_att, @pass_cmp, @pass_yds, @pass_td, @pass_int, @pass_2pt, @pass_first_downs,
+          @rush_att, @rush_yds, @rush_td, @rush_2pt, @rush_first_downs,
+          @rec_tar, @rec_rec, @rec_yds, @rec_td, @rec_2pt, @rec_first_downs,
+          @fumbles_lost, @fpts_total, @fpts_avg, @kerf_points, @pull_id, @fetched_at, @imported_at)`
+    );
+    const importedAt = new Date().toISOString();
+    const actualsFetchedAt = pages.get(stdPages[0]).fetched_at;
+    for (const j of mine) {
+      insertActual.run({
+        season, as_of_week: asOfWeek, cbs_player_id: j.cbsPlayerId, cbs_name_raw: j.nameRaw,
+        pos: j.pos, nfl_team: j.nflTeam, bye_week: j.byeWeek,
+        pass_att: j.pass_att, pass_cmp: j.pass_cmp, pass_yds: j.pass_yds, pass_td: j.pass_td,
+        pass_int: j.pass_int, pass_2pt: j.pass_2pt, pass_first_downs: j.pass_first_downs,
+        rush_att: j.rush_att, rush_yds: j.rush_yds, rush_td: j.rush_td, rush_2pt: j.rush_2pt,
+        rush_first_downs: j.rush_first_downs,
+        rec_tar: j.rec_tar, rec_rec: j.rec_rec, rec_yds: j.rec_yds, rec_td: j.rec_td,
+        rec_2pt: j.rec_2pt, rec_first_downs: j.rec_first_downs,
+        fumbles_lost: j.fumbles_lost, fpts_total: j.fpts_total, fpts_avg: j.fpts_avg,
+        kerf_points: j.kerf_points, pull_id: pullId, fetched_at: actualsFetchedAt, imported_at: importedAt,
+      });
+    }
+    stats.actuals = mine.length;
+    stats.actualsAsOfWeek = asOfWeek;
+    note(
+      `actuals: stored ${mine.length} player_actuals for season ${season} as-of week ${asOfWeek} ` +
+        `(${joined.length} joined from the stats pages, ${joined.length - mine.length} outside our universe; ` +
+        `${onlyStandard.length} standard-only, ${onlyAdvanced.length} advanced-only rows unpaired)`
+    );
+    if (crosscheckOff > 0) {
+      worst.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+      warn(
+        `actuals: ${crosscheckOff} scoring player(s) recompute >1pt off CBS's FPTS Total — ` +
+          `worst: ${worst.slice(0, 3).map((w) => `${w.name} ${w.computed} vs ${w.actual}`).join("; ")}`
+      );
+    }
+  }
+
   return stats;
 }
 
@@ -519,7 +621,7 @@ function main() {
       console.log(
         `  ✔ ${runId}  teams:${stats.teams} players:${stats.rosterPlayers} dead-cap:${stats.deadCapRows} ` +
           `tx:${stats.transactions} rules:${stats.scoringRules} boards:${stats.boards} rankings:${stats.rankingRows} ` +
-          `projections:${stats.projections ?? 0}`
+          `projections:${stats.projections ?? 0} actuals:${stats.actuals ?? 0}${stats.actuals ? `@wk${stats.actualsAsOfWeek}` : ""}`
       );
       for (const n of notes) console.log(`      · ${n}`);
       for (const w of warnings) console.log(`      ⚠ ${w}`);
