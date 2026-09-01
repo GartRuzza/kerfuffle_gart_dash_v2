@@ -41,6 +41,34 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-09-01 — Power Rankings: view any manager's perspective
+
+**New**
+- A **"Viewing" dropdown** at the top of the Power Rankings screen lets you pick any of the 12 managers and see that team's Positional Rankings, Starter Rankings, radar, and Starting Lineup. It defaults to your **Rangoon Raccoons** (marked "(you)"), and clicking a team row in the table still works the same way — the dropdown just makes switching quicker.
+- All four detail cards now show the selected team's name in their titles.
+
+## 2026-09-01 — Power Rankings now show real value, not just rank
+
+**Improved**
+- On the Power Rankings screen, the **bars now reflect actual value relative to the league** — the league's weakest team at a spot shows an empty bar, the strongest a full one. Before, everything hugged the right edge and a 7th-place group looked almost identical to 1st. Now a real gap looks like a gap, and a close race looks close.
+- Each bar has a small **league-median tick**, so you can see at a glance whether you're above or below the middle of the league.
+- **Hover** over any bar, lineup slot, or radar point to see the actual numbers — your Kerf points, your rank, the league median, and the league's range — without cluttering the charts with text.
+- The **Position Strength radar** now has a **Starters / Bench / Both** toggle, and each position's axis is scaled to the league (worst team at the center, best at the outer edge) — so you can see, in real value, where you stand by position, with the league median drawn in as a dashed reference. The Bench view uses each team's *average* bench value per position.
+
+## 2026-08-31 — New screen: League Power Rankings
+
+**New**
+- A new **Power Rankings** screen (reachable from the new links at the top of the page) ranks all **12 teams by roster strength** — built from the same Kerf projected points as the player table, just added up per team.
+- The league table shows each team's **Starter Strength** (its best possible superflex starting lineup), its **Total Roster** value (everyone, so depth counts), a **0–100 score**, and a **contenders / middle / rebuilders** tier. Click any column header to re-sort; click any team to see its detail.
+- Pick a team to see four breakdowns: **Positional Rankings** (how its QB/RB/WR/TE/FLEX/SuperFlex stack up against the league, with each position's rank), **Starter Rankings** (each starting-lineup slot's rank), a **Position-Strength radar** (starters vs. bench shape), and a **Starting-Lineup** chart (each starter with a rank badge). This is built for **trade scouting** — spotting at a glance which rivals are stacked or thin, and where.
+- A **Rest-of-Season / Weekly** toggle switches the whole board between the two lenses, just like the player table.
+
+**Known issues**
+- **Dynasty** is shown as a greyed-out toggle — dynasty rankings aren't built yet (the engine has no KERFUFFLE dynasty score to add up).
+- Defenses (DST) are not shown anywhere on this screen — the engine can't score them, so they'd be blank.
+- Practice-squad players count toward a team's Total Roster / bench depth.
+- Like the rest of the app, the numbers are as fresh as your last `npm run engine`, and the true in-season depth read arrives once real 2026 games have been played (season opens 2026-09-09).
+
 ## 2026-08-28 — Rest-of-season value now means what's LEFT, not the whole season
 
 **New**

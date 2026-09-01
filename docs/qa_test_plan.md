@@ -125,6 +125,25 @@
 
 **What validation protects you from (proven by unit tests):** the engine writes a **separate `weekly` run** (projection rows, no valuation) while `latest_engine_run` stays ROS; it **skips** the weekly run preseason; `deriveWeekly` maps this-week Kerf + weekly consensus + opponent, nulls dollars and weekly-tier fields, and leaves weekly fields null for an uncovered player. The full pipeline was validated **end-to-end on the real Week-1 data** (586 players re-scored; the Lens toggle went live; a rendered check confirmed the enabled "Weekly · Wk 1" toggle and no errors).
 
+### League Power Rankings (issue #32)
+
+*The standalone `/power-rankings` screen. Needs the store populated and `npm run engine` run (it reads the engine's per-player Kerf points). Read-only. The Weekly checks need an in-season weekly run; preseason the Weekly toggle is disabled.*
+
+| # | Do this | You should see | Pass? |
+| --- | --- | --- | --- |
+| 1 | Click **Power Rankings** in the top nav (or open `/power-rankings`) | A **Team Rankings** table listing **all 12 teams**, strongest first, each with Starter Strength, Total Roster, a 0–100 score and a colored tier dot. Your **Rangoon Raccoons** row is highlighted and its detail is shown. | ☐ |
+| 2 | Read the top team's **Score** | It is **100**; scores descend down the table. | ☐ |
+| 3 | Click a **column header** (Starters / Total / Score / RK) | The table re-sorts by that column, with a caret marking the active one. | ☐ |
+| 4 | Click a **different team's** row | The four detail charts (Positional Rankings, Starter Rankings, radar, Starting Lineup) all switch to that team. | ☐ |
+| 5 | Spot-check one team's **Starting Lineup** by hand | The nine slots (QB / RB1 / RB2 / WR1 / WR2 / TE / two FLX / SFLX) hold that team's best superflex lineup — SFLX typically holds a second QB. Bar **height is value-relative to the league** at that slot (a weak slot is clearly shorter), colored by rank with a `#rank` badge and a dashed league-median guide. | ☐ |
+| 6 | Read a team's **Positional Rankings** & check the bar lengths spread | QB/RB/WR/TE/FLEX/SFLX plus Starters and Bench, each with the team's league rank on the right. **Bar length = value vs. the league** (league-worst → empty, league-best → full), so ranks visibly spread out (not all hugging the right edge); a small **median tick** sits on each track. A stacked position fills toward full, a thin one stays short. | ☐ |
+| 7 | **Hover** a bar, a lineup slot, or a radar point | A popup shows the actual **Kerf points, rank (of 12), league median, and league range** — no numbers are printed on the bars themselves. | ☐ |
+| 8 | Use the radar's **Starters / Bench / Both** pill | The radar swaps between the starters' per-group value and the team's **average bench value** per position (and Both overlays them). Each axis is scaled league-worst (center) → league-best (edge), with a dashed **league-median** polygon. No DST axis. | ☐ |
+| 9 | Toggle **Rest-of-Season ↔ Weekly** | The whole board (table + charts) recomputes on the chosen lens. Preseason the Weekly button is disabled with a tooltip; the **Dynasty** button is always disabled (deferred). | ☐ |
+| 10 | Confirm what's NOT there | No DST anywhere; no free agents; no trade-offer generator — the screen surfaces the grid, it doesn't negotiate. | ☐ |
+
+**What validation protects you from (proven by unit tests + a live rendered check):** the pure aggregation (`lib/powerRankings.test.ts`, 23 cases) locks the optimal-lineup fill order (incl. the superflex backup-QB pick), the exclusion of DST/free-agents/unprojected players, the non-overlapping positional-group split, the ranking/0–100 scoring/Jenks tiering, the **average-bench-value** semantics, the per-metric **league distribution** (min/median/max) and the **`normalize` value-relative scaling** (incl. the all-equal guard), and the presentation helpers. A live rendered-DOM check on the real store confirmed all 12 teams render, the bars now spread realistically (Raccoons QB 30% / WR 41% / TE 50% / SFLX 65% / RB·FLEX·STARTERS·BENCH 100%, matching their ranks), the radar renders its toggle + team/median polygons + hover vertices, and the Raccoons' **Starter Strength 2354 / Total 3748** match an **independent by-hand lineup computation**. **Not yet run against real non-zero in-season actuals** — the season hasn't started.
+
 ### The backtest — the decision gate (issue #19)
 
 *Answers "does the Kerf re-rank beat raw FantasyPros ECR at predicting actual points?" No UI — it prints a verdict and writes `docs/backtest_results.md`. Needs the store populated (`npm run ingest` + `npm run ingest:historical`) and the historical FantasyPros snapshots present in `data/raw/` (captured FP-only per season). All read-only.*

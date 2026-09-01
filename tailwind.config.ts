@@ -68,6 +68,21 @@ const config: Config = {
           line: "#3a4760",
         },
 
+        // --- Power Rankings (issue #32): strength bands + radar series ---
+        // Rank thirds — top green, middle blue, bottom red (matches the reference).
+        rank: {
+          strong: "#34d399", // top third of the league
+          middle: "#3b82f6", // middle third
+          weak: "#f87171", // bottom third
+          track: "#1e2738", // empty bar track
+        },
+        // Radar chart: Starters vs Bench series + grid.
+        radar: {
+          starters: "#3b82f6",
+          bench: "#c9a24b",
+          grid: "#2a3548",
+        },
+
         // --- Edge column: green above market, red below ---
         edge: {
           DEFAULT: "#c3ccdb", // zero
