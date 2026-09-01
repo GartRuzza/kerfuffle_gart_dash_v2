@@ -63,7 +63,18 @@ export interface Player {
   // --- CBS (contract snapshot, latest pull) ---
   salary: number | null; // whole $; null = free agent / unassigned
   contractYears: number | null; // 1–4; null for free agents
-  projPts: number | null; // CBS's KERFUFFLE-scored season projection
+  // In-season ROS lens (Option B, issue #30): `projPts` is the REMAINING projected
+  // points that drive the ranks + dollars — full-season projection minus actuals to
+  // date. Preseason (no games) it equals the full-season figure. Defenses/unprojected
+  // keep CBS's own number.
+  projPts: number | null;
+  // The full-season projection before netting (context), the KERFUFFLE points scored
+  // to date that were subtracted, and the completed weeks those actuals cover. Null
+  // when the engine hasn't netted (preseason before actuals, or a non-ROS lens) —
+  // together they make the ROS number drillable: full-season − actuals = remaining.
+  seasonProjPts: number | null;
+  actualsToDate: number | null;
+  actualsAsOfWeek: number | null;
 
   // --- Weekly lens (issue #29) ---
   // The matchup opponent for the current week (e.g. "vs. TB", "at HOU"), from the

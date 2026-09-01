@@ -90,6 +90,32 @@ describe("deriveBoard", () => {
     });
   });
 
+  it("surfaces Option B netting: Proj Points is REMAINING, with full-season + actuals context (issue #30)", () => {
+    const proj = new Map([
+      // full-season 380, banked 242 through week 8 → remaining 138
+      [7, { kerf_points: 138, kerf_ovr_rank: 5, kerf_pos_rank: 2, kerf_ovr_tier: 1, kerf_pos_tier: 1,
+            season_points: 380, actuals_points: 242, actuals_as_of_week: 8 }],
+    ]);
+    const [p] = deriveBoard([row({ cbs_player_id: 7, name: "Netted Guy", owner: "FA", ecr: 3 })], proj);
+    expect(p).toMatchObject({
+      projPts: 138,        // remaining value drives the lens
+      seasonProjPts: 380,  // full-season kept as context
+      actualsToDate: 242,  // what was subtracted
+      actualsAsOfWeek: 8,  // through which week
+    });
+  });
+
+  it("with no netting (preseason / Option A), Full-Season falls back to the projection and actuals stay null", () => {
+    const proj = new Map([
+      [7, { kerf_points: 300, kerf_ovr_rank: 1, kerf_pos_rank: 1, kerf_ovr_tier: 1, kerf_pos_tier: 1 }],
+    ]);
+    const [p] = deriveBoard([row({ cbs_player_id: 7, name: "Preseason Guy", owner: "FA", ecr: 1 })], proj);
+    expect(p.projPts).toBe(300);
+    expect(p.seasonProjPts).toBe(300); // falls back to the projection so the column always shows a number
+    expect(p.actualsToDate).toBeNull();
+    expect(p.actualsAsOfWeek).toBeNull();
+  });
+
   it("surfaces the valuation dollars: Kerf/Roster value + both market prices (issue #20)", () => {
     const val = new Map([
       [7, { kerf_value: 130, roster_value: 110, market_in_season: 201, market_pre_auction: 180 }],

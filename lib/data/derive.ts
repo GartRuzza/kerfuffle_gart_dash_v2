@@ -54,6 +54,13 @@ export interface ProjectionRow {
   kerf_pos_rank: number | null;
   kerf_ovr_tier: number | null;
   kerf_pos_tier: number | null;
+  // Option B netting (issue #30): the full-season projection before netting, the
+  // actuals-to-date subtracted, and the week those actuals cover. Null on runs that
+  // don't net (weekly #29, or a ROS run before actuals exist). `kerf_points` itself
+  // is the REMAINING value under Option B.
+  season_points?: number | null;
+  actuals_points?: number | null;
+  actuals_as_of_week?: number | null;
 }
 
 /**
@@ -162,6 +169,10 @@ export function deriveWeekly(
       salary: r.salary,
       contractYears: r.contract_years,
       projPts: proj ? Math.round(proj.kerf_points * 10) / 10 : null,
+      // Weekly re-score is this-week points, not season remaining — no netting context.
+      seasonProjPts: null,
+      actualsToDate: null,
+      actualsAsOfWeek: null,
       opponent: wk?.opponent ?? null,
 
       // ECR fields = the WEEKLY consensus (no weekly tiers → null).
@@ -209,8 +220,15 @@ export function deriveBoard(
     salary: r.salary,
     contractYears: r.contract_years,
     // The engine's KERFUFFLE-scored projection for offense (incl. free agents);
-    // CBS's own number for defenses / unprojected players.
+    // CBS's own number for defenses / unprojected players. Under Option B (#30) the
+    // engine's number is the REMAINING value in-season (full-season − actuals-to-date).
     projPts: proj ? Math.round(proj.kerf_points * 10) / 10 : r.proj_points,
+    // Netting context (drill-down): full-season projection, actuals subtracted, and the
+    // week they cover. season falls back to the remaining value when a run didn't net
+    // (so the Full-Season column always shows a number for a projected player).
+    seasonProjPts: proj ? Math.round((proj.season_points ?? proj.kerf_points) * 10) / 10 : null,
+    actualsToDate: proj && proj.actuals_points != null ? Math.round(proj.actuals_points * 10) / 10 : null,
+    actualsAsOfWeek: proj?.actuals_as_of_week ?? null,
     opponent: null, // ROS lens has no per-week matchup (issue #29 fills this weekly)
 
     ecr: r.ecr,

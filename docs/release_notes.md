@@ -41,6 +41,23 @@
 
 <!-- Newest entry goes directly below this line. -->
 
+## 2026-08-28 — Rest-of-season value now means what's LEFT, not the whole season
+
+**New**
+- **The Rest-of-Season lens now shows true remaining value.** In-season, every player's Kerf number and dollar value is his *rest-of-season* worth — his refreshed full-season projection **minus the KERFUFFLE points he's already scored this year**. So a star who's banked most of his season shows a smaller number, because that's what's left to acquire in a trade or off waivers. Before, the ranking was right but the dollars ran high (they still counted games already played); now the magnitude is correct too.
+- **A "Full-Season" column and a hover breakdown.** Proj Points is now the remaining number (marked with a small `*` once games are played); hover it to see the math — full-season − scored through Week N = remaining. The new **Full-Season** column (in the Full and Trades views, or add it from the column picker) keeps the whole-season projection beside it, so the gap between them is roughly what a player has already spent.
+- The top banner now says **"remaining value through Week N"** once the season is underway, so you always know which weeks are baked in.
+
+**Improved**
+- The Kerf ranks and tiers themselves now reflect remaining value in-season — the whole lens answers "who's worth the most from here," not "who had the best full-season line."
+
+**Known issues**
+- **Preseason and the first weeks, nothing looks different** — with no games played there's nothing to subtract, so remaining = full-season. The change becomes visible as real points accrue. This is expected.
+- Not yet verified on live in-season data (the 2026 season hasn't started). The math is proven on test data and against past seasons; the first real check comes once games are played.
+
+**Requires action from you**
+- Nothing new — the usual weekly `npm run archive` → `npm run ingest` → `npm run engine`. The archive now also grabs the CBS season-stats pages (the actuals source); ingest and the engine handle the rest automatically.
+
 ## 2026-08-27 — Weekly rankings + a real Start/Sit view
 
 **New**

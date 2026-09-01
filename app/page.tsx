@@ -15,6 +15,7 @@ export default function Home() {
         capturedAt={meta?.capturedAt ?? null}
         horizon={meta?.horizon ?? null}
         engineRunAt={meta?.engineRunAt ?? null}
+        actualsAsOfWeek={meta?.actualsAsOfWeek ?? null}
       />
       <main className="mx-auto max-w-[1500px] px-4 py-6">
         <header className="mb-4">

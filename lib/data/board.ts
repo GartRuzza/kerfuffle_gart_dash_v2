@@ -47,6 +47,13 @@ export interface BoardMeta {
    */
   weeklyWeek: number | null;
   weeklyRunAt: string | null;
+  /**
+   * Option B (issue #30): the number of completed weeks the ROS lens netted actuals
+   * through. null or 0 = no netting yet (preseason / no actuals) → the lens is the
+   * full-season proxy (Option A). > 0 = the Kerf ranks + dollars are TRUE remaining
+   * value through that week.
+   */
+  actualsAsOfWeek: number | null;
 }
 
 export interface BoardData {
@@ -103,12 +110,16 @@ function readBoard(): BoardData {
     const projRows = db
       .prepare(
         `SELECT cbs_player_id, kerf_points, kerf_ovr_rank, kerf_pos_rank,
-                kerf_ovr_tier, kerf_pos_tier
+                kerf_ovr_tier, kerf_pos_tier, season_points, actuals_points, actuals_as_of_week
          FROM projection
          WHERE engine_run_id = (SELECT engine_run_id FROM latest_engine_run)`
       )
       .all() as (ProjectionRow & { cbs_player_id: number })[];
     for (const p of projRows) projById.set(p.cbs_player_id, p);
+    // The as-of week the ROS run netted actuals through (Option B, issue #30): 0 or
+    // absent preseason, > 0 once games are played. The banner uses it to say the lens
+    // is true remaining value "through Week N". All ROS rows share one value.
+    const netWeek = projRows.find((p) => p.actuals_as_of_week != null)?.actuals_as_of_week ?? null;
 
     // The latest engine run's per-player valuation (issue #20). Empty until the
     // engine has run with the valuation layer — dollar fields then stay "—".
@@ -203,6 +214,7 @@ function readBoard(): BoardData {
         engineRunAt: engineRun?.created_at ?? null,
         weeklyWeek,
         weeklyRunAt,
+        actualsAsOfWeek: netWeek,
       },
     };
   } finally {

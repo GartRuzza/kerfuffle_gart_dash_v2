@@ -122,4 +122,41 @@ Section 3 proved *reachability* with page-level word-count signals. Issue #11 pr
 
 ---
 
-**Related docs:** [`pm/roadmap.md`](pm/roadmap.md) (open decision #1 now resolved), [`decision_log.md`](decision_log.md) (D-08: access method + contract-length source), [`data_model.md`](data_model.md) (planned entities informed by these findings), [`profiles/PROFILE.md`](profiles/PROFILE.md) (the committed field profile), [`pm/current_state.md`](pm/current_state.md) (status), [`user_flows.md`](user_flows.md) (the refresh/re-extract step this validates).
+## 9. Update — 2026-08-28 (issue #30: current-season actuals — `/scoring/live` is a JS shell; the stats table is the source)
+
+Issue #30 needs **current-season actuals** (season-to-date KERFUFFLE points, ideally with stat components) captured read-only each week. It flagged `/scoring/live` as the likely page. A timeboxed discovery probe settled it:
+
+**`/scoring/live` is NOT usable read-only.** The ~747 KB it returns is a **JavaScript shell**: parsing it finds **zero real DOM tables** — the 14 `<table>` strings a text search sees are all inside client-side JS (`f.push('<table…')`) that only builds the table in a browser. It is also the wrong shape (a live per-matchup scoreboard with template regions like `liveScoringRegions`/`homeTeamTotalScoreRegion`, not season-to-date totals, and no first downs). Joins the `/players` and `/draft/results` JS-rendered set.
+
+**SOLVED — the stats table (`/stats/stats-main`) is real, parseable, and auto-updating.** Unlike `/scoring/live` it serves **server-rendered rows** (`<tr class="row1"> > <td> > a.playerLink`), and every filter is a **plain URL PATH SEGMENT** (the same "it's just a URL parameter" pattern that solved transaction pagination). The grammar:
+
+```
+/stats/stats-main/{scope}:{positions}/{timeframe}:{league}/{category}/{view}   (+ ?start_row=N)
+```
+
+| Segment | Values (observed) |
+| --- | --- |
+| scope:positions | `all:QB:RB:WR:TE:RB-WR-TE:FLEX` (offense) · `fa:` (free agents only) · `all:DST` |
+| timeframe:league | `ytd:p` = **year-to-date actuals**, NFL · `season` · `week5` · `2025` · `restofseason` · `3g`/`ytd`/… |
+| category | `standard` (volume + FPTS Total) · `advanced` (adds rush/rec/pass **first downs** + 2pt) · `scoring` |
+| view | `stats` (actuals) · `projections` |
+
+The URL issue #30 uses for season-to-date actuals:
+
+```
+/stats/stats-main/all:QB:RB:WR:TE:RB-WR-TE:FLEX/ytd:p/standard/stats     (+ /advanced/stats)   (+ ?start_row=101, 201, …)
+```
+
+- **Rows carry the CBS player id** in the Action cell (`CBSi.app.Stats.ActionButtons.players.push({<id>:…})`) — an exact join key, no name matching.
+- **FPTS Total is KERFUFFLE-scored** (verified: a projected line reconstructs the shown FPTS with **no PPR**, matching the league's scoring — [§8 Q6]).
+- **Free agents are included** (`Avail` column = `FA`), so this is also, incidentally, a real free-agent stat source (the FA pool still derives from FantasyPros for ranks).
+- **Pagination is `?start_row=N`** — the transaction-log pattern. The archiver pins its OWN segments and only reads the page numbers, so CBS's own pager links can't bounce it to the default view.
+- **Preseason caveat:** with every actual tied at 0, CBS's sort is unstable across pages, so the standard/advanced page windows overlap and don't cover everyone. Harmless — a missing actuals row nets 0 (Option-A behavior for that player); non-zero players sort stably in-season and appear in both categories.
+
+**Bonus finding:** CBS *does* publish a **`restofseason` projection** (`…/restofseason:p/standard/projections`) — the very thing [D-21] noted FantasyPros lacks. Out of scope for #30, but a candidate to refine the Option-A projection someday.
+
+Captured by `tools/archive/stats-actuals.mjs` (the archiver adds `stats-actuals-standard*` + `stats-actuals-advanced*` pages); parsed by `tools/ingest/parse-cbs-actuals.mjs` into `player_actuals` (migration 010). The throwaway probe (`spikes/cbs-stats/`) was deleted after the source was settled.
+
+---
+
+**Related docs:** [`pm/roadmap.md`](pm/roadmap.md) (open decision #1 now resolved), [`decision_log.md`](decision_log.md) (D-08: access method + contract-length source; D-23: Option B method), [`data_model.md`](data_model.md) (planned entities informed by these findings; `player_actuals`), [`profiles/PROFILE.md`](profiles/PROFILE.md) (the committed field profile), [`pm/current_state.md`](pm/current_state.md) (status), [`user_flows.md`](user_flows.md) (the refresh/re-extract step this validates).

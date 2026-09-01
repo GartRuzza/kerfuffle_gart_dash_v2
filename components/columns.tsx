@@ -115,7 +115,38 @@ export const columns: ColumnDef<PlayerRow>[] = [
   // --- GartStats (engine outputs — blank until the valuation engine exists) ---
   { id: "kerfOvrRank", accessorFn: (r) => r.kerfOvrRank ?? undefined, sortUndefined: "last", header: "Kerf Ovr Rank", cell: num },
   { id: "kerfPosRank", accessorFn: (r) => r.kerfPosRank ?? undefined, sortUndefined: "last", header: "Kerf Pos Rank", cell: posRankCell },
-  { id: "projPts", accessorFn: (r) => r.projPts ?? undefined, sortUndefined: "last", sortDescFirst: true, header: "Proj Points", cell: num },
+  {
+    id: "projPts",
+    accessorFn: (r) => r.projPts ?? undefined,
+    sortUndefined: "last",
+    sortDescFirst: true,
+    header: "Proj Points",
+    // In-season (Option B, #30) this is REMAINING value; hovering shows the drill-down
+    // (full-season − actuals scored through Week N = remaining). Preseason it's the
+    // full-season projection and no tooltip is shown.
+    cell: (info) => {
+      const v = info.getValue<number | undefined>();
+      if (v == null) return dash;
+      const r = info.row.original;
+      const netted =
+        r.actualsAsOfWeek != null && r.actualsAsOfWeek > 0 &&
+        r.actualsToDate != null && r.seasonProjPts != null;
+      const title = netted
+        ? `Remaining value: ${r.seasonProjPts} full-season − ${r.actualsToDate} scored ` +
+          `(through Week ${r.actualsAsOfWeek}) = ${v}`
+        : undefined;
+      return (
+        <span className="tabular-nums" title={title}>
+          {v}
+          {netted ? <span className="ml-0.5 text-ink-faint">*</span> : null}
+        </span>
+      );
+    },
+  },
+  // Full-season projection before netting (context, Option B #30). Preseason it equals
+  // Proj Points; in-season it's the higher pre-net figure, so the gap to Proj Points is
+  // the value already spent. Hidden in the focused views; available via the column picker.
+  { id: "seasonProjPts", accessorFn: (r) => r.seasonProjPts ?? undefined, sortUndefined: "last", sortDescFirst: true, header: "Full-Season", cell: num },
   {
     id: "kerfValue",
     accessorFn: (r) => r.kerfValue ?? undefined,
@@ -226,6 +257,7 @@ export const GART_COLUMNS = new Set([
   "kerfOvrRank",
   "kerfPosRank",
   "projPts",
+  "seasonProjPts",
   "kerfValue",
   "rosterValue",
   "ceiling",

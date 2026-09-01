@@ -26,6 +26,7 @@ import { writeFileSync, existsSync } from "node:fs";
 import { join, basename } from "node:path";
 import { RAW_ROOT, CBS_ENV_DIR, FP_ENV_DIR, loadEnv, makeRunId, ensureDir } from "./shared.mjs";
 import { currentNflWeek } from "./nfl-week.mjs";
+import { statsActualsSeeds, statsActualsPageUrl, actualsAsOfWeek } from "./stats-actuals.mjs";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -158,13 +159,59 @@ async function captureCbs(runDir, responses) {
     console.log("  ⚠ transactions page 1 failed — skipping pagination walk + print-all view");
   }
 
+  // ---- Current-season actuals-to-date (issue #30) ----
+  // The as-of week (how many COMPLETED weeks the ytd figure includes) is derived
+  // from the same 2026 date→week table the FantasyPros probes use: currentNflWeek
+  // is the first UNFINISHED week, so completed weeks = currentNflWeek - 1 (preseason
+  // → 0). It's recorded for lineage; the CBS `ytd` page itself is the source of
+  // truth for what's actually included, and ingestion cross-checks recomputed points.
+  const asOfWeek = actualsAsOfWeek(new Date());
+  console.log(`\n  Current-season actuals (ytd, as-of week ${asOfWeek}):`);
+  const STATS_PAGE_CAP = 30; // ~30 rows/page => covers ~900 offense players
+  for (const seed of statsActualsSeeds()) {
+    const seedResult = await fetchCbsPage(seed);
+    if (!seedResult.ok) {
+      console.log(`  ⚠ ${seed.name} seed failed — skipping its pagination walk`);
+      continue;
+    }
+    // Discover only the start_row NUMBERS from the page, then rebuild each URL from
+    // OUR pinned segments + ?start_row=N — never following CBS's own hrefs, which may
+    // drop the path segments and silently fall back to the default (standard/current) view.
+    const seen = new Set();
+    const queue = [];
+    const discover = (body) => {
+      for (const m of body.matchAll(/[?&]start_row=(\d+)/g)) {
+        const startRow = Number(m[1]);
+        if (startRow > 1 && !seen.has(startRow)) {
+          seen.add(startRow);
+          queue.push(startRow);
+        }
+      }
+    };
+    discover(seedResult.body);
+    let fetched = 0;
+    while (queue.length > 0 && fetched < STATS_PAGE_CAP) {
+      const startRow = queue.shift();
+      await sleep(250); // be gentle
+      const result = await fetchCbsPage({
+        name: `${seed.name}-r${startRow}`,
+        path: statsActualsPageUrl(seed.path, startRow),
+      });
+      fetched++;
+      if (result.ok) discover(result.body); // windowed pagers reveal pages incrementally
+    }
+    if (queue.length > 0) {
+      console.log(`  ⚠ stats pagination cap (${STATS_PAGE_CAP}) hit for ${seed.name} — ${queue.length} page(s) NOT captured`);
+    }
+  }
+
   if (loginRedirects > 0) {
     console.log(
       `\n  ⚠ ${loginRedirects} CBS page(s) redirected to login — your cookie is likely expired.` +
         `\n    Refresh it in spikes/cbs-api/.env, then re-run.  (Check first: npm run archive:check-cookie)`
     );
   }
-  return { attempted: true, host, ok, failed, login_redirects: loginRedirects };
+  return { attempted: true, host, ok, failed, login_redirects: loginRedirects, actuals_as_of_week: asOfWeek };
 }
 
 // ---------- FantasyPros: the spike's probe set, run with the (now active) HOF key ----------

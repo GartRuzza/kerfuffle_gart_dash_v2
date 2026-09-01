@@ -139,6 +139,8 @@ function writeFixtureRun(root, runId, mutate = {}, capturedAt = "2026-08-25T12:0
   }
   addCbs("transactions", txHtml);
   addCbs("rules", rulesHtml);
+  // Optional extra CBS pages (e.g. issue #30 current-season actuals stats pages).
+  for (const [page, html] of mutate.extraCbs ?? []) addCbs(page, html);
   addFp("ecr-draft-std-op", fpSuperflexBoard());
   addFp("ecr-dynasty-op", fpDynastySuperflexBoard());
   addFp("ecr-draft-std-all", fpAllBoard());
@@ -150,6 +152,52 @@ function writeFixtureRun(root, runId, mutate = {}, capturedAt = "2026-08-25T12:0
     join(dir, "manifest.json"),
     JSON.stringify({ run_id: runId, started_at: capturedAt, sources: {}, responses })
   );
+}
+
+// ---- issue #30: current-season actuals stats pages (standard + advanced) ----
+
+const STATS_STD_HEADER = ["Action","Avail","Player","Opp","OVP","Bye","Rost","Start","ATT","Comp","Yds","TD","Int","Att","Yds","TD","Tar","Rec","Yds","TD","Lost","Avg","Total"];
+const STATS_ADV_HEADER = ["Action","Avail","Player","Opp","OVP","Bye","Rost","Start","Pct","1stD","2Pt","Avg","1stD","2Pt","Avg","1stD","2Pt","Avg","Total"];
+const statsAction = (id) => `CBSi.app.Stats.ActionButtons.players.push({${id}:{}});`;
+
+const statsPage = (header, rows) =>
+  `<table><tbody>` +
+  `<tr class="label superheader">${header.map(() => "<td></td>").join("")}</tr>` +
+  `<tr class="label">${header.map((h) => `<td>${h}</td>`).join("")}</tr>` +
+  rows.map((cells, i) => `<tr class="${i % 2 ? "row2" : "row1"}">${cells.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("") +
+  `</tbody></table>`;
+
+function statsStdRow(id, avail, player, o) {
+  const c = Array(23).fill("0");
+  c[0] = statsAction(id); c[1] = avail; c[2] = player; c[3] = o.opp ?? "BUF"; c[5] = String(o.bye ?? 9);
+  c[10] = String(o.pass_yds ?? 0); c[11] = String(o.pass_td ?? 0);
+  c[14] = String(o.rush_yds ?? 0); c[15] = String(o.rush_td ?? 0);
+  c[17] = String(o.rec_rec ?? 0); c[18] = String(o.rec_yds ?? 0);
+  c[21] = o.total; c[22] = o.total;
+  return c;
+}
+function statsAdvRow(id, avail, player, o) {
+  const c = Array(19).fill("0");
+  c[0] = statsAction(id); c[1] = avail; c[2] = player; c[3] = o.opp ?? "BUF"; c[5] = String(o.bye ?? 9);
+  c[9] = String(o.pass_fd ?? 0); c[12] = String(o.rush_fd ?? 0); c[15] = String(o.rec_fd ?? 0);
+  c[18] = o.total;
+  return c;
+}
+
+// Two players whose KERFUFFLE points come only from passing, so they cross-check
+// EXACTLY against the fixture's 2-rule scoring (PaTD 6 + PaYd .04):
+//   111: 300 yds*.04 + 3 TD*6 = 30.00 ;  555: 100*.04 + 1*6 = 10.00
+function actualsPages() {
+  return [
+    ["stats-actuals-standard", statsPage(STATS_STD_HEADER, [
+      statsStdRow(111, "Team 1", "Rostered Star QB • BUF", { pass_yds: 300, pass_td: 3, total: "30.00" }),
+      statsStdRow(555, "FA", "Available Guy WR • BUF", { pass_yds: 100, pass_td: 1, total: "10.00" }),
+    ])],
+    ["stats-actuals-advanced", statsPage(STATS_ADV_HEADER, [
+      statsAdvRow(111, "Team 1", "Rostered Star QB • BUF", { total: "30.00" }),
+      statsAdvRow(555, "FA", "Available Guy WR • BUF", { total: "10.00" }),
+    ])],
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -376,6 +424,63 @@ describe("ingest end-to-end (synthetic archive)", () => {
     ingest("2026-08-25T12-00-00Z");
     const star = db.prepare("SELECT ecr, ecr_pos_rank, ecr_tier FROM board WHERE name='Rostered Star'").get();
     expect(star).toMatchObject({ ecr: 1, ecr_pos_rank: "QB1", ecr_tier: 1 }); // the draft board
+  });
+
+  it("stores current-season actuals (#30): recompute + cross-check, keyed by as-of week", () => {
+    // A mid-season run (Week 2 window → as-of week 1) carrying the stats-actuals pages.
+    writeFixtureRun(root, "2026-09-16T12-00-00Z", { extraCbs: actualsPages() }, "2026-09-16T12:00:00Z");
+    const stats = ingestRun(db, "2026-09-16T12-00-00Z", noop, root);
+    expect(stats.actuals).toBe(2);
+    expect(stats.actualsAsOfWeek).toBe(1);
+
+    const rows = db.prepare("SELECT * FROM player_actuals ORDER BY cbs_player_id").all();
+    expect(rows).toHaveLength(2);
+    const star = rows.find((r) => r.cbs_player_id === 111);
+    expect(star).toMatchObject({ season: 2026, as_of_week: 1, pos: "QB", nfl_team: "BUF", pass_yds: 300, pass_td: 3 });
+    // OUR recompute through the parsed scoring config == CBS's FPTS Total (cross-check clean)
+    expect(star.kerf_points).toBe(30);
+    expect(star.fpts_total).toBe(30);
+    // lineage points at the pull
+    const orphan = db.prepare("SELECT COUNT(*) c FROM player_actuals WHERE pull_id NOT IN (SELECT pull_id FROM pull)").get().c;
+    expect(orphan).toBe(0);
+    // the latest-actuals view resolves to this week's rows
+    expect(db.prepare("SELECT COUNT(*) c FROM latest_player_actuals").get().c).toBe(2);
+  });
+
+  it("actuals ingest is idempotent — re-ingesting the same week replaces, never duplicates", () => {
+    writeFixtureRun(root, "2026-09-16T12-00-00Z", { extraCbs: actualsPages() }, "2026-09-16T12:00:00Z");
+    ingest("2026-09-16T12-00-00Z");
+    ingest("2026-09-16T12-00-00Z"); // --all path: same run again
+    expect(db.prepare("SELECT COUNT(*) c FROM player_actuals").get().c).toBe(2);
+  });
+
+  it("only stores actuals for players in our universe (the stats pages carry the whole NFL)", () => {
+    // id 424242 isn't rostered and isn't on any FantasyPros board → not in `player`.
+    const pages = [
+      ["stats-actuals-standard", statsPage(STATS_STD_HEADER, [
+        statsStdRow(111, "Team 1", "Rostered Star QB • BUF", { pass_yds: 300, pass_td: 3, total: "30.00" }),
+        statsStdRow(424242, "FA", "Random Scrub WR • NYJ", { pass_yds: 50, pass_td: 0, total: "2.00" }),
+      ])],
+      ["stats-actuals-advanced", statsPage(STATS_ADV_HEADER, [
+        statsAdvRow(111, "Team 1", "Rostered Star QB • BUF", { total: "30.00" }),
+        statsAdvRow(424242, "FA", "Random Scrub WR • NYJ", { total: "2.00" }),
+      ])],
+    ];
+    writeFixtureRun(root, "2026-09-16T12-00-00Z", { extraCbs: pages }, "2026-09-16T12:00:00Z");
+    ingest("2026-09-16T12-00-00Z");
+    const ids = db.prepare("SELECT cbs_player_id FROM player_actuals ORDER BY 1").all().map((r) => r.cbs_player_id);
+    expect(ids).toEqual([111]); // the scrub is skipped, not FK-violating
+  });
+
+  it("skips actuals (lenient) when only one of the two stats views is present", () => {
+    const oneSided = [["stats-actuals-standard", statsPage(STATS_STD_HEADER, [
+      statsStdRow(111, "Team 1", "Rostered Star QB • BUF", { pass_yds: 300, pass_td: 3, total: "30.00" }),
+    ])]];
+    const warnings = [];
+    writeFixtureRun(root, "2026-09-16T12-00-00Z", { extraCbs: oneSided }, "2026-09-16T12:00:00Z");
+    ingestRun(db, "2026-09-16T12-00-00Z", { warn: (m) => warnings.push(m), note: () => {} }, root);
+    expect(db.prepare("SELECT COUNT(*) c FROM player_actuals").get().c).toBe(0);
+    expect(warnings.some((w) => /actuals capture is one-sided/.test(w))).toBe(true);
   });
 
   it("REJECTS a run missing a required page (no partial ingest)", () => {

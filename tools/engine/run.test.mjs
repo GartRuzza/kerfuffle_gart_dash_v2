@@ -93,6 +93,15 @@ function seed() {
   return db;
 }
 
+// Seed a current-season actuals row (issue #30) — the value the ROS run nets out.
+function seedActual(db, { id, name = "Actual", pos = "QB", kerf, week = 5, season = 2026 }) {
+  db.prepare(
+    `INSERT INTO player_actuals
+       (season, as_of_week, cbs_player_id, cbs_name_raw, pos, kerf_points, fpts_total, pull_id, fetched_at, imported_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 1, '2026-10-01T00:00:00Z', '2026-10-01T00:00:00Z')`
+  ).run(season, week, id, name, pos, kerf, kerf);
+}
+
 describe("runEngine (DB integration)", () => {
   let db;
   beforeEach(() => {
@@ -210,5 +219,64 @@ describe("runEngine (DB integration)", () => {
     expect(res.weekly).toBeNull();
     const horizons = db.prepare(`SELECT DISTINCT horizon FROM engine_run`).all().map((r) => r.horizon);
     expect(horizons).toEqual(["ros"]);
+  });
+
+  // ---- Option B: net current-season actuals (issue #30) ----
+
+  it("with no actuals ingested, the ROS run is Option A — full-season, nothing netted", () => {
+    const res = runEngine(db); // seed has no player_actuals rows
+    expect(res.ros.net).toBeNull();
+    const qb = db.prepare(`SELECT * FROM projection WHERE engine_run_id=? AND cbs_player_id=10`).get(res.engineRunId);
+    expect(qb.kerf_points).toBeCloseTo(380, 6); // full-season, unchanged
+    expect(qb.season_points).toBeNull(); // no netting → context columns stay null
+    expect(qb.actuals_points).toBeNull();
+  });
+
+  it("nets actuals to REMAINING points and re-ranks the whole lens (owner: net everything)", () => {
+    // QB full-season ≈ 380, WR ≈ 228. Bank 300 of the QB's points → 80 remaining,
+    // which drops him BELOW the WR: the ROS ranking flips, not just the dollars.
+    seedActual(db, { id: 10, name: "Star QB", pos: "QB", kerf: 300, week: 5 });
+    const res = runEngine(db);
+
+    expect(res.ros.net).toMatchObject({ asOfWeek: 5, playersWithActuals: 1 });
+    const qb = db.prepare(`SELECT * FROM projection WHERE engine_run_id=? AND cbs_player_id=10`).get(res.engineRunId);
+    const wr = db.prepare(`SELECT * FROM projection WHERE engine_run_id=? AND cbs_player_id=20`).get(res.engineRunId);
+
+    // drill-down: full-season → minus actuals → remaining (= kerf_points)
+    expect(qb.season_points).toBeCloseTo(380, 6);
+    expect(qb.actuals_points).toBeCloseTo(300, 6);
+    expect(qb.kerf_points).toBeCloseTo(80, 6);
+    expect(qb.actuals_as_of_week).toBe(5);
+    // the WR had no actuals: remaining == full-season
+    expect(wr.actuals_points).toBe(0);
+    expect(wr.kerf_points).toBeCloseTo(228, 0);
+
+    // net EVERYTHING: the ranking now reflects remaining value — WR passes the QB.
+    expect(wr.kerf_ovr_rank).toBe(1);
+    expect(qb.kerf_ovr_rank).toBe(2);
+
+    // dollars price the REMAINING points (valuation.kerf_points is the netted value).
+    const qbVal = db.prepare(`SELECT kerf_points FROM valuation WHERE engine_run_id=? AND cbs_player_id=10`).get(res.engineRunId);
+    expect(qbVal.kerf_points).toBeCloseTo(80, 6);
+  });
+
+  it("floors remaining at 0 — a player who outscored his projection nets to zero, never negative", () => {
+    seedActual(db, { id: 10, name: "Star QB", pos: "QB", kerf: 500, week: 8 }); // 500 > 380 projection
+    const res = runEngine(db);
+    const qb = db.prepare(`SELECT * FROM projection WHERE engine_run_id=? AND cbs_player_id=10`).get(res.engineRunId);
+    expect(qb.season_points).toBeCloseTo(380, 6);
+    expect(qb.actuals_points).toBeCloseTo(500, 6);
+    expect(qb.kerf_points).toBe(0); // floored, not -120
+    // PAR/value also floor at 0 → the minimum $1 ceiling, never negative.
+    const qbVal = db.prepare(`SELECT par_league, kerf_value FROM valuation WHERE engine_run_id=? AND cbs_player_id=10`).get(res.engineRunId);
+    expect(qbVal.par_league).toBe(0);
+    expect(qbVal.kerf_value).toBeLessThanOrEqual(1);
+  });
+
+  it("stamps the netting on the engine_run params for transparency", () => {
+    seedActual(db, { id: 10, name: "Star QB", pos: "QB", kerf: 120, week: 6 });
+    const res = runEngine(db);
+    const params = JSON.parse(db.prepare(`SELECT params_json FROM engine_run WHERE engine_run_id=?`).get(res.engineRunId).params_json);
+    expect(params.netActuals).toMatchObject({ asOfWeek: 6, playersWithActuals: 1 });
   });
 });
